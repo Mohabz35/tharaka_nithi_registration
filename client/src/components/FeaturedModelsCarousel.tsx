@@ -13,7 +13,8 @@ export default function FeaturedModelsCarousel() {
     search: undefined,
   });
 
-  const models = (registrations as any)?.filter((r: any) => r.photoUrl)?.slice(0, 6) || [];
+  // Use posters if available, fallback to photos
+  const models = (registrations as any)?.filter((r: any) => r.posterUrl || r.photoUrl)?.slice(0, 6) || [];
 
   useEffect(() => {
     if (!autoPlay || models.length === 0) return;
@@ -73,9 +74,9 @@ export default function FeaturedModelsCarousel() {
                 <div className="bg-[#4a1a2a] rounded-lg overflow-hidden border-2 border-[#d4af37] shadow-2xl hover:shadow-[#d4af37]/50 transition-shadow">
                   {/* Model Photo */}
                   <div className="relative h-64 md:h-80 overflow-hidden bg-[#2a0a1a]">
-                    {model.photoUrl ? (
+                    {model.posterUrl || model.photoUrl ? (
                       <img
-                        src={model.photoUrl}
+                        src={model.posterUrl || model.photoUrl}
                         alt={model.fullName}
                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                       />

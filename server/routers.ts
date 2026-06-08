@@ -1,7 +1,7 @@
 import { COOKIE_NAME, CATEGORY_LABELS } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
+import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations, getAllPartners, upsertPartner, createArtist } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
@@ -9,6 +9,7 @@ import { generateImage } from "./_core/imageGeneration";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
 import { generateCertificate } from "./_core/certificateGenerator";
 import { generateEnhancedCertificate } from "./_core/enhancedCertificateGenerator";
+import { generateBootcampForm } from "./_core/bootcampFormGenerator";
 import { storagePut } from "./storage";
 
 export const appRouter = router({
@@ -25,6 +26,9 @@ export const appRouter = router({
   }),
 
   gallery: router({
+    getPartners: publicProcedure.query(async () => {
+      return await getAllPartners();
+    }),
     getPublicRegistrations: publicProcedure
       .input(
         z.object({
@@ -171,6 +175,8 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           const categoryLabel = CATEGORY_LABELS[input.category];
+          const partners = await getAllPartners();
+          const partnerNames = partners.map(p => p.name);
 
           const pdfBuffer = await generateEnhancedCertificate({
             participantName: input.participantName,
@@ -178,7 +184,7 @@ export const appRouter = router({
             registrationId: input.registrationId,
             eventDate: input.eventDate,
             venue: input.venue,
-            partners: ["Royals Icon Events", "Tharaka-Nithi County"],
+            partners: partnerNames.length > 0 ? partnerNames : ["Royals Icon Events", "Tharaka-Nithi County"],
           });
 
           const fileName = `certificate_${input.registrationId}_${Date.now()}.pdf`;
@@ -189,6 +195,35 @@ export const appRouter = router({
           );
 
           return { success: true, certificateUrl: url, certificateKey: key };
+        } catch (error) {
+          console.error("Certificate generation error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate certificate",
+          });
+        }
+      }),
+
+    downloadBootcampForm: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string(),
+          category: z.enum(["adults", "teens", "little_stars"]),
+          registrationId: z.string(),
+          phoneNumber: z.string(),
+          email: z.string(),
+          countySubLocation: z.string(),
+          age: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const categoryLabel = CATEGORY_LABELS[input.category];
+          const { url, key } = await generateBootcampForm({
+            ...input,
+            category: categoryLabel,
+          });
+          return { success: true, formUrl: url, formKey: key };
         } catch (error) {
           console.error("Certificate generation error:", error);
           throw new TRPCError({
@@ -267,6 +302,43 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
         return await searchAndFilterRegistrations(input.query, input.filters || {});
+      }),
+
+    upsertPartner: protectedProcedure
+      .input(
+        z.object({
+          id: z.number().optional(),
+          name: z.string().min(1),
+          logoUrl: z.string().url(),
+          logoKey: z.string().optional(),
+          websiteUrl: z.string().url().optional(),
+          isActive: z.boolean().default(true),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        await upsertPartner(input);
+        return { success: true };
+      }),
+  }),
+
+  artist: router({
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          artistType: z.string().min(1),
+          phoneNumber: z.string().min(9),
+          email: z.string().email(),
+          portfolioUrl: z.string().url().optional(),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await createArtist(input);
+        return { success: true };
       }),
   }),
 });

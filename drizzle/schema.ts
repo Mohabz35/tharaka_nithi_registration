@@ -54,3 +54,32 @@ export const registrations = mysqlTable("registrations", {
 
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistration = typeof registrations.$inferInsert;
+
+export const partners = mysqlTable("partners", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  logoUrl: text("logoUrl").notNull(),
+  logoKey: text("logoKey"),
+  websiteUrl: text("websiteUrl"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Partner = typeof partners.$inferSelect;
+export type InsertPartner = typeof partners.$inferInsert;
+
+export const artists = mysqlTable("artists", {
+  id: int("id").autoincrement().primaryKey(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  artistType: varchar("artistType", { length: 255 }).notNull(), // e.g. Musician, Painter, Dancer
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  portfolioUrl: text("portfolioUrl"),
+  description: text("description"),
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type Artist = typeof artists.$inferSelect;
+export type InsertArtist = typeof artists.$inferInsert;

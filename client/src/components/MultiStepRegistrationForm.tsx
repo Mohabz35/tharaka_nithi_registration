@@ -4,12 +4,20 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 interface MultiStepRegistrationFormProps {
   category: "adults" | "teens" | "little_stars";
-  onSuccess: (data: { registrationId: string; fullName: string }) => void;
+  onSuccess: (data: {
+    registrationId: string;
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+    countySubLocation: string;
+    age: number;
+  }) => void;
 }
 
 type FormStep = "personal" | "talents" | "consent" | "review";
@@ -28,6 +36,7 @@ export default function MultiStepRegistrationForm({
     email: "",
     countySubLocation: "",
     talents: "",
+    photoUrlExternal: "",
     portfolioFile: null as File | null,
     consentPhotoVideo: false,
     consentDataProcessing: false,
@@ -104,7 +113,7 @@ export default function MultiStepRegistrationForm({
       if (!formData.phoneNumber) errors.phoneNumber = "Phone number is required";
       if (!formData.email) errors.email = "Email address is required";
       if (!formData.countySubLocation) errors.countySubLocation = "County sub-location is required";
-      if (!photoFile) errors.photo = "Photo upload is required";
+      if (!photoFile && !formData.photoUrlExternal) errors.photo = "Photo is required (Upload or Link)";
       
       // Email validation
       if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
@@ -147,8 +156,8 @@ export default function MultiStepRegistrationForm({
     if (!validateStep()) return;
 
     try {
-      // Upload photo to S3
-      let photoUrl = "";
+      // Upload photo to S3 if provided, else use external URL
+      let photoUrl = formData.photoUrlExternal || "";
       let photoKey = "";
       if (photoFile) {
         const formDataPhoto = new FormData();
@@ -207,6 +216,10 @@ export default function MultiStepRegistrationForm({
       onSuccess({
         registrationId: result.registrationId,
         fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        email: formData.email,
+        countySubLocation: formData.countySubLocation,
+        age: formData.age,
       });
     } catch (error) {
       toast.error("Failed to submit registration");
@@ -335,24 +348,49 @@ export default function MultiStepRegistrationForm({
             </div>
 
             <div>
-              <label className="text-white block mb-2">Upload Your Photo *</label>
-              <Input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoChange}
-                className={`bg-[#4a1a2a] text-white ${
-                  fieldErrors.photo ? "border-red-500 border-2" : "border-[#d4af37]"
-                }`}
-              />
+              <label className="text-white block mb-2">Your Photo *</label>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 bg-[#2a0a1a]">
+                  <TabsTrigger value="upload" className="text-xs">Upload File</TabsTrigger>
+                  <TabsTrigger value="url" className="text-xs">Direct Link (PostImages)</TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload" className="pt-4">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className={`bg-[#4a1a2a] text-white ${
+                      fieldErrors.photo ? "border-red-500 border-2" : "border-[#d4af37]"
+                    }`}
+                  />
+                  {photoPreview && (
+                    <img
+                      src={photoPreview}
+                      alt="Photo preview"
+                      className="mt-4 w-32 h-32 object-cover rounded-lg border border-[#d4af37]"
+                    />
+                  )}
+                </TabsContent>
+                <TabsContent value="url" className="pt-4">
+                  <Input
+                    name="photoUrlExternal"
+                    value={formData.photoUrlExternal}
+                    onChange={handleInputChange}
+                    placeholder="https://i.postimg.cc/..."
+                    className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                  />
+                  <p className="text-xs text-gray-400 mt-2">Paste a direct image link from PostImages or similar services.</p>
+                  {formData.photoUrlExternal && (
+                    <img
+                      src={formData.photoUrlExternal}
+                      alt="Preview"
+                      className="mt-4 w-32 h-32 object-cover rounded-lg border border-[#d4af37]"
+                    />
+                  )}
+                </TabsContent>
+              </Tabs>
               {fieldErrors.photo && (
                 <p className="text-red-400 text-sm mt-1">{fieldErrors.photo}</p>
-              )}
-              {photoPreview && (
-                <img
-                  src={photoPreview}
-                  alt="Photo preview"
-                  className="mt-4 w-32 h-32 object-cover rounded-lg"
-                />
               )}
             </div>
           </CardContent>

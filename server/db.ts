@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRegistration, InsertUser, registrations, users } from "../drizzle/schema";
+import { InsertRegistration, InsertUser, registrations, users, partners, InsertPartner, artists, InsertArtist } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -163,6 +163,29 @@ export async function filterRegistrations(filters: {
     if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
     return true;
   });
+}
+
+export async function getAllPartners() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(partners).where(eq(partners.isActive, true));
+}
+
+export async function upsertPartner(data: InsertPartner) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (data.id) {
+    await db.update(partners).set(data).where(eq(partners.id, data.id));
+  } else {
+    await db.insert(partners).values(data);
+  }
+}
+
+export async function createArtist(data: InsertArtist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(artists).values(data);
 }
 
 export async function searchAndFilterRegistrations(query: string, filters: {
