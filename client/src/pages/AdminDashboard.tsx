@@ -6,48 +6,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
-import { Download, LogOut } from "lucide-react";
+import { Download, LogOut, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function AdminDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
 
-  // Redirect if not admin
-  if (user?.role !== "admin") {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a] flex items-center justify-center">
-        <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 max-w-md">
-          <CardContent className="pt-6 text-center">
-            <p className="text-white mb-4">You do not have permission to access this page.</p>
-            <Button
-              onClick={() => setLocation("/")}
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
-            >
-              Return to Home
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  // Check if user is admin - but don't return early yet
+  const isAdmin = user?.role === "admin";
 
   // Determine if we're in search mode
   const isSearchMode = searchQuery !== "" || Object.values(activeFilters).some(v => v !== undefined);
 
-  // Fetch registrations - always call all hooks to maintain hook order
-  const { data: stats } = trpc.admin.getStats.useQuery();
-  const { data: allRegistrations, isLoading: isLoadingAll } = trpc.admin.getAllRegistrations.useQuery();
-  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory);
+  // Fetch registrations - always call all hooks, use enabled flag for auth
+  const { data: stats, isLoading: isLoadingStats } = trpc.admin.getStats.useQuery(undefined, { enabled: isAdmin });
+  const { data: allRegistrations, isLoading: isLoadingAll } = trpc.admin.getAllRegistrations.useQuery(undefined, { enabled: isAdmin });
+  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isAdmin });
   const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
     { query: searchQuery, filters: activeFilters },
-    { enabled: isSearchMode }
+    { enabled: isAdmin && isSearchMode }
   );
 
-  const isLoading = isSearchMode ? isSearching : (isLoadingAll || isLoadingCategory);
+  const isLoading = loading || isLoadingStats || (isSearchMode ? isSearching : (isLoadingAll || isLoadingCategory));
 
   // Determine which registrations to display
   const displayRegistrations = useMemo(() => {
@@ -97,6 +81,39 @@ export default function AdminDashboard() {
     a.download = `registrations-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
   };
+
+  // Show loading state while auth is resolving
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a] flex items-center justify-center">
+        <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 max-w-md">
+          <CardContent className="pt-6 text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-[#d4af37] mx-auto mb-4" />
+            <p className="text-white">Loading...</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Show permission denied if not admin
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a] flex items-center justify-center">
+        <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p className="text-white mb-4">You do not have permission to access this page.</p>
+            <Button
+              onClick={() => setLocation("/")}
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+            >
+              Return to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a]">
