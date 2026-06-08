@@ -22,6 +22,55 @@ export const appRouter = router({
     }),
   }),
 
+  gallery: router({
+    getPublicRegistrations: publicProcedure
+      .input(
+        z.object({
+          category: z.enum(["adults", "teens", "little_stars"]).optional(),
+          search: z.string().optional(),
+        })
+      )
+      .query(async ({ input }) => {
+        try {
+          let registrations = await getAllRegistrations();
+
+          // Filter by category if provided
+          if (input.category) {
+            registrations = registrations.filter(r => r.category === input.category);
+          }
+
+          // Filter by search query (name or talents)
+          if (input.search) {
+            const query = input.search.toLowerCase();
+            registrations = registrations.filter(r =>
+              r.fullName.toLowerCase().includes(query) ||
+              (r.talents && r.talents.toLowerCase().includes(query))
+            );
+          }
+
+          // Return only public-safe fields
+          return registrations
+            .filter(r => r.photoUrl && r.consentPhotoVideo) // Only show if they consented
+            .map(r => ({
+              id: r.id,
+              fullName: r.fullName,
+              category: r.category,
+              age: r.age,
+              talents: r.talents,
+              photoUrl: r.photoUrl,
+              posterUrl: r.posterUrl,
+              registrationDate: r.registrationDate,
+            }));
+        } catch (error) {
+          console.error("Gallery fetch error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to fetch gallery",
+          });
+        }
+      }),
+  }),
+
   registration: router({
     submit: publicProcedure
       .input(

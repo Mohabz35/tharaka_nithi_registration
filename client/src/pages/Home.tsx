@@ -5,9 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegistrationForm from "@/components/RegistrationForm";
 import PaymentModal from "@/components/PaymentModal";
 import CountdownTimer from "@/components/CountdownTimer";
-import { Crown, ChevronDown } from "lucide-react";
+import { Crown, ChevronDown, Image } from "lucide-react";
+import { useLocation } from "wouter";
 
 export default function Home() {
+  const [, setLocation] = useLocation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationComplete, setRegistrationComplete] = useState(false);
@@ -54,17 +56,26 @@ export default function Home() {
             <CountdownTimer />
           </div>
 
-          <Button
-            onClick={() => {
-              const element = document.getElementById("register-section");
-              if (element) {
-                element.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-            className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg"
-          >
-            Register Now
-          </Button>
+          <div className="flex gap-4 justify-center flex-wrap">
+            <Button
+              onClick={() => {
+                const element = document.getElementById("register-section");
+                if (element) {
+                  element.scrollIntoView({ behavior: "smooth" });
+                }
+              }}
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg"
+            >
+              Register Now
+            </Button>
+            <Button
+              onClick={() => setLocation("/gallery")}
+              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg"
+            >
+              <Image className="w-5 h-5 mr-2" />
+              View Gallery
+            </Button>
+          </div>
         </div>
       </section>
 

@@ -110,8 +110,18 @@
 - Glamorous poster design with participant name and category
 - Burgundy and gold color scheme matching event branding
 
+## Public Gallery Feature
+- [x] Add gallery tRPC procedure to fetch public registrations with photos
+- [x] Create gallery page component with photo grid
+- [x] Add profile cards with model names and categories
+- [x] Implement filtering by category
+- [x] Add search functionality for gallery
+- [x] Style with glamorous burgundy/gold theme
+- [x] Add gallery route to navigation
+- [x] Write gallery tests
+- [x] Add "View Gallery" button to home page
+
 ## Known Limitations & Future Enhancements
 - Email notifications not yet implemented
 - M-PESA payment verification webhook not yet integrated
-- Public gallery/leaderboard not yet implemented
 - SMS notifications not yet implemented
