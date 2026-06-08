@@ -8,21 +8,50 @@ import CountdownTimer from "@/components/CountdownTimer";
 import FeaturedModelsCarousel from "@/components/FeaturedModelsCarousel";
 import { Crown, ChevronDown, Image } from "lucide-react";
 import { useLocation } from "wouter";
+import { SponsorsPartners, RegisterArtist, BootcampShowcase, SupportPanel } from "./EventSections";
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationComplete, setRegistrationComplete] = useState(false);
-  const [scrollToRegister, setScrollToRegister] = useState(false);
+  const [registrationData, setRegistrationData] = useState<{
+    registrationId: string;
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+    countySubLocation: string;
+    age: number;
+  } | null>(null);
 
-  const handleRegistrationSuccess = () => {
+  const handleRegistrationSuccess = (data: {
+    registrationId: string;
+    fullName: string;
+    phoneNumber: string;
+    email: string;
+    countySubLocation: string;
+    age: number;
+  }) => {
+    setRegistrationData(data);
     setRegistrationComplete(true);
     setShowPaymentModal(true);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a]">
+    <div className="min-h-screen poster-texture relative overflow-hidden">
+      {/* Silk texture overlay */}
+      <div className="absolute inset-0 silk-sheen pointer-events-none opacity-50" />
+
+      {/* Animated Background Posters (Simulated) */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rotate-[-12deg] blur-sm">
+          <img src="/manus-storage/royals-icon-logo_9a1f7c92.jpg" alt="" className="w-full h-full object-contain opacity-50" />
+        </div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rotate-[15deg] blur-sm">
+          <img src="/manus-storage/royals-icon-logo_9a1f7c92.jpg" alt="" className="w-full h-full object-contain opacity-50" />
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
@@ -94,7 +123,7 @@ export default function Home() {
                 <CardTitle className="text-[#d4af37]">✓ Registration is FREE</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                No registration fees required. Only M-PESA payment at submission for participation.
+                No registration fees required. Participation in Mr & Miss Face of Tharaka-Nithi County 2026 is completely free of charge.
               </CardContent>
             </Card>
 
@@ -154,6 +183,18 @@ export default function Home() {
 
       {/* Featured Models Carousel */}
       <FeaturedModelsCarousel />
+
+      {/* Sponsors & Partners */}
+      <SponsorsPartners />
+
+      {/* Showcase Section */}
+      <BootcampShowcase />
+
+      {/* Register as Artist */}
+      <RegisterArtist />
+
+      {/* Support & Information */}
+      <SupportPanel />
 
       {/* Registration Section */}
       <section id="register-section" className="py-16 px-4 sm:px-6 lg:px-8">
@@ -224,6 +265,9 @@ export default function Home() {
           setRegistrationComplete(false);
         }}
         category={selectedCategory}
+        participantName={registrationData?.fullName}
+        registrationId={registrationData?.registrationId}
+        registrationFullData={registrationData}
       />
 
       {/* Footer */}

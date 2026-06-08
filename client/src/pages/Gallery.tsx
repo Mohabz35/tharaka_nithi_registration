@@ -3,8 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Search, Filter, Loader2, MessageCircle, Heart } from "lucide-react";
+import { Search, Filter, Loader2, MessageCircle, Heart, Facebook, Share2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { CATEGORY_LABELS } from "@shared/const";
+import { toast } from "sonner";
 
 export default function Gallery() {
   const [, setLocation] = useLocation();
@@ -28,12 +30,6 @@ export default function Gallery() {
     return 0;
   }) : [];
 
-  const categoryLabels = {
-    adults: "Adults (18–26)",
-    teens: "Teens (13–17)",
-    little_stars: "Little Stars (5–12)",
-  };
-
   const categoryColors = {
     adults: "bg-purple-600",
     teens: "bg-pink-600",
@@ -41,7 +37,9 @@ export default function Gallery() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a]">
+    <div className="min-h-screen poster-texture relative overflow-hidden">
+      <div className="absolute inset-0 silk-sheen pointer-events-none opacity-50" />
+
       {/* Header */}
       <header className="bg-black bg-opacity-50 border-b border-[#d4af37] py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
@@ -93,7 +91,7 @@ export default function Gallery() {
             >
               All Categories
             </Button>
-            {(Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>).map((cat) => (
+            {(Object.keys(CATEGORY_LABELS) as Array<keyof typeof CATEGORY_LABELS>).map((cat) => (
               <Button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -104,7 +102,7 @@ export default function Gallery() {
                     : "border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black"
                 }`}
               >
-                {categoryLabels[cat]}
+                {CATEGORY_LABELS[cat]}
               </Button>
             ))}
           </div>
@@ -151,7 +149,7 @@ export default function Gallery() {
                           categoryColors[model.category as keyof typeof categoryColors]
                         }`}
                       >
-                        {categoryLabels[model.category as keyof typeof categoryLabels]}
+                        {CATEGORY_LABELS[model.category as keyof typeof CATEGORY_LABELS]}
                       </div>
                     </div>
 
@@ -177,29 +175,48 @@ export default function Gallery() {
                       )}
 
                       {/* Social Sharing Buttons */}
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex flex-wrap gap-2 justify-center mt-auto">
                         <button
                           onClick={() => {
                             const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
-                            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                            const url = `https://wa.me/?text=${encodeURIComponent(text + " " + window.location.href)}`;
                             window.open(url, "_blank");
                           }}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          className="flex-1 min-w-[70px] bg-green-600 hover:bg-green-700 text-white text-[10px] py-1.5 rounded flex items-center justify-center gap-1 transition-colors"
                           title="Share on WhatsApp"
                         >
                           <MessageCircle className="w-3 h-3" />
-                          Share
+                          WhatsApp
                         </button>
                         <button
                           onClick={() => {
-                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
-                            window.open("https://www.instagram.com/", "_blank");
+                            const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`;
+                            window.open(url, "_blank");
                           }}
-                          className="flex-1 bg-pink-600 hover:bg-pink-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
-                          title="Share on Instagram"
+                          className="flex-1 min-w-[70px] bg-blue-600 hover:bg-blue-700 text-white text-[10px] py-1.5 rounded flex items-center justify-center gap-1 transition-colors"
+                          title="Share on Facebook"
                         >
-                          <Heart className="w-3 h-3" />
-                          Like
+                          <Facebook className="w-3 h-3" />
+                          Facebook
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (navigator.share) {
+                              navigator.share({
+                                title: `Model Profile: ${model.fullName}`,
+                                text: `Check out ${model.fullName} in the Models Call Out event!`,
+                                url: window.location.href,
+                              });
+                            } else {
+                              navigator.clipboard.writeText(window.location.href);
+                              toast.success("Profile link copied!");
+                            }
+                          }}
+                          className="flex-1 min-w-[70px] bg-[#d4af37] hover:bg-[#e5c158] text-black text-[10px] py-1.5 rounded flex items-center justify-center gap-1 transition-colors"
+                          title="Share Profile"
+                        >
+                          <Share2 className="w-3 h-3" />
+                          Copy Link
                         </button>
                       </div>
                     </CardContent>

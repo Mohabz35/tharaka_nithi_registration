@@ -1,13 +1,16 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, CATEGORY_LABELS } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
+import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations, getAllPartners, upsertPartner, createArtist } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { generateImage } from "./_core/imageGeneration";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
 import { generateCertificate } from "./_core/certificateGenerator";
+import { generateEnhancedCertificate } from "./_core/enhancedCertificateGenerator";
+import { generateBootcampForm } from "./_core/bootcampFormGenerator";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -23,6 +26,9 @@ export const appRouter = router({
   }),
 
   gallery: router({
+    getPartners: publicProcedure.query(async () => {
+      return await getAllPartners();
+    }),
     getPublicRegistrations: publicProcedure
       .input(
         z.object({
@@ -95,13 +101,13 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        await createRegistration(input);
+        const id = await createRegistration(input);
         
         // Generate PDFs asynchronously (don't block the response)
         setImmediate(async () => {
           try {
             const mockRegistration = {
-              id: 0,
+              id,
               ...input,
               paymentStatus: "pending" as const,
               registrationDate: new Date(),
@@ -121,7 +127,7 @@ export const appRouter = router({
           }
         });
         
-        return { success: true };
+        return { success: true, registrationId: id.toString() };
       }),
 
     generatePoster: publicProcedure
@@ -134,7 +140,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const categoryLabel = input.category === "adults" ? "Adults (18-26)" : input.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
+          const categoryLabel = CATEGORY_LABELS[input.category];
           const prompt = `Create a glamorous event poster for a modeling competition. The image should feature the photo provided, with the following text overlaid: Name: ${input.fullName}, Category: ${categoryLabel}, Event: Mr & Miss Face of Tharaka-Nithi County 2026. Use burgundy and gold colors. Make it professional and elegant.`;
 
           const posterImage = await generateImage({
@@ -168,16 +174,56 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const { url, key } = await generateCertificate({
+          const categoryLabel = CATEGORY_LABELS[input.category];
+          const partners = await getAllPartners();
+          const partnerNames = partners.map(p => p.name);
+
+          const pdfBuffer = await generateEnhancedCertificate({
             participantName: input.participantName,
-            category: input.category,
+            category: categoryLabel,
             registrationId: input.registrationId,
-            registrationDate: new Date(),
             eventDate: input.eventDate,
             venue: input.venue,
+            partners: partnerNames.length > 0 ? partnerNames : ["Royals Icon Events", "Tharaka-Nithi County"],
           });
 
+          const fileName = `certificate_${input.registrationId}_${Date.now()}.pdf`;
+          const { url, key } = await storagePut(
+            `certificates/${fileName}`,
+            pdfBuffer,
+            "application/pdf"
+          );
+
           return { success: true, certificateUrl: url, certificateKey: key };
+        } catch (error) {
+          console.error("Certificate generation error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate certificate",
+          });
+        }
+      }),
+
+    downloadBootcampForm: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string(),
+          category: z.enum(["adults", "teens", "little_stars"]),
+          registrationId: z.string(),
+          phoneNumber: z.string(),
+          email: z.string(),
+          countySubLocation: z.string(),
+          age: z.number(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const categoryLabel = CATEGORY_LABELS[input.category];
+          const { url, key } = await generateBootcampForm({
+            ...input,
+            category: categoryLabel,
+          });
+          return { success: true, formUrl: url, formKey: key };
         } catch (error) {
           console.error("Certificate generation error:", error);
           throw new TRPCError({
@@ -256,6 +302,43 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
         return await searchAndFilterRegistrations(input.query, input.filters || {});
+      }),
+
+    upsertPartner: protectedProcedure
+      .input(
+        z.object({
+          id: z.number().optional(),
+          name: z.string().min(1),
+          logoUrl: z.string().url(),
+          logoKey: z.string().optional(),
+          websiteUrl: z.string().url().optional(),
+          isActive: z.boolean().default(true),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        await upsertPartner(input);
+        return { success: true };
+      }),
+  }),
+
+  artist: router({
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          artistType: z.string().min(1),
+          phoneNumber: z.string().min(9),
+          email: z.string().email(),
+          portfolioUrl: z.string().url().optional(),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        await createArtist(input);
+        return { success: true };
       }),
   }),
 });

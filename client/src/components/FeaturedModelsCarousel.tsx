@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { CATEGORY_LABELS } from "@shared/const";
 
 export default function FeaturedModelsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -12,7 +13,8 @@ export default function FeaturedModelsCarousel() {
     search: undefined,
   });
 
-  const models = (registrations as any)?.filter((r: any) => r.photoUrl)?.slice(0, 6) || [];
+  // Use posters if available, fallback to photos
+  const models = (registrations as any)?.filter((r: any) => r.posterUrl || r.photoUrl)?.slice(0, 6) || [];
 
   useEffect(() => {
     if (!autoPlay || models.length === 0) return;
@@ -72,9 +74,9 @@ export default function FeaturedModelsCarousel() {
                 <div className="bg-[#4a1a2a] rounded-lg overflow-hidden border-2 border-[#d4af37] shadow-2xl hover:shadow-[#d4af37]/50 transition-shadow">
                   {/* Model Photo */}
                   <div className="relative h-64 md:h-80 overflow-hidden bg-[#2a0a1a]">
-                    {model.photoUrl ? (
+                    {model.posterUrl || model.photoUrl ? (
                       <img
-                        src={model.photoUrl}
+                        src={model.posterUrl || model.photoUrl}
                         alt={model.fullName}
                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                       />
@@ -93,11 +95,7 @@ export default function FeaturedModelsCarousel() {
                       {model.fullName}
                     </h3>
                     <p className="text-gray-300 text-sm">
-                      {model.category === "adults"
-                        ? "Adults (18-26)"
-                        : model.category === "teens"
-                        ? "Teens (13-17)"
-                        : "Little Stars (5-12)"}
+                      {CATEGORY_LABELS[model.category as keyof typeof CATEGORY_LABELS]}
                     </p>
                     {model.talents && (
                       <p className="text-gray-400 text-xs mt-2 line-clamp-2">

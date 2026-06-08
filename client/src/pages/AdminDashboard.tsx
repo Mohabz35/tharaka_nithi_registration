@@ -6,8 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
-import { Download, LogOut, Loader2 } from "lucide-react";
+import { Download, LogOut, Loader2, Plus, Trash2, Save, X } from "lucide-react";
 import { useLocation } from "wouter";
+import { CATEGORY_LABELS } from "@shared/const";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function AdminDashboard() {
   const { user, logout, loading } = useAuth();
@@ -15,6 +18,18 @@ export default function AdminDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
+  const [isAddingPartner, setIsAddingPartner] = useState(false);
+  const [newPartner, setNewPartner] = useState({ name: "", logoUrl: "", websiteUrl: "" });
+
+  const utils = trpc.useUtils();
+  const upsertPartnerMutation = trpc.admin.upsertPartner.useMutation({
+    onSuccess: () => {
+      utils.gallery.getPartners.invalidate();
+      setIsAddingPartner(false);
+      setNewPartner({ name: "", logoUrl: "", websiteUrl: "" });
+      toast.success("Partner saved successfully!");
+    },
+  });
 
   // Check if user is admin - but don't return early yet
   const isAdmin = user?.role === "admin";
@@ -64,7 +79,7 @@ export default function AdminDashboard() {
       reg.fullName,
       reg.dateOfBirth,
       reg.age,
-      reg.category === "adults" ? "Adults (18-26)" : reg.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)",
+      CATEGORY_LABELS[reg.category as keyof typeof CATEGORY_LABELS],
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
@@ -116,7 +131,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a]">
+    <div className="min-h-screen poster-texture relative overflow-hidden">
+      <div className="absolute inset-0 silk-sheen pointer-events-none opacity-50" />
+
       {/* Header */}
       <header className="bg-black bg-opacity-50 border-b border-[#d4af37] py-6 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
@@ -232,11 +249,7 @@ export default function AdminDashboard() {
                             <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
                               <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
                               <TableCell className="text-white">
-                                {registration.category === "adults"
-                                  ? "Adults (18-26)"
-                                  : registration.category === "teens"
-                                    ? "Teens (13-17)"
-                                    : "Little Stars (5-12)"}
+                                {CATEGORY_LABELS[registration.category as keyof typeof CATEGORY_LABELS]}
                               </TableCell>
                               <TableCell className="text-white">{registration.age}</TableCell>
                               <TableCell className="text-white">{registration.phoneNumber}</TableCell>
@@ -338,6 +351,107 @@ export default function AdminDashboard() {
                   </TabsContent>
                 </Tabs>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Partner Management */}
+          <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 mt-8">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-[#d4af37]">Partner Management</CardTitle>
+              {!isAddingPartner && (
+                <Button
+                  onClick={() => setIsAddingPartner(true)}
+                  className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Partner
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {isAddingPartner && (
+                <Card className="bg-[#4a1a2a] border-[#d4af37] mb-6">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-white text-xs block mb-1">Partner Name</label>
+                        <Input
+                          value={newPartner.name}
+                          onChange={(e) => setNewPartner({ ...newPartner, name: e.target.value })}
+                          placeholder="e.g. Coca Cola"
+                          className="bg-[#2a0a1a] text-white border-[#d4af37]/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white text-xs block mb-1">Logo URL (PostImages link)</label>
+                        <Input
+                          value={newPartner.logoUrl}
+                          onChange={(e) => setNewPartner({ ...newPartner, logoUrl: e.target.value })}
+                          placeholder="https://i.postimg.cc/..."
+                          className="bg-[#2a0a1a] text-white border-[#d4af37]/30"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-white text-xs block mb-1">Website (Optional)</label>
+                        <Input
+                          value={newPartner.websiteUrl}
+                          onChange={(e) => setNewPartner({ ...newPartner, websiteUrl: e.target.value })}
+                          placeholder="https://..."
+                          className="bg-[#2a0a1a] text-white border-[#d4af37]/30"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setIsAddingPartner(false)}
+                        className="text-gray-400 hover:text-white"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={() => upsertPartnerMutation.mutate({ ...newPartner, isActive: true })}
+                        disabled={!newPartner.name || !newPartner.logoUrl || upsertPartnerMutation.isPending}
+                        className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        {upsertPartnerMutation.isPending ? "Saving..." : "Save Partner"}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {trpc.gallery.getPartners.useQuery().data?.map((partner) => (
+                  <Card key={partner.id} className="bg-[#4a1a2a]/30 border-[#d4af37]/30 group hover:border-[#d4af37] transition-colors">
+                    <CardContent className="pt-6 flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-white p-1 flex items-center justify-center">
+                        <img src={partner.logoUrl} alt={partner.name} className="max-w-full max-h-full object-contain" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-white font-bold">{partner.name}</p>
+                        <p className="text-[#d4af37] text-xs">{partner.isActive ? "Active" : "Inactive"}</p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={() => upsertPartnerMutation.mutate({
+                          id: partner.id,
+                          name: partner.name,
+                          logoUrl: partner.logoUrl,
+                          logoKey: partner.logoKey ?? undefined,
+                          websiteUrl: partner.websiteUrl ?? undefined,
+                          isActive: !partner.isActive
+                        })}
+                        className="text-gray-400 hover:text-[#d4af37]"
+                      >
+                        {partner.isActive ? "Disable" : "Enable"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>

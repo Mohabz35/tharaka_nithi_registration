@@ -1,6 +1,7 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRegistration, InsertUser, registrations, users } from "../drizzle/schema";
+import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { InsertRegistration, InsertUser, registrations, users, partners, InsertPartner, artists, InsertArtist } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -9,7 +10,8 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -32,44 +34,28 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   try {
     const values: InsertUser = {
       openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
-
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
-
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
+      name: user.name ?? null,
+      email: user.email ?? null,
+      loginMethod: user.loginMethod ?? null,
+      lastSignedIn: user.lastSignedIn ?? new Date(),
     };
 
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
-    }
     if (user.role !== undefined) {
       values.role = user.role;
-      updateSet.role = user.role;
     } else if (user.openId === ENV.ownerOpenId) {
       values.role = 'admin';
-      updateSet.role = 'admin';
     }
 
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
+      set: {
+        name: values.name,
+        email: values.email,
+        loginMethod: values.loginMethod,
+        lastSignedIn: values.lastSignedIn,
+        role: values.role,
+        updatedAt: new Date(),
+      },
     });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
@@ -94,7 +80,8 @@ export async function createRegistration(data: InsertRegistration) {
   if (!db) {
     throw new Error("Database not available");
   }
-  await db.insert(registrations).values(data);
+  const result = await db.insert(registrations).values(data).returning({ insertId: registrations.id });
+  return result[0].insertId;
 }
 
 export async function getRegistrationsByCategory(category: "adults" | "teens" | "little_stars") {
@@ -102,7 +89,7 @@ export async function getRegistrationsByCategory(category: "adults" | "teens" | 
   if (!db) {
     throw new Error("Database not available");
   }
-  return await db.select().from(registrations).where(eq(registrations.category as any, category));
+  return await db.select().from(registrations).where(eq(registrations.category, category));
 }
 
 export async function getAllRegistrations() {
@@ -162,6 +149,29 @@ export async function filterRegistrations(filters: {
     if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
     return true;
   });
+}
+
+export async function getAllPartners() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return await db.select().from(partners).where(eq(partners.isActive, true));
+}
+
+export async function upsertPartner(data: InsertPartner) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  if (data.id) {
+    await db.update(partners).set({ ...data, updatedAt: new Date() }).where(eq(partners.id, data.id));
+  } else {
+    await db.insert(partners).values(data);
+  }
+}
+
+export async function createArtist(data: InsertArtist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(artists).values(data);
 }
 
 export async function searchAndFilterRegistrations(query: string, filters: {

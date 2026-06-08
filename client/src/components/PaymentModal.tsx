@@ -1,10 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Download, Share2 } from "lucide-react";
+import { CheckCircle2, Download, Share2, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import { CATEGORY_LABELS } from "@shared/const";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -12,6 +13,12 @@ interface PaymentModalProps {
   category: "adults" | "teens" | "little_stars";
   participantName?: string;
   registrationId?: string;
+  registrationFullData?: {
+    phoneNumber: string;
+    email: string;
+    countySubLocation: string;
+    age: number;
+  } | null;
 }
 
 export default function PaymentModal({ 
@@ -19,16 +26,13 @@ export default function PaymentModal({
   onClose, 
   category, 
   participantName = "Participant", 
-  registrationId = "REG-001" 
+  registrationId = "REG-001",
+  registrationFullData
 }: PaymentModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingForm, setIsDownloadingForm] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
-
-  const categoryNames: Record<string, string> = {
-    adults: "Adults (18-26)",
-    teens: "Teens (13-17)",
-    little_stars: "Little Stars (5-12)",
-  };
+  const downloadBootcampForm = trpc.registration.downloadBootcampForm.useMutation();
 
   const handleDownloadCertificate = async () => {
     setIsDownloading(true);
@@ -55,6 +59,30 @@ export default function PaymentModal({
       toast.error("Failed to download certificate");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadForm = async () => {
+    setIsDownloadingForm(true);
+    try {
+      const result = await downloadBootcampForm.mutateAsync({
+        fullName: participantName,
+        category,
+        registrationId,
+        phoneNumber: registrationFullData?.phoneNumber || "N/A",
+        email: registrationFullData?.email || "N/A",
+        countySubLocation: registrationFullData?.countySubLocation || "N/A",
+        age: registrationFullData?.age || 0,
+      });
+
+      if (result.success && result.formUrl) {
+        window.open(result.formUrl, "_blank");
+        toast.success("Bootcamp form downloaded!");
+      }
+    } catch (error) {
+      toast.error("Failed to download bootcamp form");
+    } finally {
+      setIsDownloadingForm(false);
     }
   };
 
@@ -112,7 +140,7 @@ export default function PaymentModal({
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Category</p>
-                  <p className="text-white font-semibold">{categoryNames[category]}</p>
+                  <p className="text-white font-semibold">{CATEGORY_LABELS[category]}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Registration ID</p>
@@ -154,14 +182,22 @@ export default function PaymentModal({
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-3">
             <Button
               onClick={handleDownloadCertificate}
               disabled={isDownloading}
-              className="flex-1 bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold py-2"
+              className="flex-1 min-w-[200px] bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold py-2"
             >
               <Download className="w-4 h-4 mr-2" />
               {isDownloading ? "Downloading..." : "Download Certificate"}
+            </Button>
+            <Button
+              onClick={handleDownloadForm}
+              disabled={isDownloadingForm}
+              className="flex-1 min-w-[200px] bg-white text-black hover:bg-gray-200 font-bold py-2"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {isDownloadingForm ? "Generating..." : "Bootcamp Form"}
             </Button>
             <Button
               onClick={handleShare}

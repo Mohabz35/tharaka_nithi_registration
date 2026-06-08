@@ -1,56 +1,80 @@
-import { boolean, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, integer, pgEnum, pgTable, serial, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
-/**
- * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
- */
-export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
-  id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const categoryEnum = pgEnum("category", ["adults", "teens", "little_stars"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "completed"]);
+export const artistStatusEnum = pgEnum("artist_status", ["pending", "approved", "rejected"]);
+
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  openId: varchar("open_id", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  loginMethod: varchar("login_method", { length: 64 }),
+  role: roleEnum("role").default("user").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-export const registrations = mysqlTable("registrations", {
-  id: int("id").autoincrement().primaryKey(),
-  fullName: varchar("fullName", { length: 255 }).notNull(),
-  dateOfBirth: varchar("dateOfBirth", { length: 10 }).notNull(),
-  age: int("age").notNull(),
-  category: mysqlEnum("category", ["adults", "teens", "little_stars"]).notNull(),
-  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+export const registrations = pgTable("registrations", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  dateOfBirth: varchar("date_of_birth", { length: 10 }).notNull(),
+  age: integer("age").notNull(),
+  category: categoryEnum("category").notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
   email: varchar("email", { length: 320 }).notNull(),
-  countySubLocation: varchar("countySubLocation", { length: 255 }).notNull(),
-  photoUrl: text("photoUrl"),
-  photoKey: text("photoKey"),
-  portfolioUrl: text("portfolioUrl"),
-  portfolioKey: text("portfolioKey"),
+  countySubLocation: varchar("county_sub_location", { length: 255 }).notNull(),
+  photoUrl: text("photo_url"),
+  photoKey: text("photo_key"),
+  portfolioUrl: text("portfolio_url"),
+  portfolioKey: text("portfolio_key"),
   talents: text("talents"),
-  posterUrl: text("posterUrl"),
-  posterKey: text("posterKey"),
-  consentPhotoVideo: boolean("consentPhotoVideo").default(false).notNull(),
-  consentDataProcessing: boolean("consentDataProcessing").default(false).notNull(),
-  consentTerms: boolean("consentTerms").default(false).notNull(),
-  parentalConsentSigned: boolean("parentalConsentSigned").default(false),
-  parentalConsentUrl: text("parentalConsentUrl"),
-  paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed"]).default("pending").notNull(),
-  registrationDate: timestamp("registrationDate").defaultNow().notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  posterUrl: text("poster_url"),
+  posterKey: text("poster_key"),
+  consentPhotoVideo: boolean("consent_photo_video").default(false).notNull(),
+  consentDataProcessing: boolean("consent_data_processing").default(false).notNull(),
+  consentTerms: boolean("consent_terms").default(false).notNull(),
+  parentalConsentSigned: boolean("parental_consent_signed").default(false),
+  parentalConsentUrl: text("parental_consent_url"),
+  paymentStatus: paymentStatusEnum("payment_status").default("pending").notNull(),
+  registrationDate: timestamp("registration_date").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistration = typeof registrations.$inferInsert;
+
+export const partners = pgTable("partners", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  logoUrl: text("logo_url").notNull(),
+  logoKey: text("logo_key"),
+  websiteUrl: text("website_url"),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Partner = typeof partners.$inferSelect;
+export type InsertPartner = typeof partners.$inferInsert;
+
+export const artists = pgTable("artists", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  artistType: varchar("artist_type", { length: 255 }).notNull(),
+  phoneNumber: varchar("phone_number", { length: 20 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  portfolioUrl: text("portfolio_url"),
+  description: text("description"),
+  status: artistStatusEnum("status").default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Artist = typeof artists.$inferSelect;
+export type InsertArtist = typeof artists.$inferInsert;
