@@ -22,9 +22,9 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
-          {/* Crown Icon */}
+          {/* Logo */}
           <div className="flex justify-center mb-6">
-            <Crown className="w-16 h-16 text-[#d4af37]" fill="#d4af37" />
+            <img src="/manus-storage/royals-icon-logo_9a1f7c92.jpg" alt="Royals Icon Events" className="w-32 h-32 drop-shadow-lg" />
           </div>
 
           <h1 className="text-5xl sm:text-6xl font-bold text-[#d4af37] mb-4 drop-shadow-lg">
@@ -38,7 +38,7 @@ export default function Home() {
           <div className="flex flex-col sm:flex-row justify-center gap-6 text-white text-lg mb-8">
             <div className="flex items-center justify-center gap-2">
               <span className="text-[#d4af37] font-bold">📅</span>
-              <span>September 15, 2026</span>
+              <span>September 12, 2026</span>
             </div>
             <div className="flex items-center justify-center gap-2">
               <span className="text-[#d4af37] font-bold">📍</span>
