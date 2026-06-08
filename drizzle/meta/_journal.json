@@ -15,6 +15,13 @@
       "when": 1780925272417,
       "tag": "0001_salty_dormammu",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1780931777161,
+      "tag": "0002_mature_wasp",
+      "breakpoints": true
     }
   ]
 }

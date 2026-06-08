@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegistrationForm from "@/components/RegistrationForm";
 import PaymentModal from "@/components/PaymentModal";
+import CountdownTimer from "@/components/CountdownTimer";
 import { Crown, ChevronDown } from "lucide-react";
 
 export default function Home() {
@@ -49,6 +50,10 @@ export default function Home() {
             Fashion | Talent | Celebration
           </p>
 
+          <div className="mb-8 max-w-2xl mx-auto">
+            <CountdownTimer />
+          </div>
+
           <Button
             onClick={() => {
               const element = document.getElementById("register-section");
@@ -73,19 +78,19 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-6">
             <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
               <CardHeader>
-                <CardTitle className="text-[#d4af37]">✓ No Height Restrictions</CardTitle>
+                <CardTitle className="text-[#d4af37]">✓ Registration is FREE</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                Beauty and talent come in all heights. Participate regardless of your stature.
+                No registration fees required. Only M-PESA payment at submission for participation.
               </CardContent>
             </Card>
 
             <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
               <CardHeader>
-                <CardTitle className="text-[#d4af37]">✓ Tattoos & Scars Welcome</CardTitle>
+                <CardTitle className="text-[#d4af37]">✓ All Are Welcome</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                Your unique story is celebrated. No disqualifications for visible marks.
+                No height restrictions. Tattoos and scars do not disqualify applicants. Your uniqueness is celebrated.
               </CardContent>
             </Card>
 
@@ -94,9 +99,42 @@ export default function Home() {
                 <CardTitle className="text-[#d4af37]">✓ Simple Documentation</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                Only National ID (adults) or Birth Certificate (minors) needed to register.
+                Only National ID (adults) or Birth Certificate (minors) needed at registration.
               </CardContent>
             </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Talents Section */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <h2 className="text-3xl font-bold text-[#d4af37] mb-8 text-center">
+            Showcase Your Talents
+          </h2>
+          <div className="bg-[#2a0a1a] border-2 border-[#d4af37] rounded-lg p-8">
+            <p className="text-white text-lg mb-6">
+              This is your opportunity to shine! We celebrate diverse talents including modeling, dancing, singing, acting, and more. 
+              Submit your portfolio or talent video to stand out from the crowd.
+            </p>
+            <ul className="text-white space-y-3 ml-6">
+              <li className="flex items-start gap-3">
+                <span className="text-[#d4af37] font-bold">•</span>
+                <span>Professional modeling portfolio or headshots</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#d4af37] font-bold">•</span>
+                <span>Dance, singing, or performance videos</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#d4af37] font-bold">•</span>
+                <span>Acting or creative talent demonstrations</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="text-[#d4af37] font-bold">•</span>
+                <span>Social media presence and influence</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

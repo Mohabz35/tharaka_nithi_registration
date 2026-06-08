@@ -5,9 +5,10 @@ import { createRegistration, getAllRegistrations, getRegistrationsByCategory, ge
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
+import { generateImage } from "./_core/imageGeneration";
+import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
 
 export const appRouter = router({
-  // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -33,11 +34,76 @@ export const appRouter = router({
           countySubLocation: z.string().min(1, "County sub-location is required"),
           photoUrl: z.string().optional(),
           photoKey: z.string().optional(),
+          talents: z.string().optional(),
+          portfolioUrl: z.string().optional(),
+          portfolioKey: z.string().optional(),
+          consentPhotoVideo: z.boolean().default(false),
+          consentDataProcessing: z.boolean().default(false),
+          consentTerms: z.boolean().default(false),
+          parentalConsentSigned: z.boolean().optional(),
+          parentalConsentUrl: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
         await createRegistration(input);
+        
+        // Generate PDFs asynchronously (don't block the response)
+        setImmediate(async () => {
+          try {
+            const mockRegistration = {
+              id: 0,
+              ...input,
+              paymentStatus: "pending" as const,
+              registrationDate: new Date(),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              posterUrl: null,
+              posterKey: null,
+            } as any;
+            
+            await generateRegistrationPDF(mockRegistration);
+            
+            if (input.category !== "adults" && input.parentalConsentSigned) {
+              await generateParentalConsentPDF(mockRegistration);
+            }
+          } catch (error) {
+            console.error("Error generating PDFs:", error);
+          }
+        });
+        
         return { success: true };
+      }),
+
+    generatePoster: publicProcedure
+      .input(
+        z.object({
+          photoUrl: z.string(),
+          fullName: z.string(),
+          category: z.enum(["adults", "teens", "little_stars"]),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const categoryLabel = input.category === "adults" ? "Adults (18-26)" : input.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
+          const prompt = `Create a glamorous event poster for a modeling competition. The image should feature the photo provided, with the following text overlaid: Name: ${input.fullName}, Category: ${categoryLabel}, Event: Mr & Miss Face of Tharaka-Nithi County 2026. Use burgundy and gold colors. Make it professional and elegant.`;
+
+          const posterImage = await generateImage({
+            prompt,
+            originalImages: [
+              {
+                url: input.photoUrl,
+                mimeType: "image/jpeg",
+              },
+            ],
+          });
+
+          return { success: true, posterUrl: posterImage.url };
+        } catch (error) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate poster",
+          });
+        }
       }),
   }),
 
@@ -45,7 +111,6 @@ export const appRouter = router({
     getRegistrationsByCategory: protectedProcedure
       .input(z.enum(["adults", "teens", "little_stars"]))
       .query(async ({ ctx, input }) => {
-        // Only owner can access admin functions
         if (ctx.user?.role !== "admin") {
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
