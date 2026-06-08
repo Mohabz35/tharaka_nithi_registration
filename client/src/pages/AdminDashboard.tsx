@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
 import { Download, LogOut } from "lucide-react";
 import { useLocation } from "wouter";
@@ -12,6 +13,8 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
 
   // Redirect if not admin
   if (user?.role !== "admin") {
@@ -34,24 +37,51 @@ export default function AdminDashboard() {
 
   // Fetch registrations
   const { data: stats } = trpc.admin.getStats.useQuery();
-  const { data: registrations, isLoading } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory);
+  const { data: allRegistrations, isLoading: isLoadingAll } = trpc.admin.getAllRegistrations.useQuery();
+  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory);
+  const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
+    { query: searchQuery, filters: activeFilters },
+    { enabled: searchQuery !== "" || Object.values(activeFilters).some(v => v !== undefined) }
+  );
+
+  const isLoading = isLoadingAll || isLoadingCategory || isSearching;
+
+  // Determine which registrations to display
+  const displayRegistrations = useMemo(() => {
+    if (searchQuery || Object.values(activeFilters).some(v => v !== undefined)) {
+      return searchResults || [];
+    }
+    return categoryRegistrations || [];
+  }, [searchQuery, activeFilters, searchResults, categoryRegistrations]);
 
   const handleLogout = async () => {
     await logout();
     setLocation("/");
   };
 
-  const exportToCSV = () => {
-    if (!registrations) return;
+  const handleSearch = (query: string, filters: FilterOptions) => {
+    setSearchQuery(query);
+    setActiveFilters(filters);
+  };
 
-    const headers = ["Full Name", "Date of Birth", "Age", "Phone", "Email", "Location", "Registration Date"];
-    const rows = registrations.map((reg) => [
+  const handleReset = () => {
+    setSearchQuery("");
+    setActiveFilters({});
+  };
+
+  const exportToCSV = () => {
+    if (!displayRegistrations || displayRegistrations.length === 0) return;
+
+    const headers = ["Full Name", "Date of Birth", "Age", "Category", "Phone", "Email", "Location", "Payment Status", "Registration Date"];
+    const rows = displayRegistrations.map((reg) => [
       reg.fullName,
       reg.dateOfBirth,
       reg.age,
+      reg.category === "adults" ? "Adults (18-26)" : reg.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)",
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
+      reg.paymentStatus,
       new Date(reg.registrationDate).toLocaleDateString(),
     ]);
 
@@ -61,7 +91,7 @@ export default function AdminDashboard() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `registrations-${selectedCategory}-${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `registrations-${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
   };
 
@@ -129,13 +159,26 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* Search and Filter Component */}
+          <AdminSearchFilter
+            onSearch={handleSearch}
+            onReset={handleReset}
+            isLoading={isLoading}
+          />
+
           {/* Registrations Table */}
           <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-[#d4af37]">Registrations by Category</CardTitle>
+              <div>
+                <CardTitle className="text-[#d4af37]">
+                  {searchQuery || Object.values(activeFilters).some(v => v !== undefined)
+                    ? `Search Results (${displayRegistrations?.length || 0})`
+                    : `Registrations by Category (${displayRegistrations?.length || 0})`}
+                </CardTitle>
+              </div>
               <Button
                 onClick={exportToCSV}
-                disabled={!registrations || registrations.length === 0}
+                disabled={!displayRegistrations || displayRegistrations.length === 0}
                 className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
               >
                 <Download className="w-4 h-4 mr-2" />
@@ -144,55 +187,50 @@ export default function AdminDashboard() {
             </CardHeader>
 
             <CardContent>
-              <Tabs
-                value={selectedCategory}
-                onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
-              >
-                <TabsList className="grid w-full grid-cols-3 bg-[#4a1a2a]">
-                  <TabsTrigger
-                    value="adults"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
-                  >
-                    Adults (18–26)
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="teens"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
-                  >
-                    Teens (13–17)
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="little_stars"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
-                  >
-                    Little Stars (5–12)
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value={selectedCategory} className="mt-6">
+              {searchQuery || Object.values(activeFilters).some(v => v !== undefined) ? (
+                // Search Results View
+                <>
                   {isLoading ? (
-                    <p className="text-white text-center py-8">Loading registrations...</p>
-                  ) : registrations && registrations.length > 0 ? (
+                    <p className="text-white text-center py-8">Searching...</p>
+                  ) : displayRegistrations && displayRegistrations.length > 0 ? (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow className="border-[#d4af37]">
                             <TableHead className="text-[#d4af37]">Full Name</TableHead>
+                            <TableHead className="text-[#d4af37]">Category</TableHead>
                             <TableHead className="text-[#d4af37]">Age</TableHead>
                             <TableHead className="text-[#d4af37]">Phone</TableHead>
                             <TableHead className="text-[#d4af37]">Email</TableHead>
                             <TableHead className="text-[#d4af37]">Location</TableHead>
+                            <TableHead className="text-[#d4af37]">Payment</TableHead>
                             <TableHead className="text-[#d4af37]">Registration Date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {registrations.map((registration) => (
+                          {displayRegistrations.map((registration) => (
                             <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
                               <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
+                              <TableCell className="text-white">
+                                {registration.category === "adults"
+                                  ? "Adults (18-26)"
+                                  : registration.category === "teens"
+                                    ? "Teens (13-17)"
+                                    : "Little Stars (5-12)"}
+                              </TableCell>
                               <TableCell className="text-white">{registration.age}</TableCell>
                               <TableCell className="text-white">{registration.phoneNumber}</TableCell>
-                              <TableCell className="text-white">{registration.email}</TableCell>
+                              <TableCell className="text-white text-sm">{registration.email}</TableCell>
                               <TableCell className="text-white">{registration.countySubLocation}</TableCell>
+                              <TableCell className="text-white">
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                  registration.paymentStatus === "completed"
+                                    ? "bg-green-900 text-green-200"
+                                    : "bg-yellow-900 text-yellow-200"
+                                }`}>
+                                  {registration.paymentStatus}
+                                </span>
+                              </TableCell>
                               <TableCell className="text-white">
                                 {new Date(registration.registrationDate).toLocaleDateString()}
                               </TableCell>
@@ -202,10 +240,84 @@ export default function AdminDashboard() {
                       </Table>
                     </div>
                   ) : (
-                    <p className="text-white text-center py-8">No registrations yet for this category.</p>
+                    <p className="text-white text-center py-8">No registrations found matching your search criteria.</p>
                   )}
-                </TabsContent>
-              </Tabs>
+                </>
+              ) : (
+                // Category View
+                <Tabs
+                  value={selectedCategory}
+                  onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
+                >
+                  <TabsList className="grid w-full grid-cols-3 bg-[#4a1a2a]">
+                    <TabsTrigger
+                      value="adults"
+                      className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    >
+                      Adults (18–26)
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="teens"
+                      className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    >
+                      Teens (13–17)
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="little_stars"
+                      className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    >
+                      Little Stars (5–12)
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value={selectedCategory} className="mt-6">
+                    {isLoading ? (
+                      <p className="text-white text-center py-8">Loading registrations...</p>
+                    ) : displayRegistrations && displayRegistrations.length > 0 ? (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="border-[#d4af37]">
+                              <TableHead className="text-[#d4af37]">Full Name</TableHead>
+                              <TableHead className="text-[#d4af37]">Age</TableHead>
+                              <TableHead className="text-[#d4af37]">Phone</TableHead>
+                              <TableHead className="text-[#d4af37]">Email</TableHead>
+                              <TableHead className="text-[#d4af37]">Location</TableHead>
+                              <TableHead className="text-[#d4af37]">Payment</TableHead>
+                              <TableHead className="text-[#d4af37]">Registration Date</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {displayRegistrations.map((registration) => (
+                              <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
+                                <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
+                                <TableCell className="text-white">{registration.age}</TableCell>
+                                <TableCell className="text-white">{registration.phoneNumber}</TableCell>
+                                <TableCell className="text-white text-sm">{registration.email}</TableCell>
+                                <TableCell className="text-white">{registration.countySubLocation}</TableCell>
+                                <TableCell className="text-white">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    registration.paymentStatus === "completed"
+                                      ? "bg-green-900 text-green-200"
+                                      : "bg-yellow-900 text-yellow-200"
+                                  }`}>
+                                    {registration.paymentStatus}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-white">
+                                  {new Date(registration.registrationDate).toLocaleDateString()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    ) : (
+                      <p className="text-white text-center py-8">No registrations yet for this category.</p>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              )}
             </CardContent>
           </Card>
         </div>

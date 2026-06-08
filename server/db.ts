@@ -126,3 +126,76 @@ export async function getRegistrationStats() {
     littleStars: all.filter(r => r.category === "little_stars").length,
   };
 }
+
+export async function searchRegistrations(query: string) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const all = await db.select().from(registrations);
+  const lowerQuery = query.toLowerCase();
+  return all.filter(r =>
+    r.fullName.toLowerCase().includes(lowerQuery) ||
+    r.email.toLowerCase().includes(lowerQuery) ||
+    r.phoneNumber.includes(query) ||
+    r.countySubLocation.toLowerCase().includes(lowerQuery)
+  );
+}
+
+export async function filterRegistrations(filters: {
+  category?: "adults" | "teens" | "little_stars";
+  paymentStatus?: "pending" | "completed";
+  ageMin?: number;
+  ageMax?: number;
+  county?: string;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const all = await db.select().from(registrations);
+  return all.filter(r => {
+    if (filters.category && r.category !== filters.category) return false;
+    if (filters.paymentStatus && r.paymentStatus !== filters.paymentStatus) return false;
+    if (filters.ageMin && r.age < filters.ageMin) return false;
+    if (filters.ageMax && r.age > filters.ageMax) return false;
+    if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
+    return true;
+  });
+}
+
+export async function searchAndFilterRegistrations(query: string, filters: {
+  category?: "adults" | "teens" | "little_stars";
+  paymentStatus?: "pending" | "completed";
+  ageMin?: number;
+  ageMax?: number;
+  county?: string;
+}) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  const all = await db.select().from(registrations);
+  const lowerQuery = query.toLowerCase();
+  return all.filter(r => {
+    // Search filter
+    const matchesSearch = !query || (
+      r.fullName.toLowerCase().includes(lowerQuery) ||
+      r.email.toLowerCase().includes(lowerQuery) ||
+      r.phoneNumber.includes(query) ||
+      r.countySubLocation.toLowerCase().includes(lowerQuery)
+    );
+    if (!matchesSearch) return false;
+
+    // Category filter
+    if (filters.category && r.category !== filters.category) return false;
+    // Payment status filter
+    if (filters.paymentStatus && r.paymentStatus !== filters.paymentStatus) return false;
+    // Age range filter
+    if (filters.ageMin && r.age < filters.ageMin) return false;
+    if (filters.ageMax && r.age > filters.ageMax) return false;
+    // County filter
+    if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
+    return true;
+  });
+}

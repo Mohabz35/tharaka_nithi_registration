@@ -1,7 +1,7 @@
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats } from "./db";
+import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
@@ -130,6 +130,52 @@ export const appRouter = router({
       }
       return await getRegistrationStats();
     }),
+
+    search: protectedProcedure
+      .input(z.string())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        return await searchRegistrations(input);
+      }),
+
+    filter: protectedProcedure
+      .input(
+        z.object({
+          category: z.enum(["adults", "teens", "little_stars"]).optional(),
+          paymentStatus: z.enum(["pending", "completed"]).optional(),
+          ageMin: z.number().optional(),
+          ageMax: z.number().optional(),
+          county: z.string().optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        return await filterRegistrations(input);
+      }),
+
+    searchAndFilter: protectedProcedure
+      .input(
+        z.object({
+          query: z.string().default(""),
+          filters: z.object({
+            category: z.enum(["adults", "teens", "little_stars"]).optional(),
+            paymentStatus: z.enum(["pending", "completed"]).optional(),
+            ageMin: z.number().optional(),
+            ageMax: z.number().optional(),
+            county: z.string().optional(),
+          }).optional(),
+        })
+      )
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        return await searchAndFilterRegistrations(input.query, input.filters || {});
+      }),
   }),
 });
 

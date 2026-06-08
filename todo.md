@@ -38,6 +38,11 @@
 - [x] Implement export functionality per category (CSV)
 - [x] Add admin navigation/access control
 - [x] Display registration statistics by category
+- [x] Add search functionality (name, email, phone, location)
+- [x] Add advanced filter options (category, payment status, age range, county)
+- [x] Implement combined search and filter functionality
+- [x] Display active filter count indicator
+- [x] Add reset filters button
 
 ## Document Generation
 - [x] Create PDF generation utility for registration confirmations
@@ -54,10 +59,12 @@
 ## Testing & Deployment
 - [x] Write vitest tests for registration submission
 - [x] Write vitest tests for admin dashboard access control
+- [x] Write vitest tests for search and filter functionality
 - [x] Test all features in browser
 - [x] Verify countdown timer functionality
 - [x] Verify multi-step form flow
 - [x] Verify consent form validation
+- [x] Verify search and filter functionality
 - [x] Create final checkpoint
 
 ## Completed Features Summary
@@ -86,6 +93,12 @@
 - Export registrations to CSV
 - Display registration statistics
 - Category-specific filtering
+- Advanced search by name, email, phone, or location
+- Multi-criteria filtering (category, payment status, age range, county)
+- Combined search and filter capabilities
+- Active filter count indicator
+- Reset filters functionality
+- Responsive table with pagination support
 
 ### Document Generation
 - Automatic PDF generation for registration confirmations
