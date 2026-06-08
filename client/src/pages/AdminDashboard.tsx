@@ -35,24 +35,27 @@ export default function AdminDashboard() {
     );
   }
 
-  // Fetch registrations
+  // Determine if we're in search mode
+  const isSearchMode = searchQuery !== "" || Object.values(activeFilters).some(v => v !== undefined);
+
+  // Fetch registrations - always call all hooks to maintain hook order
   const { data: stats } = trpc.admin.getStats.useQuery();
   const { data: allRegistrations, isLoading: isLoadingAll } = trpc.admin.getAllRegistrations.useQuery();
   const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory);
   const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
     { query: searchQuery, filters: activeFilters },
-    { enabled: searchQuery !== "" || Object.values(activeFilters).some(v => v !== undefined) }
+    { enabled: isSearchMode }
   );
 
-  const isLoading = isLoadingAll || isLoadingCategory || isSearching;
+  const isLoading = isSearchMode ? isSearching : (isLoadingAll || isLoadingCategory);
 
   // Determine which registrations to display
   const displayRegistrations = useMemo(() => {
-    if (searchQuery || Object.values(activeFilters).some(v => v !== undefined)) {
+    if (isSearchMode) {
       return searchResults || [];
     }
     return categoryRegistrations || [];
-  }, [searchQuery, activeFilters, searchResults, categoryRegistrations]);
+  }, [isSearchMode, searchResults, categoryRegistrations]);
 
   const handleLogout = async () => {
     await logout();
@@ -171,7 +174,7 @@ export default function AdminDashboard() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-[#d4af37]">
-                  {searchQuery || Object.values(activeFilters).some(v => v !== undefined)
+                  {isSearchMode
                     ? `Search Results (${displayRegistrations?.length || 0})`
                     : `Registrations by Category (${displayRegistrations?.length || 0})`}
                 </CardTitle>
@@ -187,7 +190,7 @@ export default function AdminDashboard() {
             </CardHeader>
 
             <CardContent>
-              {searchQuery || Object.values(activeFilters).some(v => v !== undefined) ? (
+              {isSearchMode ? (
                 // Search Results View
                 <>
                   {isLoading ? (
