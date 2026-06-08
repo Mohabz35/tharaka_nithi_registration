@@ -19,6 +19,7 @@ This guide will help you set up Supabase and deploy the project to Vercel.
 ## 2. Vercel Deployment
 
 1.  **Connect Repo**: Import your GitHub repository to Vercel.
+2.  **Enable Corepack**: In the Vercel project settings, ensure you have enabled Corepack or set the `ENABLE_VC_COREPACK=1` environment variable to support pnpm 10.
 2.  **Environment Variables**: In the Vercel dashboard, add the following variables:
     *   `DATABASE_URL`: The URI you copied from Supabase.
     *   `JWT_SECRET`: A random strong string for session signing.
