@@ -19,6 +19,7 @@ export default function MultiStepRegistrationForm({
   onSuccess,
 }: MultiStepRegistrationFormProps) {
   const [currentStep, setCurrentStep] = useState<FormStep>("personal");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); 
   const [formData, setFormData] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -95,39 +96,49 @@ export default function MultiStepRegistrationForm({
   };
 
   const validateStep = (): boolean => {
+    const errors: Record<string, string> = {};
+    
     if (currentStep === "personal") {
-      if (
-        !formData.fullName ||
-        !formData.dateOfBirth ||
-        !formData.phoneNumber ||
-        !formData.email ||
-        !formData.countySubLocation ||
-        !photoFile
-      ) {
-        toast.error("Please fill in all required fields");
-        return false;
+      if (!formData.fullName) errors.fullName = "Full name is required";
+      if (!formData.dateOfBirth) errors.dateOfBirth = "Date of birth is required";
+      if (!formData.phoneNumber) errors.phoneNumber = "Phone number is required";
+      if (!formData.email) errors.email = "Email address is required";
+      if (!formData.countySubLocation) errors.countySubLocation = "County sub-location is required";
+      if (!photoFile) errors.photo = "Photo upload is required";
+      
+      // Email validation
+      if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        errors.email = "Please enter a valid email address";
+      }
+      
+      // Phone validation (basic)
+      if (formData.phoneNumber && !/^[0-9+\-\s()]+$/.test(formData.phoneNumber)) {
+        errors.phoneNumber = "Please enter a valid phone number";
       }
 
       // Validate age based on category
       if (category === "adults" && (formData.age < 18 || formData.age > 26)) {
-        toast.error("Adults must be between 18 and 26 years old");
-        return false;
+        errors.dateOfBirth = "Adults must be between 18 and 26 years old";
       } else if (category === "teens" && (formData.age < 13 || formData.age > 17)) {
-        toast.error("Teens must be between 13 and 17 years old");
-        return false;
+        errors.dateOfBirth = "Teens must be between 13 and 17 years old";
       } else if (category === "little_stars" && (formData.age < 5 || formData.age > 12)) {
-        toast.error("Little Stars must be between 5 and 12 years old");
-        return false;
+        errors.dateOfBirth = "Little Stars must be between 5 and 12 years old";
       }
     } else if (currentStep === "consent") {
-      if (!formData.consentPhotoVideo || !formData.consentDataProcessing || !formData.consentTerms) {
-        toast.error("Please accept all consent forms");
-        return false;
-      }
+      if (!formData.consentPhotoVideo) errors.consentPhotoVideo = "Photo/video consent is required";
+      if (!formData.consentDataProcessing) errors.consentDataProcessing = "Data processing consent is required";
+      if (!formData.consentTerms) errors.consentTerms = "You must accept the terms and conditions";
       if ((category === "teens" || category === "little_stars") && !formData.parentalConsentSigned) {
-        toast.error("Parental consent is required for minors");
-        return false;
+        errors.parentalConsent = "Parental consent is required for minors";
       }
+    }
+    
+    setFieldErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0];
+      toast.error(firstError);
+      return false;
     }
     return true;
   };
@@ -243,8 +254,13 @@ export default function MultiStepRegistrationForm({
                 value={formData.fullName}
                 onChange={handleInputChange}
                 placeholder="Enter your full name"
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.fullName ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.fullName && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.fullName}</p>
+              )}
             </div>
 
             <div>
@@ -268,8 +284,13 @@ export default function MultiStepRegistrationForm({
                 value={formData.phoneNumber}
                 onChange={handleInputChange}
                 placeholder="Enter your phone number"
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.phoneNumber ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.phoneNumber && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.phoneNumber}</p>
+              )}
             </div>
 
             <div>
@@ -280,8 +301,13 @@ export default function MultiStepRegistrationForm({
                 value={formData.email}
                 onChange={handleInputChange}
                 placeholder="Enter your email"
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.email ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.email && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.email}</p>
+              )}
             </div>
 
             <div>
@@ -291,8 +317,13 @@ export default function MultiStepRegistrationForm({
                 value={formData.countySubLocation}
                 onChange={handleInputChange}
                 placeholder="e.g., Maara, Chuka/Igambang'ombe, Tharaka South, etc."
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.countySubLocation ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.countySubLocation && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.countySubLocation}</p>
+              )}
             </div>
 
             <div>
@@ -301,8 +332,13 @@ export default function MultiStepRegistrationForm({
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.photo ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.photo && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.photo}</p>
+              )}
               {photoPreview && (
                 <img
                   src={photoPreview}

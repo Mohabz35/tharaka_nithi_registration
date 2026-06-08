@@ -1,10 +1,11 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegistrationForm from "@/components/RegistrationForm";
 import PaymentModal from "@/components/PaymentModal";
 import CountdownTimer from "@/components/CountdownTimer";
+import FeaturedModelsCarousel from "@/components/FeaturedModelsCarousel";
 import { Crown, ChevronDown, Image } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -13,6 +14,7 @@ export default function Home() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const [scrollToRegister, setScrollToRegister] = useState(false);
 
   const handleRegistrationSuccess = () => {
     setRegistrationComplete(true);
@@ -149,6 +151,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Featured Models Carousel */}
+      <FeaturedModelsCarousel />
 
       {/* Registration Section */}
       <section id="register-section" className="py-16 px-4 sm:px-6 lg:px-8">

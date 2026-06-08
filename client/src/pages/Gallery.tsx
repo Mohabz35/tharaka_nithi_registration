@@ -1,9 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Search, Filter, Loader2 } from "lucide-react";
+import { Search, Filter, Loader2, MessageCircle, Heart } from "lucide-react";
 import { useLocation } from "wouter";
 
 export default function Gallery() {
@@ -147,11 +147,38 @@ export default function Gallery() {
                       {model.posterUrl && (
                         <Button
                           onClick={() => window.open(model.posterUrl || "", "_blank")}
-                          className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] text-xs font-bold py-1"
+                          className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] text-xs font-bold py-1 mb-3"
                         >
                           View Poster
                         </Button>
                       )}
+
+                      {/* Social Sharing Buttons */}
+                      <div className="flex gap-2 justify-center">
+                        <button
+                          onClick={() => {
+                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
+                            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+                            window.open(url, "_blank");
+                          }}
+                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          title="Share on WhatsApp"
+                        >
+                          <MessageCircle className="w-3 h-3" />
+                          Share
+                        </button>
+                        <button
+                          onClick={() => {
+                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
+                            window.open("https://www.instagram.com/", "_blank");
+                          }}
+                          className="flex-1 bg-pink-600 hover:bg-pink-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          title="Share on Instagram"
+                        >
+                          <Heart className="w-3 h-3" />
+                          Like
+                        </button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

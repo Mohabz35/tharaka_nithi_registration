@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Copy, Download } from "lucide-react";
+import { CheckCircle2, Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
@@ -14,20 +14,20 @@ interface PaymentModalProps {
   registrationId?: string;
 }
 
-const categoryFees: Record<string, { name: string; fee: number }> = {
-  adults: { name: "Adults", fee: 1000 },
-  teens: { name: "Teens", fee: 500 },
-  little_stars: { name: "Little Stars", fee: 300 },
-};
-
-export default function PaymentModal({ isOpen, onClose, category, participantName = "Participant", registrationId = "REG-001" }: PaymentModalProps) {
-  const { name, fee } = categoryFees[category];
+export default function PaymentModal({ 
+  isOpen, 
+  onClose, 
+  category, 
+  participantName = "Participant", 
+  registrationId = "REG-001" 
+}: PaymentModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
 
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+  const categoryNames: Record<string, string> = {
+    adults: "Adults (18-26)",
+    teens: "Teens (13-17)",
+    little_stars: "Little Stars (5-12)",
   };
 
   const handleDownloadCertificate = async () => {
@@ -42,7 +42,6 @@ export default function PaymentModal({ isOpen, onClose, category, participantNam
       });
 
       if (result.success && result.certificateUrl) {
-        // Create a temporary link and download
         const link = document.createElement("a");
         link.href = result.certificateUrl;
         link.download = `certificate_${registrationId}.pdf`;
@@ -59,118 +58,132 @@ export default function PaymentModal({ isOpen, onClose, category, participantNam
     }
   };
 
+  const handleShare = () => {
+    const shareText = `I just registered for the Models Call Out event! Join me at the Mr & Miss Face of Tharaka-Nithi County 2026 on September 12 at Chuka Grounds. Registration is FREE! 🎭✨`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: "Models Call Out Event",
+        text: shareText,
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast.success("Share text copied to clipboard!");
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-[#2a0a1a] border-[#d4af37] border-2 max-w-2xl">
         <DialogHeader>
           <DialogTitle className="text-[#d4af37] text-2xl flex items-center gap-2">
-            <CheckCircle2 className="w-6 h-6" />
-            Registration Submitted Successfully!
+            <CheckCircle2 className="w-6 h-6 text-green-400" />
+            Registration Confirmed!
           </DialogTitle>
           <DialogDescription className="text-white">
-            Your registration has been received. Now complete your payment to finalize your entry.
+            Your registration for the Models Call Out event has been successfully submitted.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Confirmation Message */}
-          <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
+          {/* Free Registration Confirmation */}
+          <Card className="bg-gradient-to-r from-[#d4af37] to-[#e5c158] border-0">
             <CardContent className="pt-6">
-              <p className="text-white text-center text-lg">
-                Thank you for registering for the <span className="font-bold text-[#d4af37]">Models Call Out</span>!
-              </p>
-              <p className="text-gray-300 text-center mt-2">
-                Your registration is pending payment confirmation. Complete the M-PESA payment below to secure your spot.
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Payment Instructions */}
-          <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
-            <CardHeader>
-              <CardTitle className="text-[#d4af37]">M-PESA Payment Instructions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="bg-[#2a0a1a] p-4 rounded-lg border border-[#d4af37]">
-                <p className="text-white text-sm mb-2">Category:</p>
-                <p className="text-[#d4af37] font-bold text-lg">{name}</p>
-              </div>
-
-              <div className="bg-[#2a0a1a] p-4 rounded-lg border border-[#d4af37]">
-                <p className="text-white text-sm mb-2">Registration Fee:</p>
-                <p className="text-[#d4af37] font-bold text-2xl">KSh {fee.toLocaleString()}</p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="bg-[#2a0a1a] p-4 rounded-lg border border-[#d4af37]">
-                  <p className="text-white text-sm mb-2">Paybill Number:</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[#d4af37] font-bold text-xl">522522</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard("522522")}
-                      className="text-[#d4af37] hover:bg-[#4a1a2a]"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="bg-[#2a0a1a] p-4 rounded-lg border border-[#d4af37]">
-                  <p className="text-white text-sm mb-2">Account Name:</p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-[#d4af37] font-bold text-xl">ROYALS2026</p>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => copyToClipboard("ROYALS2026")}
-                      className="text-[#d4af37] hover:bg-[#4a1a2a]"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-yellow-900 bg-opacity-30 border border-yellow-600 p-4 rounded-lg">
-                <p className="text-yellow-100 text-sm">
-                  <span className="font-bold">📱 How to Pay:</span> Go to M-PESA on your phone, select "Lipa na M-PESA Online", enter Paybill <span className="font-bold">522522</span>, Account <span className="font-bold">ROYALS2026</span>, and the amount <span className="font-bold">KSh {fee}</span>.
+              <div className="text-center">
+                <h3 className="text-black text-2xl font-bold mb-2">Registration is FREE! ✨</h3>
+                <p className="text-black text-lg">
+                  No payment required. You're all set for the event!
                 </p>
               </div>
             </CardContent>
           </Card>
 
-          {/* Important Notes */}
+          {/* Registration Details */}
           <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
             <CardHeader>
-              <CardTitle className="text-[#d4af37] text-base">Important Notes</CardTitle>
+              <CardTitle className="text-[#d4af37]">Your Registration Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 text-white text-sm">
-              <p>✓ Keep your M-PESA receipt for verification purposes.</p>
-              <p>✓ You will receive an SMS confirmation once payment is verified.</p>
-              <p>✓ Ensure you have sufficient M-PESA balance before attempting payment.</p>
-              <p>✓ For payment issues, contact: contact@royalsiconevents.co.ke</p>
+            <CardContent className="space-y-3">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-400 text-sm">Name</p>
+                  <p className="text-white font-semibold">{participantName}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Category</p>
+                  <p className="text-white font-semibold">{categoryNames[category]}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Registration ID</p>
+                  <p className="text-white font-semibold">{registrationId}</p>
+                </div>
+                <div>
+                  <p className="text-gray-400 text-sm">Event Date</p>
+                  <p className="text-white font-semibold">September 12, 2026</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Download Certificate Button */}
-          <Button
-            onClick={handleDownloadCertificate}
-            disabled={isDownloading}
-            className="w-full bg-green-600 text-white hover:bg-green-700 font-bold text-lg py-6 flex items-center justify-center gap-2"
-          >
-            <Download className="w-5 h-5" />
-            {isDownloading ? "Generating Certificate..." : "Download Registration Certificate"}
-          </Button>
+          {/* Event Information */}
+          <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
+            <CardHeader>
+              <CardTitle className="text-[#d4af37]">Event Information</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-white">
+              <p><span className="text-[#d4af37] font-semibold">Event:</span> Mr & Miss Face of Tharaka-Nithi County 2026</p>
+              <p><span className="text-[#d4af37] font-semibold">Date:</span> September 12, 2026</p>
+              <p><span className="text-[#d4af37] font-semibold">Venue:</span> Chuka Grounds</p>
+              <p><span className="text-[#d4af37] font-semibold">Theme:</span> Fashion | Talent | Celebration</p>
+            </CardContent>
+          </Card>
 
-          {/* Close Button */}
-          <Button
-            onClick={onClose}
-            className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg py-6"
-          >
-            Done
-          </Button>
+          {/* Next Steps */}
+          <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
+            <CardHeader>
+              <CardTitle className="text-[#d4af37]">Next Steps</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 text-white">
+              <p>✓ Your registration has been confirmed</p>
+              <p>✓ Check your email for confirmation details</p>
+              <p>✓ Download your registration certificate below</p>
+              <p>✓ Share your registration with friends and family</p>
+              <p>✓ Prepare your portfolio for the event</p>
+            </CardContent>
+          </Card>
+
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleDownloadCertificate}
+              disabled={isDownloading}
+              className="flex-1 bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold py-2"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isDownloading ? "Downloading..." : "Download Certificate"}
+            </Button>
+            <Button
+              onClick={handleShare}
+              className="flex-1 border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold py-2"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share Registration
+            </Button>
+            <Button
+              onClick={onClose}
+              className="flex-1 bg-[#4a1a2a] text-[#d4af37] hover:bg-[#5a2a3a] border border-[#d4af37] font-bold py-2"
+            >
+              Close
+            </Button>
+          </div>
+
+          {/* Support Message */}
+          <div className="bg-[#4a1a2a] border border-[#d4af37] rounded-lg p-4 text-center">
+            <p className="text-white text-sm">
+              Have questions? Contact us at <span className="text-[#d4af37] font-semibold">support@royalsicon.events</span>
+            </p>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
