@@ -7,6 +7,7 @@ import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
 import { generateImage } from "./_core/imageGeneration";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
+import { generateCertificate } from "./_core/certificateGenerator";
 
 export const appRouter = router({
   system: systemRouter,
@@ -102,6 +103,37 @@ export const appRouter = router({
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
             message: "Failed to generate poster",
+          });
+        }
+      }),
+
+    downloadCertificate: publicProcedure
+      .input(
+        z.object({
+          participantName: z.string(),
+          category: z.enum(["adults", "teens", "little_stars"]),
+          registrationId: z.string(),
+          eventDate: z.string().default("September 12, 2026"),
+          venue: z.string().default("Chuka Grounds"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const { url, key } = await generateCertificate({
+            participantName: input.participantName,
+            category: input.category,
+            registrationId: input.registrationId,
+            registrationDate: new Date(),
+            eventDate: input.eventDate,
+            venue: input.venue,
+          });
+
+          return { success: true, certificateUrl: url, certificateKey: key };
+        } catch (error) {
+          console.error("Certificate generation error:", error);
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "Failed to generate certificate",
           });
         }
       }),

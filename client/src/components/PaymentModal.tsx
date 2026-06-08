@@ -1,13 +1,17 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, Copy } from "lucide-react";
+import { CheckCircle2, Copy, Download } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import { useState } from "react";
 
 interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: "adults" | "teens" | "little_stars";
+  participantName?: string;
+  registrationId?: string;
 }
 
 const categoryFees: Record<string, { name: string; fee: number }> = {
@@ -16,12 +20,43 @@ const categoryFees: Record<string, { name: string; fee: number }> = {
   little_stars: { name: "Little Stars", fee: 300 },
 };
 
-export default function PaymentModal({ isOpen, onClose, category }: PaymentModalProps) {
+export default function PaymentModal({ isOpen, onClose, category, participantName = "Participant", registrationId = "REG-001" }: PaymentModalProps) {
   const { name, fee } = categoryFees[category];
+  const [isDownloading, setIsDownloading] = useState(false);
+  const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Copied to clipboard!");
+  };
+
+  const handleDownloadCertificate = async () => {
+    setIsDownloading(true);
+    try {
+      const result = await downloadCertificate.mutateAsync({
+        participantName,
+        category,
+        registrationId,
+        eventDate: "September 12, 2026",
+        venue: "Chuka Grounds",
+      });
+
+      if (result.success && result.certificateUrl) {
+        // Create a temporary link and download
+        const link = document.createElement("a");
+        link.href = result.certificateUrl;
+        link.download = `certificate_${registrationId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Certificate downloaded successfully!");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download certificate");
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -118,6 +153,16 @@ export default function PaymentModal({ isOpen, onClose, category }: PaymentModal
               <p>✓ For payment issues, contact: contact@royalsiconevents.co.ke</p>
             </CardContent>
           </Card>
+
+          {/* Download Certificate Button */}
+          <Button
+            onClick={handleDownloadCertificate}
+            disabled={isDownloading}
+            className="w-full bg-green-600 text-white hover:bg-green-700 font-bold text-lg py-6 flex items-center justify-center gap-2"
+          >
+            <Download className="w-5 h-5" />
+            {isDownloading ? "Generating Certificate..." : "Download Registration Certificate"}
+          </Button>
 
           {/* Close Button */}
           <Button
