@@ -10,12 +10,23 @@ export default function Gallery() {
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars" | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "talents">("newest");
 
   // Fetch gallery data
   const { data: galleryData, isLoading } = trpc.gallery.getPublicRegistrations.useQuery({
     category: selectedCategory,
     search: searchQuery,
   });
+
+  // Sort gallery data
+  const sortedData = galleryData ? [...galleryData].sort((a, b) => {
+    if (sortBy === "newest") {
+      return new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime();
+    } else if (sortBy === "talents") {
+      return (a.talents || "").localeCompare(b.talents || "");
+    }
+    return 0;
+  }) : [];
 
   const categoryLabels = {
     adults: "Adults (18–26)",
@@ -55,6 +66,18 @@ export default function Gallery() {
                 className="pl-10 bg-[#2a0a1a] border-[#d4af37] text-white placeholder-gray-400"
               />
             </div>
+          </div>
+
+          {/* Sort Options */}
+          <div className="flex gap-2 mb-4">
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as "newest" | "talents")}
+              className="bg-[#2a0a1a] border-2 border-[#d4af37] text-[#d4af37] px-4 py-2 rounded font-semibold hover:bg-[#3a1a2a] transition-colors"
+            >
+              <option value="newest">Sort by: Newest First</option>
+              <option value="talents">Sort by: Talents</option>
+            </select>
           </div>
 
           {/* Category Filters */}
@@ -103,7 +126,7 @@ export default function Gallery() {
 
               {/* Gallery Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {galleryData.map((model) => (
+                {sortedData.map((model) => (
                   <Card
                     key={model.id}
                     className="bg-[#2a0a1a] border-[#d4af37] border-2 overflow-hidden hover:shadow-lg hover:shadow-[#d4af37] transition-all duration-300 transform hover:scale-105"
