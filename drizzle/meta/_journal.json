@@ -1,5 +1,20 @@
 {
   "version": "7",
   "dialect": "mysql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1780924804087,
+      "tag": "0000_ordinary_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1780925272417,
+      "tag": "0001_salty_dormammu",
+      "breakpoints": true
+    }
+  ]
 }

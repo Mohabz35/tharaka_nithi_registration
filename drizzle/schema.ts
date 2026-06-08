@@ -25,4 +25,22 @@ export const users = mysqlTable("users", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+export const registrations = mysqlTable("registrations", {
+  id: int("id").autoincrement().primaryKey(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  dateOfBirth: varchar("dateOfBirth", { length: 10 }).notNull(), // YYYY-MM-DD format
+  age: int("age").notNull(),
+  category: mysqlEnum("category", ["adults", "teens", "little_stars"]).notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  countySubLocation: varchar("countySubLocation", { length: 255 }).notNull(),
+  photoUrl: text("photoUrl"), // S3 storage URL
+  photoKey: text("photoKey"), // S3 storage key for reference
+  paymentStatus: mysqlEnum("paymentStatus", ["pending", "completed"]).default("pending").notNull(),
+  registrationDate: timestamp("registrationDate").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Registration = typeof registrations.$inferSelect;
+export type InsertRegistration = typeof registrations.$inferInsert;
