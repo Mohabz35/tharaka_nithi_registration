@@ -8,6 +8,7 @@ import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchF
 import { trpc } from "@/lib/trpc";
 import { Download, LogOut, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { CATEGORY_LABELS } from "@shared/const";
 
 export default function AdminDashboard() {
   const { user, logout, loading } = useAuth();
@@ -64,7 +65,7 @@ export default function AdminDashboard() {
       reg.fullName,
       reg.dateOfBirth,
       reg.age,
-      reg.category === "adults" ? "Adults (18-26)" : reg.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)",
+      CATEGORY_LABELS[reg.category as keyof typeof CATEGORY_LABELS],
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
@@ -232,11 +233,7 @@ export default function AdminDashboard() {
                             <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
                               <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
                               <TableCell className="text-white">
-                                {registration.category === "adults"
-                                  ? "Adults (18-26)"
-                                  : registration.category === "teens"
-                                    ? "Teens (13-17)"
-                                    : "Little Stars (5-12)"}
+                                {CATEGORY_LABELS[registration.category as keyof typeof CATEGORY_LABELS]}
                               </TableCell>
                               <TableCell className="text-white">{registration.age}</TableCell>
                               <TableCell className="text-white">{registration.phoneNumber}</TableCell>

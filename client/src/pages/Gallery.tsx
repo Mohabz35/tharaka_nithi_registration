@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { Search, Filter, Loader2, MessageCircle, Heart } from "lucide-react";
 import { useLocation } from "wouter";
+import { CATEGORY_LABELS } from "@shared/const";
 
 export default function Gallery() {
   const [, setLocation] = useLocation();
@@ -27,12 +28,6 @@ export default function Gallery() {
     }
     return 0;
   }) : [];
-
-  const categoryLabels = {
-    adults: "Adults (18–26)",
-    teens: "Teens (13–17)",
-    little_stars: "Little Stars (5–12)",
-  };
 
   const categoryColors = {
     adults: "bg-purple-600",
@@ -93,7 +88,7 @@ export default function Gallery() {
             >
               All Categories
             </Button>
-            {(Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>).map((cat) => (
+            {(Object.keys(CATEGORY_LABELS) as Array<keyof typeof CATEGORY_LABELS>).map((cat) => (
               <Button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -104,7 +99,7 @@ export default function Gallery() {
                     : "border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black"
                 }`}
               >
-                {categoryLabels[cat]}
+                {CATEGORY_LABELS[cat]}
               </Button>
             ))}
           </div>
@@ -151,7 +146,7 @@ export default function Gallery() {
                           categoryColors[model.category as keyof typeof categoryColors]
                         }`}
                       >
-                        {categoryLabels[model.category as keyof typeof categoryLabels]}
+                        {CATEGORY_LABELS[model.category as keyof typeof CATEGORY_LABELS]}
                       </div>
                     </div>
 

@@ -14,9 +14,10 @@ export default function Home() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationComplete, setRegistrationComplete] = useState(false);
-  const [scrollToRegister, setScrollToRegister] = useState(false);
+  const [registrationData, setRegistrationData] = useState<{ registrationId: string; fullName: string } | null>(null);
 
-  const handleRegistrationSuccess = () => {
+  const handleRegistrationSuccess = (data: { registrationId: string; fullName: string }) => {
+    setRegistrationData(data);
     setRegistrationComplete(true);
     setShowPaymentModal(true);
   };
@@ -94,7 +95,7 @@ export default function Home() {
                 <CardTitle className="text-[#d4af37]">✓ Registration is FREE</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                No registration fees required. Only M-PESA payment at submission for participation.
+                No registration fees required. Participation in Mr & Miss Face of Tharaka-Nithi County 2026 is completely free of charge.
               </CardContent>
             </Card>
 
@@ -224,6 +225,8 @@ export default function Home() {
           setRegistrationComplete(false);
         }}
         category={selectedCategory}
+        participantName={registrationData?.fullName}
+        registrationId={registrationData?.registrationId}
       />
 
       {/* Footer */}

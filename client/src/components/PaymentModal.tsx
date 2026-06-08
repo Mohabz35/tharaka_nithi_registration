@@ -5,6 +5,7 @@ import { CheckCircle2, Download, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import { CATEGORY_LABELS } from "@shared/const";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -23,12 +24,6 @@ export default function PaymentModal({
 }: PaymentModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
-
-  const categoryNames: Record<string, string> = {
-    adults: "Adults (18-26)",
-    teens: "Teens (13-17)",
-    little_stars: "Little Stars (5-12)",
-  };
 
   const handleDownloadCertificate = async () => {
     setIsDownloading(true);
@@ -112,7 +107,7 @@ export default function PaymentModal({
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Category</p>
-                  <p className="text-white font-semibold">{categoryNames[category]}</p>
+                  <p className="text-white font-semibold">{CATEGORY_LABELS[category]}</p>
                 </div>
                 <div>
                   <p className="text-gray-400 text-sm">Registration ID</p>

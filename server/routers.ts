@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, CATEGORY_LABELS } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
@@ -8,6 +8,8 @@ import { systemRouter } from "./_core/systemRouter";
 import { generateImage } from "./_core/imageGeneration";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
 import { generateCertificate } from "./_core/certificateGenerator";
+import { generateEnhancedCertificate } from "./_core/enhancedCertificateGenerator";
+import { storagePut } from "./storage";
 
 export const appRouter = router({
   system: systemRouter,
@@ -95,13 +97,13 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        await createRegistration(input);
+        const id = await createRegistration(input);
         
         // Generate PDFs asynchronously (don't block the response)
         setImmediate(async () => {
           try {
             const mockRegistration = {
-              id: 0,
+              id,
               ...input,
               paymentStatus: "pending" as const,
               registrationDate: new Date(),
@@ -121,7 +123,7 @@ export const appRouter = router({
           }
         });
         
-        return { success: true };
+        return { success: true, registrationId: id.toString() };
       }),
 
     generatePoster: publicProcedure
@@ -134,7 +136,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const categoryLabel = input.category === "adults" ? "Adults (18-26)" : input.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
+          const categoryLabel = CATEGORY_LABELS[input.category];
           const prompt = `Create a glamorous event poster for a modeling competition. The image should feature the photo provided, with the following text overlaid: Name: ${input.fullName}, Category: ${categoryLabel}, Event: Mr & Miss Face of Tharaka-Nithi County 2026. Use burgundy and gold colors. Make it professional and elegant.`;
 
           const posterImage = await generateImage({
@@ -168,14 +170,23 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const { url, key } = await generateCertificate({
+          const categoryLabel = CATEGORY_LABELS[input.category];
+
+          const pdfBuffer = await generateEnhancedCertificate({
             participantName: input.participantName,
-            category: input.category,
+            category: categoryLabel,
             registrationId: input.registrationId,
-            registrationDate: new Date(),
             eventDate: input.eventDate,
             venue: input.venue,
+            partners: ["Royals Icon Events", "Tharaka-Nithi County"],
           });
+
+          const fileName = `certificate_${input.registrationId}_${Date.now()}.pdf`;
+          const { url, key } = await storagePut(
+            `certificates/${fileName}`,
+            pdfBuffer,
+            "application/pdf"
+          );
 
           return { success: true, certificateUrl: url, certificateKey: key };
         } catch (error) {

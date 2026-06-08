@@ -94,7 +94,8 @@ export async function createRegistration(data: InsertRegistration) {
   if (!db) {
     throw new Error("Database not available");
   }
-  await db.insert(registrations).values(data);
+  const [result] = await db.insert(registrations).values(data);
+  return result.insertId;
 }
 
 export async function getRegistrationsByCategory(category: "adults" | "teens" | "little_stars") {

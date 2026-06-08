@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
+import { CATEGORY_LABELS } from "@shared/const";
 
 export default function FeaturedModelsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -93,11 +94,7 @@ export default function FeaturedModelsCarousel() {
                       {model.fullName}
                     </h3>
                     <p className="text-gray-300 text-sm">
-                      {model.category === "adults"
-                        ? "Adults (18-26)"
-                        : model.category === "teens"
-                        ? "Teens (13-17)"
-                        : "Little Stars (5-12)"}
+                      {CATEGORY_LABELS[model.category as keyof typeof CATEGORY_LABELS]}
                     </p>
                     {model.talents && (
                       <p className="text-gray-400 text-xs mt-2 line-clamp-2">
