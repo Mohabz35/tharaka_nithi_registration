@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
+import { searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db.js";
 
 // Mock registrations for testing
 const mockRegistrations = [

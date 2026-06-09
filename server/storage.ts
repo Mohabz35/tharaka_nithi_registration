@@ -1,4 +1,4 @@
-import { ENV } from "./_core/env";
+import { ENV } from "./_core/env.js";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 

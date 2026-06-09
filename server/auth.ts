@@ -3,8 +3,8 @@ import crypto from "crypto";
 import { SignJWT, jwtVerify } from "jose";
 import { parse as parseCookieHeader } from "cookie";
 import { z } from "zod";
-import * as db from "./db";
-import { ENV } from "./_core/env";
+import * as db from "./db.js";
+import { ENV } from "./_core/env.js";
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 

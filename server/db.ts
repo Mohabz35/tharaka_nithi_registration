@@ -7,8 +7,8 @@ import {
   artist_registrations, InsertArtistRegistration,
   showcase_registrations, InsertShowcaseRegistration,
   site_settings, InsertSiteSetting,
-} from "../drizzle/schema";
-import { ENV } from './_core/env';
+} from "../drizzle/schema.js";
+import { ENV } from './_core/env.js";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;

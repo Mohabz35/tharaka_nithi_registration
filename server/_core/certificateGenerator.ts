@@ -1,5 +1,5 @@
 import { PDFDocument, PDFPage, rgb, degrees, StandardFonts } from "pdf-lib";
-import { storagePut } from "../storage";
+import { storagePut } from "../storage.js";
 
 export interface CertificateData {
   participantName: string;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appRouter } from "./routers";
+import { appRouter } from "./routers.js";
 
 describe("gallery.getPublicRegistrations", () => {
   it("returns empty array when no registrations exist", async () => {

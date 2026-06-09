@@ -1,4 +1,4 @@
-import { storagePut } from "../storage";
+import { storagePut } from "../storage.js";
 import type { Registration } from "../../drizzle/schema";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 

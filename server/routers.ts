@@ -9,13 +9,13 @@ import {
   createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
   getSiteSettings, upsertSiteSetting,
   getPartnerLogos, createPartnerLogo, togglePartnerLogoStatus, deletePartnerLogo,
-} from "./db";
-import { getSessionCookieOptions } from "./_core/cookies";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { systemRouter } from "./_core/systemRouter";
-import { generateImage } from "./_core/imageGeneration";
-import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator";
-import { generateCertificate } from "./_core/certificateGenerator";
+} from "./db.js";
+import { getSessionCookieOptions } from "./_core/cookies.js";
+import { protectedProcedure, publicProcedure, router } from "./_core/trpc.js";
+import { systemRouter } from "./_core/systemRouter.js";
+import { generateImage } from "./_core/imageGeneration.js";
+import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
+import { generateCertificate } from "./_core/certificateGenerator.js";
 
 export const appRouter = router({
   system: systemRouter,
