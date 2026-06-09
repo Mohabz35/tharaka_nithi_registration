@@ -25,8 +25,11 @@ export default function FeaturedModelsCarousel() {
   }, [autoPlay, models.length]);
 
   if (isLoading || models.length === 0) {
-    return null;
+    return null; // Still no models at all
   }
+
+  // Only show as many cards as we have models (up to 3)
+  const visibleCount = Math.min(models.length, 3);
 
   const goToPrevious = () => {
     setCurrentIndex((prev) => (prev - 1 + models.length) % models.length);
@@ -38,11 +41,10 @@ export default function FeaturedModelsCarousel() {
     setAutoPlay(false);
   };
 
-  const visibleModels = [
-    models[currentIndex],
-    models[(currentIndex + 1) % models.length],
-    models[(currentIndex + 2) % models.length],
-  ];
+  // Show unique models only — no duplicates when fewer than 3
+  const visibleModels = Array.from({ length: visibleCount }, (_, i) =>
+    models[(currentIndex + i) % models.length]
+  );
 
   return (
     <div className="relative w-full bg-gradient-to-b from-[#2a0a1a] to-[#1a0a1a] py-12 overflow-hidden">
@@ -61,7 +63,11 @@ export default function FeaturedModelsCarousel() {
 
         {/* Carousel */}
         <div className="relative">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className={`grid gap-6 ${
+            visibleCount === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
+            visibleCount === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto' :
+            'grid-cols-1 md:grid-cols-3'
+          }`}>
             {visibleModels.map((model, idx) => (
               <div
                 key={`${model.id}-${idx}`}
