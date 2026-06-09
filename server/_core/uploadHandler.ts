@@ -1,10 +1,12 @@
 import { Router, Request, Response } from "express";
+import express from "express";
 import { storagePut } from "../storage.js";
 
 const uploadRouter = Router();
 
-uploadRouter.post("/upload", async (req: Request, res: Response) => {
+uploadRouter.post("/upload", express.raw({ type: "*/*", limit: "50mb" }), async (req: Request, res: Response) => {
   try {
+
     // Get the file from the request body (assuming it's sent as base64 or binary)
     const fileBuffer = req.body;
     const fileName = req.headers["x-file-name"] as string || "upload";
