@@ -94,14 +94,9 @@ Files in `client/public` are available at the root of your site—reference them
 Available pre-defined system envs:
 - `DATABASE_URL`: MySQL/TiDB connection string
 - `JWT_SECRET`: Session cookie signing secret
-- `VITE_APP_ID`: Manus OAuth application ID
-- `OAUTH_SERVER_URL`: Manus OAuth backend base URL
-- `VITE_OAUTH_PORTAL_URL`: Manus login portal URL (frontend)
-- `OWNER_OPEN_ID`, `OWNER_NAME`: Owner's info
-- `BUILT_IN_FORGE_API_URL`: Manus built-in apis (includes llm, storage, data_api, notification, etc...)
-- `BUILT_IN_FORGE_API_KEY`: Bearer token used by Manus built-in apis (server-side)
-- `VITE_FRONTEND_FORGE_API_KEY`: Bearer token for frontend access to Manus built-in apis
-- `VITE_FRONTEND_FORGE_API_URL`: Manus built-in apis URL for frontend
+- `ADMIN_EMAIL`: Email address that automatically gets admin privileges upon registration
+- `OPENAI_API_URL`: OpenAI compatible API URL (defaults to http://localhost:11434/v1 for Ollama)
+- `OPENAI_API_KEY`: API key for LLM services
 
 Do not edit these directly in code or commit `.env` files.
 The envs above are system envs, when use env in website code, refer `server/_core/env.ts` for available list.
@@ -203,9 +198,6 @@ Dashboard & Layout:
 
 Chat & Messaging:
 - `client/src/components/AIChatBox.tsx` - Full-featured chat interface with message history, streaming support, and markdown rendering. Use this for any chat/conversation UI instead of building from scratch.
-
-Maps:
-- `client/src/components/Map.tsx` - Google Maps integration with proxy authentication. Provides MapView component with onMapReady callback for initializing Google Maps services (Places, Geocoder, Directions, Drawing, etc.). All map functionality works directly in the browser.
 
 When implementing features that match these categories, MUST evaluate the component first to decide whether to use or customize it.
 
@@ -317,7 +309,7 @@ const { data } = await listLLMModels();
 const ids = data.map(m => m.id);
 ```
 
-Returns OpenAI-standard model metadata for each available ID. From the project shell you can also peek at it directly: `curl "$BUILT_IN_FORGE_API_URL/v1/models" -H "Authorization: Bearer $BUILT_IN_FORGE_API_KEY"`.
+Returns OpenAI-standard model metadata for each available ID. From the project shell you can also peek at it directly: `curl "$OPENAI_API_URL/v1/models" -H "Authorization: Bearer $OPENAI_API_KEY"`.
 
 **Combine with `invokeLLM`** to discover IDs at runtime instead of hardcoding:
 
@@ -392,68 +384,12 @@ const structured = await invokeLLM({
 ```
 The helpers mirror the Python SDK semantics but produce JavaScript-first code, keeping credentials inside the server and ensuring every environment has access to the same token.
 
----
-
-## Voice Transcription Integration
-
-Use the preconfigured voice transcription helper that converts speech to text using Whisper API, no manual setup required.
-
-Example usage:
-```ts
-import { transcribeAudio } from "./server/_core/voiceTranscription";
-
-const result = await transcribeAudio({
-  audioUrl: "https://storage.example.com/audio/recording.mp3",
-  language: "en", // Optional: helps improve accuracy
-  prompt: "Transcribe meeting notes" // Optional: context hint
-});
-
-// Returns native Whisper API response
-// result.text - Full transcription
-// result.language - Detected language (ISO-639-1)
-// result.segments - Timestamped segments with metadata
-```
-
-Tips
-- Accepts URL to pre-uploaded audio file
-- 16MB file size limit enforced during transcription, size flag to be set by frontend
-- Supported formats: webm, mp3, wav, ogg, m4a
-- Returns native Whisper API response with rich metadata
-- Frontend should handle audio capture, storage upload, and size validation
-
----
-
-## Image Generation Integration
-
-Use the preconfigured image generation helper that connects to the internal ImageService, no manual setup required.
-
-Example usage:
-```ts
-import { generateImage } from "./server/_core/imageGeneration.ts";
-
-const { url: imageUrl } = await generateImage({
-  prompt: "A serene landscape with mountains"
-});
-// For editing:
-const { url: imageUrl } = await generateImage({
-  prompt: "Add a rainbow to this landscape",
-  originalImages: [{
-    url: "https://example.com/original.jpg",
-    mimeType: "image/jpeg"
-  }]
-});
-```
-
-Tips
-- Always call from server-side code (e.g., inside tRPC procedures) to avoid exposing API keys
-- Image generation can take 5-20 seconds, implement proper loading states
-- Implement proper error handling as image generation can fail
 
 ---
 
 ## ☁️ File Storage
 
-Use the preconfigured storage helpers in `server/storage.ts`. Credentials are injected from the platform (no manual setup required). Files are stored securely and served via the built-in `/manus-storage/` path — no manual URL management needed.
+Use the preconfigured storage helpers in `server/storage.ts`. Credentials are injected from the platform (no manual setup required). Files are stored securely and served via the configured Supabase storage provider.
 
 ```ts
 import { storagePut } from "./server/storage";
@@ -465,41 +401,13 @@ const { key, url } = await storagePut(
   fileBuffer, // Buffer | Uint8Array | string
   "image/png"
 );
-// url = "/manus-storage/{key}" — use directly in frontend code
+// url = Supabase public URL — use directly in frontend code
 // key = unique storage key — save in database
 ```
 
 Tips
 - Save the `key` or `url` in your database; use storage for the actual file bytes. This applies to all files including images, documents, and media.
 - For file uploads, have the client POST to your server, then call `storagePut` from your backend.
-- The returned `url` (e.g. `/manus-storage/...`) is automatically served via signed redirect — no manual URL signing needed.
-- To delete a file, drop its `key` from your DB and any UI references — the key is the only way to reach the object, so an unreferenced file is effectively gone. Do not implement a helper to remove the underlying object; the template's storage layer does not expose a delete endpoint.
-
----
-
-## 🗺️ Maps Integration
-
-**CRITICAL: The Manus proxy provides FULL access to ALL Google Maps features** - including advanced drawing, heatmaps, Street View, all layers, Places API, etc. Do ask users for Google Map API keys - authentication is automatic.
-
-**Default: Use Frontend SDK** - Import MapView from `client/src/components/Map.tsx` and initialize ANY Google Maps service (geocoding, directions, places, drawing, visualization, geometry, etc.) in the onMapReady callback. 
-
-**Use Backend API only when:**
-- Persisting data (save routes/locations to database)
-- Bulk operations (1000+ addresses)
-- Server-side needs (caching, scheduled jobs, hiding business logic)
-
-**Implementation:**
-- Frontend: See `client/src/components/Map.tsx` for component usage - ALL Google Maps JavaScript API features work
-- Backend: Create tRPC procedures using `makeRequest` from `server/_core/map.ts`
-
-NEVER use external map libraries or request API keys from users - the Manus proxy handles everything automatically with no feature limitations.
-
-
----
-
-## ☁️ Data API
-
-When you need external data, use the omni_search with search_type = 'api' to see there's any built-in api available in Manus API Hub access. You only have to connect other api if there's no suitable built-in api available.
 
 ---
 

@@ -8,15 +8,17 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import EventSections from "./pages/EventSections";
+import Auth from "./pages/Auth";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path={"/"} component={Home} />
-      <Route path={"gallery"} component={Gallery} />
-      <Route path={"admin"} component={AdminDashboard} />
-      <Route path={"event-sections"} component={EventSections} />
+      <Route path={"/login"} component={Auth} />
+      <Route path={"/gallery"} component={Gallery} />
+      <Route path={"/admin"} component={AdminDashboard} />
+      <Route path={"/event-sections"} component={EventSections} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
