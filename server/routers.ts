@@ -38,12 +38,12 @@ export const appRouter = router({
       )
       .query(async ({ input }) => {
         try {
-          const registrations = await searchAndFilterRegistrations(input.search || "", {
+          const result = await searchAndFilterRegistrations(input.search || "", {
             category: input.category,
             hasPhoto: true
           });
           
-          return registrations.map(r => ({
+          return result.data.map(r => ({
               id: r.id,
               fullName: r.fullName,
               category: r.category,
