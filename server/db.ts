@@ -1,4 +1,4 @@
-import { eq, or, ilike } from "drizzle-orm";
+import { eq, or, ilike, desc } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -101,13 +101,7 @@ export async function getRegistrationsByCategory(category: "adults" | "teens" | 
   return await db.select().from(registrations).where(eq(registrations.category as any, category));
 }
 
-export async function getAllRegistrations() {
-  const db = await getDb();
-  if (!db) {
-    throw new Error("Database not available");
-  }
-  return await db.select().from(registrations);
-}
+
 
 export async function getRegistrationStats() {
   const db = await getDb();
