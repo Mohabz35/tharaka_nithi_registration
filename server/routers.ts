@@ -312,10 +312,12 @@ export const appRouter = router({
           ageMax: z.number().optional(),
           county: z.string().optional(),
         }).optional(),
+        page: z.number().optional().default(1),
+        limit: z.number().optional().default(50)
       }))
       .query(async ({ ctx, input }) => {
         if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        return await searchAndFilterRegistrations(input.query, input.filters || {});
+        return await searchAndFilterRegistrations(input.query, input.filters || {}, input.page, input.limit);
       }),
 
     // Partner Logos

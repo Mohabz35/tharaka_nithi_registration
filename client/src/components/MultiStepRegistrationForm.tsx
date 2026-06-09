@@ -493,7 +493,8 @@ export default function MultiStepRegistrationForm({
               <div>
                 <label className="text-white block mb-2">Upload Portfolio (Optional)</label>
                 <p className="text-gray-400 text-sm mb-2">
-                  Upload your modeling portfolio, performance videos, or other talent demonstrations
+                  Upload your modeling portfolio or performance videos. <br/>
+                  <span className="text-[#d4af37]">Tip: For large Canva or PDF portfolios, please paste the link in the "Describe Your Talents" box above instead of uploading to save space.</span>
                 </p>
                 <Input
                   type="file"

@@ -1,4 +1,4 @@
-import { eq, or, ilike, desc, and, gte, lte, isNotNull } from "drizzle-orm";
+import { eq, or, desc, ilike, and, gte, lte, isNotNull, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -169,7 +169,7 @@ export async function searchAndFilterRegistrations(query: string, filters: {
   ageMax?: number;
   county?: string;
   hasPhoto?: boolean;
-}) {
+}, page: number = 1, limit: number = 50) {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
@@ -194,11 +194,24 @@ export async function searchAndFilterRegistrations(query: string, filters: {
   if (filters.county) conditions.push(ilike(registrations.countySubLocation, `%${filters.county}%`));
   if (filters.hasPhoto) conditions.push(isNotNull(registrations.photoUrl));
 
-  if (conditions.length === 0) {
-    return await db.select().from(registrations).orderBy(desc(registrations.createdAt));
-  }
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-  return await db.select().from(registrations).where(and(...conditions)).orderBy(desc(registrations.createdAt));
+  const totalCountResult = await db
+    .select({ count: count() })
+    .from(registrations)
+    .where(whereClause);
+  
+  const totalCount = totalCountResult[0].count;
+
+  const data = await db
+    .select()
+    .from(registrations)
+    .where(whereClause)
+    .orderBy(desc(registrations.createdAt))
+    .limit(limit)
+    .offset((page - 1) * limit);
+
+  return { data, totalCount };
 }
 
 // ============ Partner Logos ============

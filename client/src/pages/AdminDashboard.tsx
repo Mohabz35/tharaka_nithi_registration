@@ -14,12 +14,15 @@ import AdminArtistsTable from "@/components/AdminArtistsTable";
 import AdminShowcasesTable from "@/components/AdminShowcasesTable";
 import AdminSiteSettings from "@/components/AdminSiteSettings";
 
+const PAGE_SIZE = 50;
+
 export default function AdminDashboard() {
   const { user, logout, loading } = useAuth();
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterOptions>({});
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Check if user is admin - but don't return early yet
   const isAdmin = user?.role === "admin";
@@ -29,22 +32,24 @@ export default function AdminDashboard() {
 
   // Fetch registrations - always call all hooks, use enabled flag for auth
   const { data: stats, isLoading: isLoadingStats } = trpc.admin.getStats.useQuery(undefined, { enabled: isAdmin });
-  const { data: allRegistrations, isLoading: isLoadingAll } = trpc.admin.getAllRegistrations.useQuery(undefined, { enabled: isAdmin });
-  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isAdmin });
+  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isAdmin && !isSearchMode });
   const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
-    { query: searchQuery, filters: activeFilters },
+    { query: searchQuery, filters: activeFilters, page: currentPage, limit: PAGE_SIZE },
     { enabled: isAdmin && isSearchMode }
   );
 
-  const isLoading = loading || isLoadingStats || (isSearchMode ? isSearching : (isLoadingAll || isLoadingCategory));
+  const isLoading = loading || isLoadingStats || (isSearchMode ? isSearching : isLoadingCategory);
+
+  // Paginated data from search mode
+  const pagedData = searchResults?.data ?? [];
+  const totalCount = searchResults?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   // Determine which registrations to display
   const displayRegistrations = useMemo(() => {
-    if (isSearchMode) {
-      return searchResults || [];
-    }
+    if (isSearchMode) return pagedData;
     return categoryRegistrations || [];
-  }, [isSearchMode, searchResults, categoryRegistrations]);
+  }, [isSearchMode, pagedData, categoryRegistrations]);
 
   const handleLogout = async () => {
     await logout();
@@ -54,17 +59,19 @@ export default function AdminDashboard() {
   const handleSearch = (query: string, filters: FilterOptions) => {
     setSearchQuery(query);
     setActiveFilters(filters);
+    setCurrentPage(1); // reset to first page on new search
   };
 
   const handleReset = () => {
     setSearchQuery("");
     setActiveFilters({});
+    setCurrentPage(1);
   };
 
   const exportToCSV = () => {
     if (!displayRegistrations || displayRegistrations.length === 0) return;
 
-    const headers = ["Full Name", "Date of Birth", "Age", "Category", "Phone", "Email", "Location", "Payment Status", "Registration Date"];
+    const headers = ["Full Name", "Date of Birth", "Age", "Category", "Phone", "Email", "Location", "Registration Date"];
     const rows = displayRegistrations.map((reg) => [
       reg.fullName,
       reg.dateOfBirth,
@@ -73,7 +80,6 @@ export default function AdminDashboard() {
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
-      reg.paymentStatus,
       new Date(reg.registrationDate).toLocaleDateString(),
     ]);
 
@@ -298,6 +304,35 @@ export default function AdminDashboard() {
                     </div>
                   ) : (
                     <p className="text-white text-center py-8">No registrations found matching your search criteria.</p>
+                  )}
+                  {/* Pagination Controls */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-[#d4af37]/30">
+                      <p className="text-gray-400 text-sm">
+                        Showing {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} registrations
+                      </p>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                          disabled={currentPage === 1}
+                          variant="outline"
+                          className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black disabled:opacity-40"
+                        >
+                          ← Previous
+                        </Button>
+                        <span className="text-white px-3 py-1 bg-[#4a1a2a] rounded border border-[#d4af37] text-sm flex items-center">
+                          Page {currentPage} of {totalPages}
+                        </span>
+                        <Button
+                          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                          disabled={currentPage === totalPages}
+                          variant="outline"
+                          className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black disabled:opacity-40"
+                        >
+                          Next →
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </>
               ) : (
