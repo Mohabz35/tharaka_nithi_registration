@@ -25,13 +25,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black" style={{ backgroundImage: "url('/manus-storage/royals-icon-logo_9a1f7c92.jpg')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
+    <div className="min-h-screen bg-black" style={{ backgroundImage: "url('/royal_icon_events_logo_new.png')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img src="/manus-storage/royals-icon-logo_9a1f7c92.jpg" alt="Royals Icon Events" className="w-32 h-32 drop-shadow-lg" />
+            <img src="/royal_icon_events_logo_new.png" alt="Royals Icon Events" className="w-40 h-40 drop-shadow-lg animate-lively-logo rounded-full border-2 border-[#d4af37]" />
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#d4af37] mb-2 drop-shadow-lg leading-tight">
