@@ -192,14 +192,16 @@ export default function Gallery() {
                         </button>
                         <button
                           onClick={() => {
-                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
-                            window.open("https://www.instagram.com/", "_blank");
+                            const text = `Check out ${model.fullName} in the Mr & Miss Face of Tharaka-Nithi County 2026 event! 🌟`;
+                            const shareUrl = window.location.origin + "/gallery";
+                            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(text)}`;
+                            window.open(facebookUrl, "_blank");
                           }}
-                          className="flex-1 bg-pink-600 hover:bg-pink-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
-                          title="Share on Instagram"
+                          className="flex-1 bg-blue-700 hover:bg-blue-800 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          title="Share on Facebook"
                         >
                           <Heart className="w-3 h-3" />
-                          Like
+                          Share
                         </button>
                       </div>
                     </CardContent>

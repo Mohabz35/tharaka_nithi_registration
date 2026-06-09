@@ -190,9 +190,9 @@ export default function MultiStepRegistrationForm({
 
       // Build social media handles JSON
       const socialHandles = portfolioChoice === "social" ? JSON.stringify({
-        instagram: formData.instagram,
-        tiktok: formData.tiktok,
-        twitter: formData.twitter,
+        instagram: formData.instagram && !formData.instagram.startsWith('@') ? `@${formData.instagram}` : formData.instagram,
+        tiktok: formData.tiktok && !formData.tiktok.startsWith('@') ? `@${formData.tiktok}` : formData.tiktok,
+        twitter: formData.twitter && !formData.twitter.startsWith('@') ? `@${formData.twitter}` : formData.twitter,
         facebook: formData.facebook,
       }) : undefined;
 

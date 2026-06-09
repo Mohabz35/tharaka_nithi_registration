@@ -25,7 +25,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black" style={{ backgroundImage: "url('/royal_icon_events_logo_new.png')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
+    <div className="min-h-screen bg-black" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=2029&auto=format&fit=crop')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'multiply', backgroundColor: 'rgba(74, 26, 42, 0.85)' }}>
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
@@ -61,7 +61,7 @@ export default function Home() {
             Fashion | Talent | Celebration
           </p>
 
-          <div className="mb-8 max-w-2xl mx-auto">
+          <div className="mb-8 max-w-2xl mx-auto scale-90 sm:scale-100">
             <CountdownTimer />
           </div>
 
