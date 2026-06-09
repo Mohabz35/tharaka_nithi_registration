@@ -105,7 +105,14 @@ export default function PartnerLogosManager() {
                   className="hidden"
                   onChange={(e) => {
                     const selected = e.target.files?.[0];
-                    if (selected) setFile(selected);
+                    if (selected) {
+                      if (selected.size > 4.5 * 1024 * 1024) {
+                        toast.error("Logo is too large. Please upload an image smaller than 4.5MB.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setFile(selected);
+                    }
                   }}
                 />
               </div>

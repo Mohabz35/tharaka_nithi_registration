@@ -48,6 +48,11 @@ export default function MultiStepRegistrationForm({
   const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 4.5 * 1024 * 1024) {
+        toast.error("Photo is too large. Please upload an image smaller than 4.5MB.");
+        e.target.value = "";
+        return;
+      }
       setPhotoFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -60,6 +65,11 @@ export default function MultiStepRegistrationForm({
   const handlePortfolioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 4.5 * 1024 * 1024) {
+        toast.error("Portfolio file is too large. Please upload a file smaller than 4.5MB.");
+        e.target.value = "";
+        return;
+      }
       setFormData({ ...formData, portfolioFile: file });
     }
   };
