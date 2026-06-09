@@ -1,77 +1,97 @@
+import { v2 as cloudinary } from "cloudinary";
 import { ENV } from "./_core/env.js";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import crypto from "crypto";
+import { Readable } from "stream";
 
-let s3Client: S3Client | null = null;
+let configured = false;
 
-function getS3Client() {
-  if (!s3Client) {
-    if (!ENV.awsAccessKeyId || !ENV.awsSecretAccessKey || !ENV.awsRegion || !ENV.awsS3Bucket) {
-      throw new Error("AWS S3 config missing: set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET");
+function getCloudinary() {
+  if (!configured) {
+    if (!ENV.cloudinaryCloudName || !ENV.cloudinaryApiKey || !ENV.cloudinaryApiSecret) {
+      throw new Error(
+        "Cloudinary config missing: set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET"
+      );
     }
-    s3Client = new S3Client({
-      region: ENV.awsRegion,
-      credentials: {
-        accessKeyId: ENV.awsAccessKeyId,
-        secretAccessKey: ENV.awsSecretAccessKey,
-      },
+    cloudinary.config({
+      cloud_name: ENV.cloudinaryCloudName,
+      api_key: ENV.cloudinaryApiKey,
+      api_secret: ENV.cloudinaryApiSecret,
+      secure: true,
     });
+    configured = true;
   }
-  return s3Client;
+  return cloudinary;
 }
 
-function normalizeKey(relKey: string): string {
-  return relKey.replace(/^\/+/, "");
+function bufferToStream(buffer: Buffer): Readable {
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
 }
 
-function appendHashSuffix(relKey: string): string {
+function buildPublicId(relKey: string): string {
+  // Strip extension — Cloudinary manages that
   const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const lastDot = relKey.lastIndexOf(".");
-  if (lastDot === -1) return `${relKey}_${hash}`;
-  return `${relKey.slice(0, lastDot)}_${hash}${relKey.slice(lastDot)}`;
+  const normalized = relKey.replace(/^\/+/, "").replace(/\.[^/.]+$/, "");
+  return `${normalized}_${hash}`;
 }
 
 export async function storagePut(
   relKey: string,
   data: Buffer | Uint8Array | string,
-  contentType = "application/octet-stream",
+  contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  const s3 = getS3Client();
-  const key = appendHashSuffix(normalizeKey(relKey));
-  const bucket = ENV.awsS3Bucket!;
+  const cl = getCloudinary();
+  const publicId = buildPublicId(relKey);
 
-  const command = new PutObjectCommand({
-    Bucket: bucket,
-    Key: key,
-    Body: data,
-    ContentType: contentType,
-  });
+  const buffer = Buffer.isBuffer(data)
+    ? data
+    : Buffer.from(data as Uint8Array | string);
 
-  await s3.send(command);
+  // Determine resource type
+  const resourceType: "image" | "raw" | "auto" = contentType.startsWith("image/")
+    ? "image"
+    : "raw";
 
-  // Return a public URL assuming the bucket is configured for public read
-  const publicUrl = `https://${bucket}.s3.${ENV.awsRegion}.amazonaws.com/${key}`;
-  
-  return { key, url: publicUrl };
+  const uploadResult = await new Promise<{ public_id: string; secure_url: string }>(
+    (resolve, reject) => {
+      const stream = cl.uploader.upload_stream(
+        {
+          public_id: publicId,
+          resource_type: resourceType,
+          // Auto-quality + format for images (reduces file size by ~50-80%)
+          ...(resourceType === "image"
+            ? { quality: "auto", fetch_format: "auto" }
+            : {}),
+          folder: "tharaka-nithi",
+        },
+        (error, result) => {
+          if (error || !result) reject(error ?? new Error("Upload failed"));
+          else resolve(result as { public_id: string; secure_url: string });
+        }
+      );
+      bufferToStream(buffer).pipe(stream);
+    }
+  );
+
+  return { key: uploadResult.public_id, url: uploadResult.secure_url };
 }
 
 export async function storageGet(relKey: string): Promise<{ key: string; url: string }> {
-  const key = normalizeKey(relKey);
-  const bucket = ENV.awsS3Bucket!;
-  const publicUrl = `https://${bucket}.s3.${ENV.awsRegion}.amazonaws.com/${key}`;
-  return { key, url: publicUrl };
+  const cl = getCloudinary();
+  const url = cl.url(relKey, { secure: true });
+  return { key: relKey, url };
 }
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
-  const s3 = getS3Client();
-  const key = normalizeKey(relKey);
-  const command = new GetObjectCommand({
-    Bucket: ENV.awsS3Bucket!,
-    Key: key,
+  const cl = getCloudinary();
+  // Signed URL valid for 1 hour
+  const url = cl.url(relKey, {
+    secure: true,
+    sign_url: true,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
   });
-
-  // Generates a pre-signed URL valid for 1 hour (3600 seconds)
-  const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-  return signedUrl;
+  return url;
 }
+
