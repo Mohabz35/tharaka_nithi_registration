@@ -50,7 +50,7 @@ export const appRouter = router({
             );
           }
           return registrations
-            .filter(r => r.photoUrl && r.consentPhotoVideo)
+            .filter(r => r.photoUrl)
             .map(r => ({
               id: r.id,
               fullName: r.fullName,
@@ -59,6 +59,7 @@ export const appRouter = router({
               talents: r.talents,
               photoUrl: r.photoUrl,
               posterUrl: r.posterUrl,
+              countySubLocation: r.countySubLocation,
               registrationDate: r.registrationDate,
             }));
         } catch (error) {

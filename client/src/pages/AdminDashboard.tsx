@@ -246,30 +246,38 @@ export default function AdminDashboard() {
                       <Table>
                         <TableHeader>
                           <TableRow className="border-[#d4af37]">
+                            <TableHead className="text-[#d4af37]">Photo</TableHead>
                             <TableHead className="text-[#d4af37]">Full Name</TableHead>
                             <TableHead className="text-[#d4af37]">Category</TableHead>
                             <TableHead className="text-[#d4af37]">Age</TableHead>
                             <TableHead className="text-[#d4af37]">Phone</TableHead>
                             <TableHead className="text-[#d4af37]">Email</TableHead>
                             <TableHead className="text-[#d4af37]">Location</TableHead>
-                            <TableHead className="text-[#d4af37]">Payment</TableHead>
-                            <TableHead className="text-[#d4af37]">Registration Date</TableHead>
+                            <TableHead className="text-[#d4af37]">Status</TableHead>
+                            <TableHead className="text-[#d4af37]">Date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {displayRegistrations.map((registration) => (
                             <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
+                              <TableCell>
+                                {registration.photoUrl ? (
+                                  <a href={registration.photoUrl} target="_blank" rel="noreferrer">
+                                    <img src={registration.photoUrl} alt={registration.fullName} className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
+                                  </a>
+                                ) : <span className="text-gray-500 text-xs">—</span>}
+                              </TableCell>
                               <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
                               <TableCell className="text-white">
                                 {registration.category === "adults"
-                                  ? "Adults (18-26)"
+                                  ? "Adults"
                                   : registration.category === "teens"
-                                    ? "Teens (13-17)"
-                                    : "Little Stars (5-12)"}
+                                    ? "Teens"
+                                    : "Little Stars"}
                               </TableCell>
                               <TableCell className="text-white">{registration.age}</TableCell>
                               <TableCell className="text-white">{registration.phoneNumber}</TableCell>
-                              <TableCell className="text-white text-sm">{registration.email}</TableCell>
+                              <TableCell className="text-white text-xs">{registration.email}</TableCell>
                               <TableCell className="text-white">{registration.countySubLocation}</TableCell>
                               <TableCell className="text-white">
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -280,7 +288,7 @@ export default function AdminDashboard() {
                                   {registration.paymentStatus}
                                 </span>
                               </TableCell>
-                              <TableCell className="text-white">
+                              <TableCell className="text-white text-xs">
                                 {new Date(registration.registrationDate).toLocaleDateString()}
                               </TableCell>
                             </TableRow>
@@ -327,22 +335,30 @@ export default function AdminDashboard() {
                         <Table>
                           <TableHeader>
                             <TableRow className="border-[#d4af37]">
+                              <TableHead className="text-[#d4af37]">Photo</TableHead>
                               <TableHead className="text-[#d4af37]">Full Name</TableHead>
                               <TableHead className="text-[#d4af37]">Age</TableHead>
                               <TableHead className="text-[#d4af37]">Phone</TableHead>
                               <TableHead className="text-[#d4af37]">Email</TableHead>
                               <TableHead className="text-[#d4af37]">Location</TableHead>
-                              <TableHead className="text-[#d4af37]">Payment</TableHead>
-                              <TableHead className="text-[#d4af37]">Registration Date</TableHead>
+                              <TableHead className="text-[#d4af37]">Status</TableHead>
+                              <TableHead className="text-[#d4af37]">Date</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {displayRegistrations.map((registration) => (
                               <TableRow key={registration.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
+                                <TableCell>
+                                  {registration.photoUrl ? (
+                                    <a href={registration.photoUrl} target="_blank" rel="noreferrer">
+                                      <img src={registration.photoUrl} alt={registration.fullName} className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
+                                    </a>
+                                  ) : <span className="text-gray-500 text-xs">—</span>}
+                                </TableCell>
                                 <TableCell className="text-white font-medium">{registration.fullName}</TableCell>
                                 <TableCell className="text-white">{registration.age}</TableCell>
                                 <TableCell className="text-white">{registration.phoneNumber}</TableCell>
-                                <TableCell className="text-white text-sm">{registration.email}</TableCell>
+                                <TableCell className="text-white text-xs">{registration.email}</TableCell>
                                 <TableCell className="text-white">{registration.countySubLocation}</TableCell>
                                 <TableCell className="text-white">
                                   <span className={`px-2 py-1 rounded text-xs font-medium ${
@@ -353,7 +369,7 @@ export default function AdminDashboard() {
                                     {registration.paymentStatus}
                                   </span>
                                 </TableCell>
-                                <TableCell className="text-white">
+                                <TableCell className="text-white text-xs">
                                   {new Date(registration.registrationDate).toLocaleDateString()}
                                 </TableCell>
                               </TableRow>

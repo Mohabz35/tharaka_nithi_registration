@@ -417,7 +417,7 @@ export default function MultiStepRegistrationForm({
             {/* Portfolio Choice */}
             <div>
               <label className="text-white block mb-3 font-semibold">How would you like to showcase yourself?</label>
-              <div className="flex gap-3">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <Button
                   type="button"
                   onClick={() => setPortfolioChoice("social")}

@@ -129,15 +129,16 @@ export default function Gallery() {
                 {sortedData.map((model) => (
                   <Card
                     key={model.id}
-                    className="bg-[#2a0a1a] border-[#d4af37] border-2 overflow-hidden hover:shadow-lg hover:shadow-[#d4af37] transition-all duration-300 transform hover:scale-105"
+                    className="bg-[#2a0a1a] border-[#d4af37] border-2 overflow-hidden hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all duration-300 hover:scale-[1.02]"
                   >
                     {/* Photo */}
-                    <div className="relative h-64 bg-[#1a0a1a] overflow-hidden">
+                    <div className="relative h-72 bg-[#1a0a1a] overflow-hidden">
                       {model.photoUrl ? (
                         <img
                           src={model.photoUrl}
-                          alt={model.fullName}
-                          className="w-full h-full object-cover"
+                          alt={`${model.fullName} - ${model.category} contestant at Mr & Miss Face of Tharaka-Nithi 2026`}
+                          className="w-full h-full object-cover object-top"
+                          loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -147,7 +148,7 @@ export default function Gallery() {
 
                       {/* Category Badge */}
                       <div
-                        className={`absolute top-2 right-2 px-3 py-1 rounded-full text-white text-xs font-bold ${
+                        className={`absolute top-2 right-2 px-2 py-1 rounded-full text-white text-xs font-bold ${
                           categoryColors[model.category as keyof typeof categoryColors]
                         }`}
                       >
@@ -156,50 +157,33 @@ export default function Gallery() {
                     </div>
 
                     {/* Profile Info */}
-                    <CardContent className="pt-4">
-                      <h3 className="text-lg font-bold text-[#d4af37] mb-1">{model.fullName}</h3>
-                      <p className="text-white text-sm mb-2">Age: {model.age}</p>
+                    <CardContent className="pt-4 pb-4">
+                      <h3 className="text-base font-bold text-[#d4af37] mb-1 truncate">{model.fullName}</h3>
+                      <p className="text-gray-300 text-sm">Age: {model.age} &nbsp;|&nbsp; 📍 {(model as any).countySubLocation}</p>
 
                       {model.talents && (
-                        <div className="mb-3">
-                          <p className="text-gray-300 text-xs font-semibold mb-1">Talents:</p>
-                          <p className="text-white text-sm line-clamp-2">{model.talents}</p>
-                        </div>
-                      )}
-
-                      {model.posterUrl && (
-                        <Button
-                          onClick={() => window.open(model.posterUrl || "", "_blank")}
-                          className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] text-xs font-bold py-1 mb-3"
-                        >
-                          View Poster
-                        </Button>
+                        <p className="text-white text-xs mt-2 line-clamp-2 italic">"{model.talents}"</p>
                       )}
 
                       {/* Social Sharing Buttons */}
-                      <div className="flex gap-2 justify-center">
+                      <div className="flex gap-2 mt-3">
                         <button
                           onClick={() => {
-                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
-                            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-                            window.open(url, "_blank");
+                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026! Register at https://www.faceoftharakanithi.app`;
+                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="flex-1 bg-green-600 hover:bg-green-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
-                          title="Share on WhatsApp"
+                          className="flex-1 bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
                         >
-                          <MessageCircle className="w-3 h-3" />
-                          Share
+                          <MessageCircle className="w-3 h-3" /> Share
                         </button>
                         <button
                           onClick={() => {
-                            const text = `Check out ${model.fullName} in the Models Call Out event! 🌟`;
-                            window.open("https://www.instagram.com/", "_blank");
+                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! #FaceOfTharakaNithi`;
+                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="flex-1 bg-pink-600 hover:bg-pink-700 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
-                          title="Share on Instagram"
+                          className="flex-1 bg-sky-700 hover:bg-sky-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
                         >
-                          <Heart className="w-3 h-3" />
-                          Like
+                          <Heart className="w-3 h-3" /> Tweet
                         </button>
                       </div>
                     </CardContent>

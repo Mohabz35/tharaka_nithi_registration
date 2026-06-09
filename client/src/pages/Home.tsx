@@ -105,7 +105,7 @@ export default function Home() {
                 <CardTitle className="text-[#d4af37]">✓ Registration is FREE</CardTitle>
               </CardHeader>
               <CardContent className="text-white">
-                No registration fees required. Only M-PESA payment at submission for participation.
+                Registration is completely free. Come showcase your talent and compete for the title.
               </CardContent>
             </Card>
 
