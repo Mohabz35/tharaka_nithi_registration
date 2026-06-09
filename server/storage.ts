@@ -31,9 +31,15 @@ function bufferToStream(buffer: Buffer): Readable {
 }
 
 function buildPublicId(relKey: string): string {
-  // Strip extension — Cloudinary manages that
   const hash = crypto.randomUUID().replace(/-/g, "").slice(0, 8);
-  const normalized = relKey.replace(/^\/+/, "").replace(/\.[^/.]+$/, "");
+  const parts = relKey.split('.');
+  if (parts.length > 1) {
+    const ext = parts.pop();
+    const name = parts.join('.').replace(/^\/+/, "");
+    // Cloudinary raw files need the extension in the public_id
+    return `${name}_${hash}.${ext}`;
+  }
+  const normalized = relKey.replace(/^\/+/, "");
   return `${normalized}_${hash}`;
 }
 

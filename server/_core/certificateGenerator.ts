@@ -113,7 +113,7 @@ export async function generateCertificate(data: CertificateData): Promise<{ url:
   };
 
   // Crown placeholder
-  drawCenteredText("♕", fontRegular, 40, gold, 50);
+  drawCenteredText("* * *", fontBold, 24, gold, 50);
 
   drawCenteredText("Certificate of Registration", fontBold, 28, goldBright, 40);
   drawCenteredText("Mr & Miss", fontBold, 18, gold, 20);
