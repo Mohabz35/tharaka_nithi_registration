@@ -6,6 +6,10 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import FeaturedModelsCarousel from "@/components/FeaturedModelsCarousel";
+import SponsorRegistrationForm from "@/components/SponsorRegistrationForm";
+import ArtistRegistrationForm from "@/components/ArtistRegistrationForm";
+import ShowcaseRegistrationForm from "@/components/ShowcaseRegistrationForm";
+import SocialMediaFooter from "@/components/SocialMediaFooter";
 import { Crown, ChevronDown, Image } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -30,12 +34,16 @@ export default function Home() {
             <img src="/manus-storage/royals-icon-logo_9a1f7c92.jpg" alt="Royals Icon Events" className="w-32 h-32 drop-shadow-lg" />
           </div>
 
-          <h1 className="text-5xl sm:text-6xl font-bold text-[#d4af37] mb-4 drop-shadow-lg">
-            MODELS CALL OUT
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#d4af37] mb-2 drop-shadow-lg leading-tight">
+            OFFICIAL THARAKA NITHI MODELS 2026
           </h1>
 
-          <p className="text-xl sm:text-2xl text-white mb-2">
-            Mr & Miss Face of Tharaka-Nithi County 2026
+          <p className="text-xl sm:text-2xl text-white mb-2 font-medium">
+            Mr & Miss Face of Tharaka-Nithi County
+          </p>
+
+          <p className="text-md sm:text-lg text-gray-300 mb-4">
+            Featuring: <span className="text-[#d4af37] font-semibold">Chuka University (Eagles)</span> | <span className="text-[#d4af37] font-semibold">Tharaka Nithi University</span> | <span className="text-[#d4af37] font-semibold">Chuka TC</span>
           </p>
 
           <div className="flex flex-col sm:flex-row justify-center gap-6 text-white text-lg mb-8">
@@ -231,29 +239,8 @@ export default function Home() {
 
       {/* Sponsor & Partner Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#2a0a1a] to-[#4a1a2a]">
-        <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-12">Collaborate With Us</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37] text-2xl">Sponsor Event</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white space-y-4 text-left">
-                <p>Support the biggest modeling event in Tharaka-Nithi County. Gain premium brand exposure and connect with our vibrant audience.</p>
-                <Button className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold w-full">Become a Sponsor</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37] text-2xl">Partner With Us</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white space-y-4 text-left">
-                <p>We are open to partnerships with media houses, fashion brands, and local businesses to make this event a success.</p>
-                <Button className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold w-full">Join as a Partner</Button>
-              </CardContent>
-            </Card>
-          </div>
+        <div className="max-w-4xl mx-auto">
+          <SponsorRegistrationForm />
         </div>
       </section>
 
@@ -261,26 +248,9 @@ export default function Home() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-[#d4af37] mb-12">More Opportunities</h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            <Card className="bg-[#2a0a1a] border-0">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37] text-2xl">Register as Artist</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white space-y-4">
-                <p>Are you a makeup artist, photographer, or performer? Register to showcase your skills during the main event.</p>
-                <Button className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold">Register Now</Button>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#2a0a1a] border-0">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37] text-2xl">Showcasing</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white space-y-4">
-                <p>Designers and brands can book a slot to showcase their latest collections on our grand runway.</p>
-                <Button className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold">Book a Slot</Button>
-              </CardContent>
-            </Card>
+          <div className="grid md:grid-cols-2 gap-8 text-left">
+            <ArtistRegistrationForm />
+            <ShowcaseRegistrationForm />
           </div>
         </div>
       </section>
@@ -321,7 +291,10 @@ export default function Home() {
         <p className="text-sm mt-4 text-gray-400">
           Email: contact@royalsiconevents.co.ke | Website: www.royalsiconevents.co.ke
         </p>
-        <div className="mt-6 pt-6 border-t border-[#d4af37] border-opacity-30">
+
+        <SocialMediaFooter />
+
+        <div className="mt-2 pt-6 border-t border-[#d4af37] border-opacity-30">
           <a
             href="/admin"
             className="text-[#d4af37] hover:text-[#e5c158] text-sm underline"

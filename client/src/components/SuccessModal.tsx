@@ -22,7 +22,9 @@ export default function SuccessModal({
   registrationId 
 }: SuccessModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
+  const downloadPdf = trpc.registration.downloadRegistrationPdf.useMutation();
 
   const categoryNames: Record<string, string> = {
     adults: "Adults (18-26)",
@@ -55,6 +57,30 @@ export default function SuccessModal({
       toast.error("Failed to download certificate");
     } finally {
       setIsDownloading(false);
+    }
+  };
+
+  const handleDownloadPdf = async () => {
+    setIsDownloadingPdf(true);
+    try {
+      const result = await downloadPdf.mutateAsync({
+        registrationId,
+      });
+
+      if (result.success && result.pdfUrl) {
+        const link = document.createElement("a");
+        link.href = result.pdfUrl;
+        link.download = `registration_form_${registrationId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Application form downloaded successfully!");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download application form");
+    } finally {
+      setIsDownloadingPdf(false);
     }
   };
 
@@ -154,18 +180,31 @@ export default function SuccessModal({
           </Card>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            <Button
+          <div className="flex flex-col gap-4">
+            <Button 
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg py-6 flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              {isDownloadingPdf ? "Generating Form..." : "Download Registration Form (Hardcopy)"}
+            </Button>
+            <p className="text-gray-400 text-sm text-center">
+              * Download this form, sign it, and bring it to the bootcamp.
+            </p>
+
+            <Button 
               onClick={handleDownloadCertificate}
               disabled={isDownloading}
-              className="flex-1 bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold py-2"
+              className="w-full border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg py-6 flex items-center justify-center gap-2"
             >
-              <Download className="w-4 h-4 mr-2" />
-              {isDownloading ? "Downloading..." : "Download Certificate"}
+              <Download className="w-5 h-5" />
+              {isDownloading ? "Generating Certificate..." : "Download Digital Certificate"}
             </Button>
+            
             <Button
               onClick={handleShare}
-              className="flex-1 border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold py-2"
+              className="w-full border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold py-2"
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share Registration

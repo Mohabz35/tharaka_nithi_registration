@@ -20,6 +20,7 @@ export default function MultiStepRegistrationForm({
 }: MultiStepRegistrationFormProps) {
   const [currentStep, setCurrentStep] = useState<FormStep>("personal");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({}); 
+  const [portfolioChoice, setPortfolioChoice] = useState<"file" | "social">("social");
   const [formData, setFormData] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -29,6 +30,10 @@ export default function MultiStepRegistrationForm({
     countySubLocation: "",
     talents: "",
     portfolioFile: null as File | null,
+    instagram: "",
+    tiktok: "",
+    twitter: "",
+    facebook: "",
     consentPhotoVideo: false,
     consentDataProcessing: false,
     consentTerms: false,
@@ -183,6 +188,14 @@ export default function MultiStepRegistrationForm({
         portfolioKey = data.key;
       }
 
+      // Build social media handles JSON
+      const socialHandles = portfolioChoice === "social" ? JSON.stringify({
+        instagram: formData.instagram,
+        tiktok: formData.tiktok,
+        twitter: formData.twitter,
+        facebook: formData.facebook,
+      }) : undefined;
+
       // Submit registration
       const result = await submitMutation.mutateAsync({
         fullName: formData.fullName,
@@ -197,6 +210,7 @@ export default function MultiStepRegistrationForm({
         talents: formData.talents,
         portfolioUrl,
         portfolioKey,
+        socialMediaHandles: socialHandles,
         consentPhotoVideo: formData.consentPhotoVideo,
         consentDataProcessing: formData.consentDataProcessing,
         consentTerms: formData.consentTerms,
@@ -359,7 +373,7 @@ export default function MultiStepRegistrationForm({
         </Card>
       )}
 
-      {/* Step 2: Talents & Portfolio */}
+      {/* Step 2: Talents & Portfolio / Social Media */}
       {currentStep === "talents" && (
         <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
           <CardHeader>
@@ -368,31 +382,108 @@ export default function MultiStepRegistrationForm({
           <CardContent className="space-y-4">
             <div>
               <label className="text-white block mb-2">Describe Your Talents</label>
-            <Textarea
-              name="talents"
-              value={formData.talents}
-              onChange={(e: any) => setFormData({ ...formData, talents: e.target.value })}
-              placeholder="Tell us about your talents, skills, and what makes you unique..."
-              className="bg-[#4a1a2a] text-white border-[#d4af37] min-h-32"
-            />
+              <Textarea
+                name="talents"
+                value={formData.talents}
+                onChange={(e: any) => setFormData({ ...formData, talents: e.target.value })}
+                placeholder="Tell us about your talents, skills, and what makes you unique..."
+                className="bg-[#4a1a2a] text-white border-[#d4af37] min-h-32"
+              />
             </div>
 
+            {/* Portfolio Choice */}
             <div>
-              <label className="text-white block mb-2">Upload Portfolio (Optional)</label>
-              <p className="text-gray-400 text-sm mb-2">
-                Upload your modeling portfolio, performance videos, or other talent demonstrations
-              </p>
-              <Input
-                type="file"
-                onChange={handlePortfolioChange}
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
-              />
-              {formData.portfolioFile && (
-                <p className="text-[#d4af37] text-sm mt-2">
-                  File selected: {formData.portfolioFile.name}
-                </p>
-              )}
+              <label className="text-white block mb-3 font-semibold">How would you like to showcase yourself?</label>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  onClick={() => setPortfolioChoice("social")}
+                  className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                    portfolioChoice === "social"
+                      ? "bg-[#d4af37] text-black"
+                      : "bg-[#4a1a2a] text-[#d4af37] border border-[#d4af37] hover:bg-[#5a2a3a]"
+                  }`}
+                >
+                  📱 Social Media Handles
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setPortfolioChoice("file")}
+                  className={`flex-1 py-3 rounded-lg font-bold transition-all ${
+                    portfolioChoice === "file"
+                      ? "bg-[#d4af37] text-black"
+                      : "bg-[#4a1a2a] text-[#d4af37] border border-[#d4af37] hover:bg-[#5a2a3a]"
+                  }`}
+                >
+                  📄 Upload Portfolio
+                </Button>
+              </div>
             </div>
+
+            {portfolioChoice === "social" ? (
+              <div className="space-y-3">
+                <p className="text-gray-400 text-sm">Provide your social media handles so judges can view your work</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-white text-sm block mb-1">📸 Instagram</label>
+                    <Input
+                      name="instagram"
+                      value={formData.instagram}
+                      onChange={handleInputChange}
+                      placeholder="@your_handle"
+                      className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white text-sm block mb-1">🎵 TikTok</label>
+                    <Input
+                      name="tiktok"
+                      value={formData.tiktok}
+                      onChange={handleInputChange}
+                      placeholder="@your_handle"
+                      className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white text-sm block mb-1">🐦 Twitter / X</label>
+                    <Input
+                      name="twitter"
+                      value={formData.twitter}
+                      onChange={handleInputChange}
+                      placeholder="@your_handle"
+                      className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-white text-sm block mb-1">📘 Facebook</label>
+                    <Input
+                      name="facebook"
+                      value={formData.facebook}
+                      onChange={handleInputChange}
+                      placeholder="Your page or profile"
+                      className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                    />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label className="text-white block mb-2">Upload Portfolio (Optional)</label>
+                <p className="text-gray-400 text-sm mb-2">
+                  Upload your modeling portfolio, performance videos, or other talent demonstrations
+                </p>
+                <Input
+                  type="file"
+                  onChange={handlePortfolioChange}
+                  className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                />
+                {formData.portfolioFile && (
+                  <p className="text-[#d4af37] text-sm mt-2">
+                    File selected: {formData.portfolioFile.name}
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}

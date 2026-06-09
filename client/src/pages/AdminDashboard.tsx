@@ -9,6 +9,10 @@ import { trpc } from "@/lib/trpc";
 import { Download, LogOut, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
 import PartnerLogosManager from "@/components/PartnerLogosManager";
+import AdminSponsorsTable from "@/components/AdminSponsorsTable";
+import AdminArtistsTable from "@/components/AdminArtistsTable";
+import AdminShowcasesTable from "@/components/AdminShowcasesTable";
+import AdminSiteSettings from "@/components/AdminSiteSettings";
 
 export default function AdminDashboard() {
   const { user, logout, loading } = useAuth();
@@ -182,12 +186,24 @@ export default function AdminDashboard() {
 
           {/* Admin Sections */}
           <Tabs defaultValue="registrations" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-[#2a0a1a] mb-6">
-              <TabsTrigger value="registrations" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white">
+            <TabsList className="flex flex-wrap w-full bg-[#2a0a1a] mb-6 h-auto">
+              <TabsTrigger value="registrations" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Registrations
               </TabsTrigger>
-              <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white">
+              <TabsTrigger value="sponsors" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Sponsors & Partners
+              </TabsTrigger>
+              <TabsTrigger value="artists" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Artists
+              </TabsTrigger>
+              <TabsTrigger value="showcases" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Showcases
+              </TabsTrigger>
+              <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Certificate Partners
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Site Settings
               </TabsTrigger>
             </TabsList>
 
@@ -355,8 +371,24 @@ export default function AdminDashboard() {
           </Card>
             </TabsContent>
             
+            <TabsContent value="sponsors">
+              <AdminSponsorsTable />
+            </TabsContent>
+
+            <TabsContent value="artists">
+              <AdminArtistsTable />
+            </TabsContent>
+
+            <TabsContent value="showcases">
+              <AdminShowcasesTable />
+            </TabsContent>
+
             <TabsContent value="partners">
               <PartnerLogosManager />
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <AdminSiteSettings />
             </TabsContent>
           </Tabs>
         </div>

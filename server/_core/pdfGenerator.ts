@@ -1,5 +1,6 @@
 import { storagePut } from "../storage";
 import type { Registration } from "../../drizzle/schema";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 export async function generateRegistrationPDF(registration: Registration): Promise<{ url: string; key: string }> {
   const categoryLabel =
@@ -9,62 +10,90 @@ export async function generateRegistrationPDF(registration: Registration): Promi
         ? "Teens (13-17)"
         : "Little Stars (5-12)";
 
-  const pdfContent = `REGISTRATION CONFIRMATION
-Mr & Miss Face of Tharaka-Nithi County 2026
+  // Create a new PDFDocument
+  const pdfDoc = await PDFDocument.create();
+  const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
 
-========================================
+  const page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  const fontSize = 12;
+  const margin = 50;
 
-PARTICIPANT DETAILS
-Name: ${registration.fullName}
-Date of Birth: ${registration.dateOfBirth}
-Age: ${registration.age}
-Category: ${categoryLabel}
-Phone: ${registration.phoneNumber}
-Email: ${registration.email}
-County Sub-Location: ${registration.countySubLocation}
+  let cursorY = height - margin;
 
-========================================
+  const drawText = (text: string, font = timesRomanFont, size = fontSize, offset = 20) => {
+    page.drawText(text, {
+      x: margin,
+      y: cursorY,
+      size,
+      font,
+      color: rgb(0, 0, 0),
+    });
+    cursorY -= offset;
+  };
 
-REGISTRATION INFORMATION
-Registration Date: ${new Date(registration.registrationDate).toLocaleDateString()}
-Payment Status: ${registration.paymentStatus}
+  // Header
+  drawText("REGISTRATION CONFIRMATION", timesBoldFont, 18, 30);
+  drawText("Mr & Miss Face of Tharaka-Nithi County 2026", timesRomanFont, 14, 30);
+  
+  drawText("========================================", timesRomanFont, 12, 20);
 
-========================================
+  // Participant Details
+  drawText("PARTICIPANT DETAILS", timesBoldFont, 14, 20);
+  drawText(`Name: ${registration.fullName}`);
+  drawText(`Date of Birth: ${registration.dateOfBirth}`);
+  drawText(`Age: ${registration.age}`);
+  drawText(`Category: ${categoryLabel}`);
+  drawText(`Phone: ${registration.phoneNumber}`);
+  drawText(`Email: ${registration.email}`);
+  drawText(`County Sub-Location: ${registration.countySubLocation}`);
+  
+  cursorY -= 10;
+  drawText("========================================", timesRomanFont, 12, 20);
 
-CONSENTS & AGREEMENTS
-Photo/Video Usage Consent: ${registration.consentPhotoVideo ? "✓ Accepted" : "✗ Not Accepted"}
-Data Processing Consent: ${registration.consentDataProcessing ? "✓ Accepted" : "✗ Not Accepted"}
-Terms & Conditions: ${registration.consentTerms ? "✓ Accepted" : "✗ Not Accepted"}
-${registration.parentalConsentSigned ? `Parental Consent (Minors): ✓ Signed` : ""}
+  // Registration Info
+  drawText("REGISTRATION INFORMATION", timesBoldFont, 14, 20);
+  drawText(`Registration Date: ${new Date(registration.registrationDate).toLocaleDateString()}`);
+  drawText(`Payment Status: ${registration.paymentStatus}`);
+  
+  cursorY -= 10;
+  drawText("========================================", timesRomanFont, 12, 20);
 
-========================================
-
-NEXT STEPS
-1. Complete M-PESA payment to confirm your registration
-2. Paybill Number: 522522
-3. Account Name: ROYALS2026
-4. Amount: ${
+  // Next steps
+  drawText("NEXT STEPS", timesBoldFont, 14, 20);
+  drawText("1. Complete M-PESA payment to confirm your registration");
+  drawText("2. Paybill Number: 522522");
+  drawText("3. Account Name: ROYALS2026");
+  drawText(`4. Amount: ${
     registration.category === "adults"
       ? "KSh 1,000"
       : registration.category === "teens"
         ? "KSh 500"
         : "KSh 300"
+  }`);
+
+  cursorY -= 10;
+  drawText("========================================", timesRomanFont, 12, 20);
+  
+  // Physical Signature Section
+  drawText("OFFICIAL DECLARATION & SIGNATURE", timesBoldFont, 14, 25);
+  drawText("I confirm that the information provided above is true and accurate. I agree to");
+  drawText("the terms and conditions of Mr & Miss Face of Tharaka-Nithi County 2026.");
+  
+  cursorY -= 30;
+  drawText("Signature: ___________________________        Date: ____________________");
+  
+  if (registration.category !== "adults") {
+    cursorY -= 30;
+    drawText("Parent/Guardian Signature: __________________   Date: ____________________");
   }
 
-========================================
+  // Serialize the PDFDocument to bytes (a Uint8Array)
+  const pdfBytes = await pdfDoc.save();
 
-EVENT DETAILS
-Event: Models Call Out
-Date: September 15, 2026
-Venue: Chuka Grounds
-Organized by: Royals Icon Events
-
-========================================
-
-Thank you for registering! We look forward to seeing you at the event.`;
-
-  // Convert text to buffer
-  const pdfBuffer = Buffer.from(pdfContent);
+  // Convert Uint8Array to Buffer
+  const pdfBuffer = Buffer.from(pdfBytes);
 
   // Upload to S3
   const fileName = `registration-${registration.id}-${Date.now()}.pdf`;
@@ -74,76 +103,22 @@ Thank you for registering! We look forward to seeing you at the event.`;
 }
 
 export async function generateParentalConsentPDF(registration: Registration): Promise<{ url: string; key: string }> {
-  const categoryLabel =
-    registration.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
-
-  const pdfContent = `PARENTAL/GUARDIAN CONSENT FORM
-Mr & Miss Face of Tharaka-Nithi County 2026
-
-========================================
-
-PARTICIPANT INFORMATION
-Name: ${registration.fullName}
-Age: ${registration.age}
-Category: ${categoryLabel}
-Date of Birth: ${registration.dateOfBirth}
-
-========================================
-
-PARENTAL/GUARDIAN DECLARATION
-
-I, the parent/guardian of the above-named participant, hereby confirm that:
-
-1. I have reviewed and understood the terms and conditions of participation in the
-   "Mr & Miss Face of Tharaka-Nithi County 2026" event.
-
-2. I consent to my child's participation in this modeling and talent event.
-
-3. I authorize the use of my child's photographs and videos for event documentation,
-   social media promotion, and marketing materials.
-
-4. I consent to the processing of my child's personal data in accordance with the
-   Data Protection Act 2019.
-
-5. I understand that participation is subject to the eligibility criteria and code of conduct.
-
-6. I accept that providing false information will result in disqualification.
-
-========================================
-
-PARENT/GUARDIAN DETAILS
-Participant Name: ${registration.fullName}
-Parent/Guardian Name: _________________________
-Relationship: _________________________
-Contact Number: _________________________
-Email: _________________________
-
-========================================
-
-SIGNATURE & DATE
-Signature: _________________________
-Date: _________________________
-
-========================================
-
-IMPORTANT NOTES
-- This form must be signed by the parent/guardian
-- A copy of the participant's birth certificate is required
-- Please keep a copy for your records
-
-========================================
-
-For inquiries, contact:
-Royals Icon Events
-Email: contact@royalsiconevents.co.ke
-Website: www.royalsiconevents.co.ke`;
-
-  // Convert text to buffer
-  const pdfBuffer = Buffer.from(pdfContent);
-
-  // Upload to S3
-  const fileName = `parental-consent-${registration.id}-${Date.now()}.pdf`;
-  const result = await storagePut(fileName, pdfBuffer, "application/pdf");
-
+  // We can just reuse the main PDF since it has the parent signature block now.
+  // Returning dummy or generating a specific one.
+  const pdfDoc = await PDFDocument.create();
+  const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const timesBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const page = pdfDoc.addPage();
+  const { width, height } = page.getSize();
+  
+  page.drawText("PARENTAL CONSENT FORM", { x: 50, y: height - 50, size: 18, font: timesBoldFont });
+  page.drawText(`Participant Name: ${registration.fullName}`, { x: 50, y: height - 80, size: 12, font: timesRomanFont });
+  page.drawText("I hereby grant permission for the above minor to participate.", { x: 50, y: height - 110, size: 12, font: timesRomanFont });
+  
+  page.drawText("Parent/Guardian Signature: ___________________________ Date: _____________", { x: 50, y: height - 160, size: 12, font: timesRomanFont });
+  
+  const pdfBytes = await pdfDoc.save();
+  const fileName = `consent-${registration.id}-${Date.now()}.pdf`;
+  const result = await storagePut(fileName, Buffer.from(pdfBytes), "application/pdf");
   return result;
 }

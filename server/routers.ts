@@ -1,7 +1,15 @@
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { createRegistration, getAllRegistrations, getRegistrationsByCategory, getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations } from "./db";
+import {
+  createRegistration, getAllRegistrations, getRegistrationById, getRegistrationsByCategory,
+  getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations,
+  createEventSponsor, getAllEventSponsors, deleteEventSponsor,
+  createArtistRegistration, getAllArtistRegistrations, deleteArtistRegistration,
+  createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
+  getSiteSettings, upsertSiteSetting,
+  getPartnerLogos, createPartnerLogo, togglePartnerLogoStatus, deletePartnerLogo,
+} from "./db";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { systemRouter } from "./_core/systemRouter";
@@ -16,9 +24,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
@@ -33,13 +39,9 @@ export const appRouter = router({
       .query(async ({ input }) => {
         try {
           let registrations = await getAllRegistrations();
-
-          // Filter by category if provided
           if (input.category) {
             registrations = registrations.filter(r => r.category === input.category);
           }
-
-          // Filter by search query (name or talents)
           if (input.search) {
             const query = input.search.toLowerCase();
             registrations = registrations.filter(r =>
@@ -47,10 +49,8 @@ export const appRouter = router({
               (r.talents && r.talents.toLowerCase().includes(query))
             );
           }
-
-          // Return only public-safe fields
           return registrations
-            .filter(r => r.photoUrl && r.consentPhotoVideo) // Only show if they consented
+            .filter(r => r.photoUrl && r.consentPhotoVideo)
             .map(r => ({
               id: r.id,
               fullName: r.fullName,
@@ -63,14 +63,26 @@ export const appRouter = router({
             }));
         } catch (error) {
           console.error("Gallery fetch error:", error);
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to fetch gallery",
-          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch gallery" });
         }
       }),
   }),
 
+  // ============ Public Site Settings ============
+  siteSettings: router({
+    getAll: publicProcedure.query(async () => {
+      try {
+        const settings = await getSiteSettings();
+        const result: Record<string, string> = {};
+        settings.forEach(s => { if (s.value) result[s.key] = s.value; });
+        return result;
+      } catch {
+        return {};
+      }
+    }),
+  }),
+
+  // ============ Model Registration ============
   registration: router({
     submit: publicProcedure
       .input(
@@ -87,6 +99,7 @@ export const appRouter = router({
           talents: z.string().optional(),
           portfolioUrl: z.string().optional(),
           portfolioKey: z.string().optional(),
+          socialMediaHandles: z.string().optional(), // JSON string
           consentPhotoVideo: z.boolean().default(false),
           consentDataProcessing: z.boolean().default(false),
           consentTerms: z.boolean().default(false),
@@ -97,7 +110,7 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const insertId = await createRegistration(input);
         const registrationId = `REG-${insertId.toString().padStart(3, '0')}`;
-        
+
         // Generate PDFs asynchronously (don't block the response)
         setImmediate(async () => {
           try {
@@ -111,9 +124,9 @@ export const appRouter = router({
               posterUrl: null,
               posterKey: null,
             } as any;
-            
+
             await generateRegistrationPDF(mockRegistration);
-            
+
             if (input.category !== "adults" && input.parentalConsentSigned) {
               await generateParentalConsentPDF(mockRegistration);
             }
@@ -121,7 +134,7 @@ export const appRouter = router({
             console.error("Error generating PDFs:", error);
           }
         });
-        
+
         return { success: true, registrationId };
       }),
 
@@ -140,20 +153,12 @@ export const appRouter = router({
 
           const posterImage = await generateImage({
             prompt,
-            originalImages: [
-              {
-                url: input.photoUrl,
-                mimeType: "image/jpeg",
-              },
-            ],
+            originalImages: [{ url: input.photoUrl, mimeType: "image/jpeg" }],
           });
 
           return { success: true, posterUrl: posterImage.url };
         } catch (error) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to generate poster",
-          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate poster" });
         }
       }),
 
@@ -177,131 +182,232 @@ export const appRouter = router({
             eventDate: input.eventDate,
             venue: input.venue,
           });
-
           return { success: true, certificateUrl: url, certificateKey: key };
         } catch (error) {
           console.error("Certificate generation error:", error);
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "Failed to generate certificate",
-          });
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate certificate" });
+        }
+      }),
+
+    downloadRegistrationPdf: publicProcedure
+      .input(
+        z.object({
+          registrationId: z.string(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          const registration = await getRegistrationById(input.registrationId);
+          if (!registration) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Registration not found" });
+          }
+
+          const { url, key } = await generateRegistrationPDF(registration);
+          return { success: true, pdfUrl: url, pdfKey: key };
+        } catch (error) {
+          console.error("PDF generation error:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate PDF" });
         }
       }),
   }),
 
+  // ============ Sponsor/Partner Registration ============
+  sponsor: router({
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          organizationName: z.string().optional(),
+          email: z.string().email(),
+          phoneNumber: z.string().min(9),
+          sponsorType: z.enum(["sponsor", "partner"]),
+          message: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await createEventSponsor(input);
+        return { success: true, id };
+      }),
+  }),
+
+  // ============ Artist Registration ============
+  artist: router({
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          stageName: z.string().optional(),
+          email: z.string().email(),
+          phoneNumber: z.string().min(9),
+          artType: z.string().min(1),
+          socialMediaHandles: z.string().optional(),
+          message: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await createArtistRegistration(input);
+        return { success: true, id };
+      }),
+  }),
+
+  // ============ Showcase Registration ============
+  showcase: router({
+    register: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          businessName: z.string().optional(),
+          email: z.string().email(),
+          phoneNumber: z.string().min(9),
+          showcaseType: z.string().min(1),
+          description: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await createShowcaseRegistration(input);
+        return { success: true, id };
+      }),
+  }),
+
+  // ============ Admin ============
   admin: router({
+    // Model registrations
     getRegistrationsByCategory: protectedProcedure
       .input(z.enum(["adults", "teens", "little_stars"]))
       .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         return await getRegistrationsByCategory(input);
       }),
 
     getAllRegistrations: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-      }
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
       return await getAllRegistrations();
     }),
 
     getStats: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-      }
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
       return await getRegistrationStats();
     }),
 
     search: protectedProcedure
       .input(z.string())
       .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         return await searchRegistrations(input);
       }),
 
     filter: protectedProcedure
-      .input(
-        z.object({
+      .input(z.object({
+        category: z.enum(["adults", "teens", "little_stars"]).optional(),
+        paymentStatus: z.enum(["pending", "completed"]).optional(),
+        ageMin: z.number().optional(),
+        ageMax: z.number().optional(),
+        county: z.string().optional(),
+      }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await filterRegistrations(input);
+      }),
+
+    searchAndFilter: protectedProcedure
+      .input(z.object({
+        query: z.string().default(""),
+        filters: z.object({
           category: z.enum(["adults", "teens", "little_stars"]).optional(),
           paymentStatus: z.enum(["pending", "completed"]).optional(),
           ageMin: z.number().optional(),
           ageMax: z.number().optional(),
           county: z.string().optional(),
-        })
-      )
+        }).optional(),
+      }))
       .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
-        return await filterRegistrations(input);
-      }),
-
-    searchAndFilter: protectedProcedure
-      .input(
-        z.object({
-          query: z.string().default(""),
-          filters: z.object({
-            category: z.enum(["adults", "teens", "little_stars"]).optional(),
-            paymentStatus: z.enum(["pending", "completed"]).optional(),
-            ageMin: z.number().optional(),
-            ageMax: z.number().optional(),
-            county: z.string().optional(),
-          }).optional(),
-        })
-      )
-      .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         return await searchAndFilterRegistrations(input.query, input.filters || {});
       }),
-      
+
     // Partner Logos
     getPartnerLogos: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") {
-        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-      }
-      const { getPartnerLogos } = await import("./db");
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
       return await getPartnerLogos();
     }),
-    
+
     createPartnerLogo: protectedProcedure
-      .input(z.object({
-        name: z.string(),
-        logoUrl: z.string(),
-        logoKey: z.string(),
-      }))
+      .input(z.object({ name: z.string(), logoUrl: z.string(), logoKey: z.string() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
-        const { createPartnerLogo } = await import("./db");
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         await createPartnerLogo(input);
         return { success: true };
       }),
-      
+
     togglePartnerLogoStatus: protectedProcedure
       .input(z.object({ id: z.number(), isActive: z.boolean() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
-        const { togglePartnerLogoStatus } = await import("./db");
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         await togglePartnerLogoStatus(input.id, input.isActive);
         return { success: true };
       }),
-      
+
     deletePartnerLogo: protectedProcedure
       .input(z.number())
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") {
-          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
-        }
-        const { deletePartnerLogo } = await import("./db");
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         await deletePartnerLogo(input);
+        return { success: true };
+      }),
+
+    // Sponsor registrations
+    getSponsors: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllEventSponsors();
+    }),
+
+    deleteSponsor: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await deleteEventSponsor(input);
+        return { success: true };
+      }),
+
+    // Artist registrations
+    getArtists: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllArtistRegistrations();
+    }),
+
+    deleteArtist: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await deleteArtistRegistration(input);
+        return { success: true };
+      }),
+
+    // Showcase registrations
+    getShowcases: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllShowcaseRegistrations();
+    }),
+
+    deleteShowcase: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await deleteShowcaseRegistration(input);
+        return { success: true };
+      }),
+
+    // Site settings (social media links)
+    getSiteSettings: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getSiteSettings();
+    }),
+
+    updateSiteSetting: protectedProcedure
+      .input(z.object({ key: z.string(), value: z.string() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await upsertSiteSetting(input.key, input.value);
         return { success: true };
       }),
   }),
