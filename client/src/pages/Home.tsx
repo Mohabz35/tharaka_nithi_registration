@@ -1,17 +1,21 @@
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
-import FeaturedModelsCarousel from "@/components/FeaturedModelsCarousel";
-import SponsorRegistrationForm from "@/components/SponsorRegistrationForm";
-import ArtistRegistrationForm from "@/components/ArtistRegistrationForm";
-import ShowcaseRegistrationForm from "@/components/ShowcaseRegistrationForm";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Crown, ChevronDown, Image } from "lucide-react";
+import { Image } from "lucide-react";
 import { useLocation } from "wouter";
+
+// Lazy-load heavy below-the-fold components
+const FeaturedModelsCarousel = lazy(() => import("@/components/FeaturedModelsCarousel"));
+const SponsorRegistrationForm = lazy(() => import("@/components/SponsorRegistrationForm"));
+const ArtistRegistrationForm = lazy(() => import("@/components/ArtistRegistrationForm"));
+const ShowcaseRegistrationForm = lazy(() => import("@/components/ShowcaseRegistrationForm"));
+
+const SectionLoader = () => <div className="h-32 animate-pulse bg-[#2a0a1a] rounded-lg" />;
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -31,7 +35,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            <img src="/royal_icon_events_logo_new.png" alt="Royals Icon Events" className="w-40 h-40 drop-shadow-lg animate-lively-logo rounded-full border-2 border-[#d4af37]" />
+            <img src="/royal_icon_events_logo_new.png" alt="Royals Icon Events - Mr and Miss Face of Tharaka-Nithi County 2026 organizer" className="w-40 h-40 drop-shadow-lg animate-lively-logo rounded-full border-2 border-[#d4af37]" fetchPriority="high" />
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#d4af37] mb-2 drop-shadow-lg leading-tight">
@@ -160,7 +164,9 @@ export default function Home() {
       </section>
 
       {/* Featured Models Carousel */}
-      <FeaturedModelsCarousel />
+      <Suspense fallback={<SectionLoader />}>
+        <FeaturedModelsCarousel />
+      </Suspense>
 
       {/* Registration Section */}
       <section id="register-section" className="py-16 px-4 sm:px-6 lg:px-8">
@@ -240,7 +246,9 @@ export default function Home() {
       {/* Sponsor & Partner Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#2a0a1a] to-[#4a1a2a]">
         <div className="max-w-4xl mx-auto">
-          <SponsorRegistrationForm />
+          <Suspense fallback={<SectionLoader />}>
+            <SponsorRegistrationForm />
+          </Suspense>
         </div>
       </section>
 
@@ -249,8 +257,12 @@ export default function Home() {
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-[#d4af37] mb-12">More Opportunities</h2>
           <div className="grid md:grid-cols-2 gap-8 text-left">
-            <ArtistRegistrationForm />
-            <ShowcaseRegistrationForm />
+            <Suspense fallback={<SectionLoader />}>
+              <ArtistRegistrationForm />
+            </Suspense>
+            <Suspense fallback={<SectionLoader />}>
+              <ShowcaseRegistrationForm />
+            </Suspense>
           </div>
         </div>
       </section>

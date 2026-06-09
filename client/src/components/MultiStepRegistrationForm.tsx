@@ -161,13 +161,14 @@ export default function MultiStepRegistrationForm({
   const handleSubmit = async () => {
     if (!validateStep()) return;
 
+    const toastId = toast.loading("Preparing your registration...");
+
     try {
       // Upload photo to S3
       let photoUrl = "";
       let photoKey = "";
       if (photoFile) {
-        const formDataPhoto = new FormData();
-        formDataPhoto.append("file", photoFile);
+        toast.loading("Uploading your photo... Please wait", { id: toastId });
         const response = await fetch("/api/upload", {
           method: "POST",
           body: photoFile,
@@ -176,6 +177,10 @@ export default function MultiStepRegistrationForm({
             "content-type": photoFile.type,
           },
         });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Upload failed: ${response.status}`);
+        }
         const data = await response.json();
         photoUrl = data.url;
         photoKey = data.key;
@@ -185,6 +190,7 @@ export default function MultiStepRegistrationForm({
       let portfolioUrl = "";
       let portfolioKey = "";
       if (formData.portfolioFile) {
+        toast.loading("Uploading your portfolio file... Please wait", { id: toastId });
         const response = await fetch("/api/upload", {
           method: "POST",
           body: formData.portfolioFile,
@@ -193,6 +199,10 @@ export default function MultiStepRegistrationForm({
             "content-type": formData.portfolioFile.type,
           },
         });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Portfolio upload failed: ${response.status}`);
+        }
         const data = await response.json();
         portfolioUrl = data.url;
         portfolioKey = data.key;
@@ -205,6 +215,8 @@ export default function MultiStepRegistrationForm({
         twitter: formData.twitter,
         facebook: formData.facebook,
       }) : undefined;
+
+      toast.loading("Saving your registration...", { id: toastId });
 
       // Submit registration
       const result = await submitMutation.mutateAsync({
@@ -227,16 +239,17 @@ export default function MultiStepRegistrationForm({
         parentalConsentSigned: formData.parentalConsentSigned,
       });
 
-      toast.success("Registration submitted successfully!");
+      toast.success("Registration submitted successfully! 🎉", { id: toastId });
       onSuccess({ 
         participantName: formData.fullName, 
         registrationId: result.registrationId || "REG-000" 
       });
-    } catch (error) {
-      toast.error("Failed to submit registration");
-      console.error(error);
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to submit registration. Please try again.", { id: toastId });
+      console.error("[Registration Error]", error);
     }
   };
+
 
   const steps: FormStep[] = ["personal", "talents", "consent", "review"];
   const currentStepIndex = steps.indexOf(currentStep);
