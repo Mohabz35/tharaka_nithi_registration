@@ -38,10 +38,15 @@ export const appRouter = router({
       )
       .query(async ({ input }) => {
         try {
-          const result = await searchAndFilterRegistrations(input.search || "", {
-            category: input.category,
-            hasPhoto: true
-          });
+          const result = await searchAndFilterRegistrations(
+            input.search || "", 
+            {
+              category: input.category,
+              hasPhoto: true
+            },
+            1, // page
+            500 // limit (fetch more for gallery since no pagination UI exists)
+          );
           
           return result.data.map(r => ({
               id: r.id,

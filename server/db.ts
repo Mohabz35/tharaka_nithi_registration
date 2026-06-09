@@ -18,12 +18,11 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       _client = postgres(process.env.DATABASE_URL, { 
-        max: 1, 
+        max: 10, 
         prepare: false, 
         ssl: 'require',
-        connect_timeout: 10,
+        connect_timeout: 30,
         idle_timeout: 20,
-        max_lifetime: 60 * 10, // 10 minutes
       });
       _db = drizzle(_client);
     } catch (error) {
