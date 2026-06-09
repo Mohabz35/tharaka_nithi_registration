@@ -2,8 +2,9 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 import { defineConfig } from "vite";
+import viteCompression from "vite-plugin-compression";
 
-const plugins = [react(), tailwindcss()];
+const plugins = [react(), tailwindcss(), viteCompression({ algorithm: "brotliCompress" })];
 
 export default defineConfig({
   plugins,

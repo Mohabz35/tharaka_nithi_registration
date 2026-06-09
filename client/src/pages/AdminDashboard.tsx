@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                               <TableCell>
                                 {registration.photoUrl ? (
                                   <a href={registration.photoUrl} target="_blank" rel="noreferrer">
-                                    <img src={registration.photoUrl} alt={registration.fullName} className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
+                                    <img src={registration.photoUrl} alt={registration.fullName} loading="lazy" className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
                                   </a>
                                 ) : <span className="text-gray-500 text-xs">—</span>}
                               </TableCell>
@@ -351,7 +351,7 @@ export default function AdminDashboard() {
                                 <TableCell>
                                   {registration.photoUrl ? (
                                     <a href={registration.photoUrl} target="_blank" rel="noreferrer">
-                                      <img src={registration.photoUrl} alt={registration.fullName} className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
+                                      <img src={registration.photoUrl} alt={registration.fullName} loading="lazy" className="w-10 h-10 rounded object-cover border border-[#d4af37]" />
                                     </a>
                                   ) : <span className="text-gray-500 text-xs">—</span>}
                                 </TableCell>

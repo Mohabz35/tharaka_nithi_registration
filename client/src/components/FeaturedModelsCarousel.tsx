@@ -82,6 +82,7 @@ export default function FeaturedModelsCarousel() {
                       <img
                         src={model.photoUrl}
                         alt={model.fullName}
+                        loading="lazy"
                         className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
                       />
                     ) : (

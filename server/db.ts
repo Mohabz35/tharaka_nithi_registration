@@ -1,4 +1,4 @@
-import { eq, or, ilike, desc } from "drizzle-orm";
+import { eq, or, ilike, desc, and, gte, lte, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -122,14 +122,15 @@ export async function searchRegistrations(query: string) {
   if (!db) {
     throw new Error("Database not available");
   }
-  const all = await db.select().from(registrations);
-  const lowerQuery = query.toLowerCase();
-  return all.filter(r =>
-    r.fullName.toLowerCase().includes(lowerQuery) ||
-    r.email.toLowerCase().includes(lowerQuery) ||
-    r.phoneNumber.includes(query) ||
-    r.countySubLocation.toLowerCase().includes(lowerQuery)
-  );
+  const searchPattern = `%${query}%`;
+  return await db.select().from(registrations).where(
+    or(
+      ilike(registrations.fullName, searchPattern),
+      ilike(registrations.email, searchPattern),
+      ilike(registrations.phoneNumber, searchPattern),
+      ilike(registrations.countySubLocation, searchPattern)
+    )
+  ).orderBy(desc(registrations.createdAt));
 }
 
 export async function filterRegistrations(filters: {
@@ -143,15 +144,15 @@ export async function filterRegistrations(filters: {
   if (!db) {
     throw new Error("Database not available");
   }
-  const all = await db.select().from(registrations);
-  return all.filter(r => {
-    if (filters.category && r.category !== filters.category) return false;
-    if (filters.paymentStatus && r.paymentStatus !== filters.paymentStatus) return false;
-    if (filters.ageMin && r.age < filters.ageMin) return false;
-    if (filters.ageMax && r.age > filters.ageMax) return false;
-    if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
-    return true;
-  });
+  
+  const conditions = [];
+  if (filters.category) conditions.push(eq(registrations.category as any, filters.category));
+  if (filters.paymentStatus) conditions.push(eq(registrations.paymentStatus, filters.paymentStatus));
+  if (filters.ageMin) conditions.push(gte(registrations.age, filters.ageMin));
+  if (filters.ageMax) conditions.push(lte(registrations.age, filters.ageMax));
+  if (filters.county) conditions.push(ilike(registrations.countySubLocation, `%${filters.county}%`));
+
+  return await db.select().from(registrations).where(and(...conditions)).orderBy(desc(registrations.createdAt));
 }
 
 export async function searchAndFilterRegistrations(query: string, filters: {
@@ -160,28 +161,37 @@ export async function searchAndFilterRegistrations(query: string, filters: {
   ageMin?: number;
   ageMax?: number;
   county?: string;
+  hasPhoto?: boolean;
 }) {
   const db = await getDb();
   if (!db) {
     throw new Error("Database not available");
   }
-  const all = await db.select().from(registrations);
-  const lowerQuery = query.toLowerCase();
-  return all.filter(r => {
-    const matchesSearch = !query || (
-      r.fullName.toLowerCase().includes(lowerQuery) ||
-      r.email.toLowerCase().includes(lowerQuery) ||
-      r.phoneNumber.includes(query) ||
-      r.countySubLocation.toLowerCase().includes(lowerQuery)
-    );
-    if (!matchesSearch) return false;
-    if (filters.category && r.category !== filters.category) return false;
-    if (filters.paymentStatus && r.paymentStatus !== filters.paymentStatus) return false;
-    if (filters.ageMin && r.age < filters.ageMin) return false;
-    if (filters.ageMax && r.age > filters.ageMax) return false;
-    if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
-    return true;
-  });
+
+  const conditions = [];
+  
+  if (query) {
+    const searchPattern = `%${query}%`;
+    conditions.push(or(
+      ilike(registrations.fullName, searchPattern),
+      ilike(registrations.email, searchPattern),
+      ilike(registrations.phoneNumber, searchPattern),
+      ilike(registrations.countySubLocation, searchPattern)
+    ));
+  }
+
+  if (filters.category) conditions.push(eq(registrations.category as any, filters.category));
+  if (filters.paymentStatus) conditions.push(eq(registrations.paymentStatus, filters.paymentStatus));
+  if (filters.ageMin) conditions.push(gte(registrations.age, filters.ageMin));
+  if (filters.ageMax) conditions.push(lte(registrations.age, filters.ageMax));
+  if (filters.county) conditions.push(ilike(registrations.countySubLocation, `%${filters.county}%`));
+  if (filters.hasPhoto) conditions.push(isNotNull(registrations.photoUrl));
+
+  if (conditions.length === 0) {
+    return await db.select().from(registrations).orderBy(desc(registrations.createdAt));
+  }
+
+  return await db.select().from(registrations).where(and(...conditions)).orderBy(desc(registrations.createdAt));
 }
 
 // ============ Partner Logos ============
