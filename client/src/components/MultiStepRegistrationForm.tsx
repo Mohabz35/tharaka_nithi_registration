@@ -9,7 +9,7 @@ import { toast } from "sonner";
 
 interface MultiStepRegistrationFormProps {
   category: "adults" | "teens" | "little_stars";
-  onSuccess: () => void;
+  onSuccess: (data: { participantName: string; registrationId: string }) => void;
 }
 
 type FormStep = "personal" | "talents" | "consent" | "review";
@@ -184,7 +184,7 @@ export default function MultiStepRegistrationForm({
       }
 
       // Submit registration
-      await submitMutation.mutateAsync({
+      const result = await submitMutation.mutateAsync({
         fullName: formData.fullName,
         dateOfBirth: formData.dateOfBirth,
         age: formData.age,
@@ -204,7 +204,10 @@ export default function MultiStepRegistrationForm({
       });
 
       toast.success("Registration submitted successfully!");
-      onSuccess();
+      onSuccess({ 
+        participantName: formData.fullName, 
+        registrationId: result.registrationId || "REG-000" 
+      });
     } catch (error) {
       toast.error("Failed to submit registration");
       console.error(error);
@@ -270,8 +273,13 @@ export default function MultiStepRegistrationForm({
                 type="date"
                 value={formData.dateOfBirth}
                 onChange={handleDateChange}
-                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+                className={`bg-[#4a1a2a] text-white ${
+                  fieldErrors.dateOfBirth ? "border-red-500 border-2" : "border-[#d4af37]"
+                }`}
               />
+              {fieldErrors.dateOfBirth && (
+                <p className="text-red-400 text-sm mt-1">{fieldErrors.dateOfBirth}</p>
+              )}
               {formData.age > 0 && (
                 <p className="text-[#d4af37] text-sm mt-1">Age: {formData.age} years</p>
               )}
@@ -397,49 +405,61 @@ export default function MultiStepRegistrationForm({
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={formData.consentPhotoVideo}
-                  onCheckedChange={(checked) => setFormData({ ...formData, consentPhotoVideo: checked as boolean })}
-                  className="mt-1"
-                />
-                <label className="text-white text-sm">
-                  I consent to the use of my photographs and videos for event documentation, social media promotion, and marketing materials.
-                </label>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={formData.consentPhotoVideo}
+                    onCheckedChange={(checked) => setFormData({ ...formData, consentPhotoVideo: checked as boolean })}
+                    className={`mt-1 ${fieldErrors.consentPhotoVideo ? 'border-red-500' : ''}`}
+                  />
+                  <label className="text-white text-sm">
+                    I consent to the use of my photographs and videos for event documentation, social media promotion, and marketing materials.
+                  </label>
+                </div>
+                {fieldErrors.consentPhotoVideo && <p className="text-red-400 text-sm ml-7">{fieldErrors.consentPhotoVideo}</p>}
               </div>
 
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={formData.consentDataProcessing}
-                  onCheckedChange={(checked) => setFormData({ ...formData, consentDataProcessing: checked as boolean })}
-                  className="mt-1"
-                />
-                <label className="text-white text-sm">
-                  I consent to the processing of my personal data in accordance with the Data Protection Act 2019 for event registration, communication, and event management purposes.
-                </label>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={formData.consentDataProcessing}
+                    onCheckedChange={(checked) => setFormData({ ...formData, consentDataProcessing: checked as boolean })}
+                    className={`mt-1 ${fieldErrors.consentDataProcessing ? 'border-red-500' : ''}`}
+                  />
+                  <label className="text-white text-sm">
+                    I consent to the processing of my personal data in accordance with the Data Protection Act 2019 for event registration, communication, and event management purposes.
+                  </label>
+                </div>
+                {fieldErrors.consentDataProcessing && <p className="text-red-400 text-sm ml-7">{fieldErrors.consentDataProcessing}</p>}
               </div>
 
-              <div className="flex items-start gap-3">
-                <Checkbox
-                  checked={formData.consentTerms}
-                  onCheckedChange={(checked) => setFormData({ ...formData, consentTerms: checked as boolean })}
-                  className="mt-1"
-                />
-                <label className="text-white text-sm">
-                  I accept the terms and conditions and understand that providing false information will result in disqualification.
-                </label>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    checked={formData.consentTerms}
+                    onCheckedChange={(checked) => setFormData({ ...formData, consentTerms: checked as boolean })}
+                    className={`mt-1 ${fieldErrors.consentTerms ? 'border-red-500' : ''}`}
+                  />
+                  <label className="text-white text-sm">
+                    I accept the terms and conditions and understand that providing false information will result in disqualification.
+                  </label>
+                </div>
+                {fieldErrors.consentTerms && <p className="text-red-400 text-sm ml-7">{fieldErrors.consentTerms}</p>}
               </div>
 
               {(category === "teens" || category === "little_stars") && (
-                <div className="flex items-start gap-3 bg-[#4a1a2a] p-4 rounded-lg border border-[#d4af37]">
-                  <Checkbox
-                    checked={formData.parentalConsentSigned}
-                    onCheckedChange={(checked) => setFormData({ ...formData, parentalConsentSigned: checked as boolean })}
-                    className="mt-1"
-                  />
-                  <label className="text-white text-sm">
-                    Parent/Guardian has reviewed and consented to all terms. I confirm that I have parental/guardian permission to participate.
-                  </label>
+                <div className={`flex flex-col gap-1 bg-[#4a1a2a] p-4 rounded-lg border ${fieldErrors.parentalConsent ? 'border-red-500' : 'border-[#d4af37]'}`}>
+                  <div className="flex items-start gap-3">
+                    <Checkbox
+                      checked={formData.parentalConsentSigned}
+                      onCheckedChange={(checked) => setFormData({ ...formData, parentalConsentSigned: checked as boolean })}
+                      className={`mt-1 ${fieldErrors.parentalConsent ? 'border-red-500' : ''}`}
+                    />
+                    <label className="text-white text-sm">
+                      Parent/Guardian has reviewed and consented to all terms. I confirm that I have parental/guardian permission to participate.
+                    </label>
+                  </div>
+                  {fieldErrors.parentalConsent && <p className="text-red-400 text-sm ml-7">{fieldErrors.parentalConsent}</p>}
                 </div>
               )}
             </div>

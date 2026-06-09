@@ -8,6 +8,7 @@ import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchF
 import { trpc } from "@/lib/trpc";
 import { Download, LogOut, Loader2 } from "lucide-react";
 import { useLocation } from "wouter";
+import PartnerLogosManager from "@/components/PartnerLogosManager";
 
 export default function AdminDashboard() {
   const { user, logout, loading } = useAuth();
@@ -179,15 +180,27 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Search and Filter Component */}
-          <AdminSearchFilter
-            onSearch={handleSearch}
-            onReset={handleReset}
-            isLoading={isLoading}
-          />
+          {/* Admin Sections */}
+          <Tabs defaultValue="registrations" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 bg-[#2a0a1a] mb-6">
+              <TabsTrigger value="registrations" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white">
+                Registrations
+              </TabsTrigger>
+              <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white">
+                Certificate Partners
+              </TabsTrigger>
+            </TabsList>
 
-          {/* Registrations Table */}
-          <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
+            <TabsContent value="registrations">
+              {/* Search and Filter Component */}
+              <AdminSearchFilter
+                onSearch={handleSearch}
+                onReset={handleReset}
+                isLoading={isLoading}
+              />
+
+              {/* Registrations Table */}
+              <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="text-[#d4af37]">
@@ -340,6 +353,12 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+            </TabsContent>
+            
+            <TabsContent value="partners">
+              <PartnerLogosManager />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

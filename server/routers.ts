@@ -95,13 +95,14 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        await createRegistration(input);
+        const insertId = await createRegistration(input);
+        const registrationId = `REG-${insertId.toString().padStart(3, '0')}`;
         
         // Generate PDFs asynchronously (don't block the response)
         setImmediate(async () => {
           try {
             const mockRegistration = {
-              id: 0,
+              id: insertId,
               ...input,
               paymentStatus: "pending" as const,
               registrationDate: new Date(),
@@ -121,7 +122,7 @@ export const appRouter = router({
           }
         });
         
-        return { success: true };
+        return { success: true, registrationId };
       }),
 
     generatePoster: publicProcedure
@@ -256,6 +257,52 @@ export const appRouter = router({
           throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         }
         return await searchAndFilterRegistrations(input.query, input.filters || {});
+      }),
+      
+    // Partner Logos
+    getPartnerLogos: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      }
+      const { getPartnerLogos } = await import("./db");
+      return await getPartnerLogos();
+    }),
+    
+    createPartnerLogo: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        logoUrl: z.string(),
+        logoKey: z.string(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        const { createPartnerLogo } = await import("./db");
+        await createPartnerLogo(input);
+        return { success: true };
+      }),
+      
+    togglePartnerLogoStatus: protectedProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        const { togglePartnerLogoStatus } = await import("./db");
+        await togglePartnerLogoStatus(input.id, input.isActive);
+        return { success: true };
+      }),
+      
+    deletePartnerLogo: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        }
+        const { deletePartnerLogo } = await import("./db");
+        await deletePartnerLogo(input);
+        return { success: true };
       }),
   }),
 });

@@ -6,21 +6,21 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 
-interface PaymentModalProps {
+interface SuccessModalProps {
   isOpen: boolean;
   onClose: () => void;
   category: "adults" | "teens" | "little_stars";
-  participantName?: string;
-  registrationId?: string;
+  participantName: string;
+  registrationId: string;
 }
 
-export default function PaymentModal({ 
+export default function SuccessModal({ 
   isOpen, 
   onClose, 
   category, 
-  participantName = "Participant", 
-  registrationId = "REG-001" 
-}: PaymentModalProps) {
+  participantName, 
+  registrationId 
+}: SuccessModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
 

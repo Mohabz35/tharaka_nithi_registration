@@ -1,4 +1,4 @@
-import { PDFDocument, PDFPage, rgb, degrees } from "pdf-lib";
+import { PDFDocument, PDFPage, rgb, degrees, StandardFonts } from "pdf-lib";
 import { storagePut } from "../storage";
 
 export interface CertificateData {
@@ -19,175 +19,187 @@ const getCategoryLabel = (category: string): string => {
   return labels[category] || category;
 };
 
+// Colors
+const bgColor = rgb(35/255, 8/255, 12/255); // Deep burgundy
+const gold = rgb(218/255, 165/255, 32/255);
+const goldBright = rgb(255/255, 223/255, 128/255);
+const goldDark = rgb(139/255, 101/255, 20/255);
+const whiteColor = rgb(1, 1, 1);
+const silver = rgb(240/255, 240/255, 245/255);
+
 export async function generateCertificate(data: CertificateData): Promise<{ url: string; key: string }> {
-  // Create a new PDF document
+  // Create a new PDF document (A4 Portrait instead of Landscape to match 1600x2200 ratio)
   const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([842, 595]); // A4 landscape in points
+  const page = pdfDoc.addPage([595, 842]); // A4 Portrait
 
   const { width, height } = page.getSize();
 
-  // Draw burgundy border
+  // Background
   page.drawRectangle({
-    x: 20,
-    y: 20,
-    width: width - 40,
-    height: height - 40,
-    borderColor: rgb(0.8, 0.68, 0.22), // Gold color
-    borderWidth: 3,
+    x: 0,
+    y: 0,
+    width,
+    height,
+    color: bgColor,
   });
 
-  // Draw inner decorative border
+  // Fonts
+  const fontBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
+  const fontRegular = await pdfDoc.embedFont(StandardFonts.TimesRoman);
+  const fontItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
+
+  // Border frame
+  const border = 20;
   page.drawRectangle({
-    x: 35,
-    y: 35,
-    width: width - 70,
-    height: height - 70,
-    borderColor: rgb(0.8, 0.68, 0.22),
+    x: border,
+    y: border,
+    width: width - border * 2,
+    height: height - border * 2,
+    borderColor: gold,
+    borderWidth: 3,
+  });
+  page.drawRectangle({
+    x: border + 6,
+    y: border + 6,
+    width: width - (border + 6) * 2,
+    height: height - (border + 6) * 2,
+    borderColor: goldDark,
+    borderWidth: 2,
+  });
+  page.drawRectangle({
+    x: border + 10,
+    y: border + 10,
+    width: width - (border + 10) * 2,
+    height: height - (border + 10) * 2,
+    borderColor: gold,
     borderWidth: 1,
   });
 
-  // Title
-  page.drawText("Certificate of Registration", {
-    x: width / 2 - 120,
-    y: height - 80,
-    size: 32,
-    color: rgb(0.29, 0.1, 0.16), // Burgundy
-    font: await pdfDoc.embedFont("Helvetica-Bold"),
-  });
+  // Diamond drawing helper
+  const drawDiamond = (x: number, y: number, size: number) => {
+    // In pdf-lib, polygons aren't directly supported by a single simple function without paths
+    // But we can draw a rotated square
+    page.drawRectangle({
+      x,
+      y,
+      width: size,
+      height: size,
+      color: silver,
+      borderColor: goldBright,
+      borderWidth: 1,
+      rotate: degrees(45)
+    });
+  };
 
-  // Subtitle
-  page.drawText("Mr & Miss Face of Tharaka-Nithi County 2026", {
-    x: width / 2 - 140,
-    y: height - 120,
-    size: 14,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
+  // Corner diamonds
+  drawDiamond(40, height - 40, 15);
+  drawDiamond(width - 40, height - 40, 15);
+  drawDiamond(40, 40, 15);
+  drawDiamond(width - 40, 40, 15);
+
+  // Layout text
+  let y = height - 150;
+
+  const drawCenteredText = (text: string, font: any, size: number, color: any, spaceAfter: number) => {
+    const textWidth = font.widthOfTextAtSize(text, size);
+    page.drawText(text, {
+      x: (width - textWidth) / 2,
+      y,
+      size,
+      font,
+      color,
+    });
+    y -= spaceAfter;
+  };
+
+  // Crown placeholder
+  drawCenteredText("♕", fontRegular, 40, gold, 50);
+
+  drawCenteredText("Certificate of Registration", fontBold, 28, goldBright, 40);
+  drawCenteredText("Mr & Miss", fontBold, 18, gold, 20);
+  drawCenteredText("FACE OF THARAKA-NITHI COUNTY", fontBold, 24, gold, 30);
+  drawCenteredText("2026", fontBold, 24, gold, 40);
 
   // Decorative line
   page.drawLine({
-    start: { x: 100, y: height - 140 },
-    end: { x: width - 100, y: height - 140 },
+    start: { x: width / 2 - 100, y: y + 20 },
+    end: { x: width / 2 + 100, y: y + 20 },
     thickness: 2,
-    color: rgb(0.8, 0.68, 0.22),
+    color: gold,
   });
-
-  // "This is to certify that" text
-  page.drawText("This is to certify that", {
-    x: width / 2 - 50,
-    y: height - 200,
-    size: 12,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
-
-  // Participant name (larger, bold)
-  page.drawText(data.participantName, {
-    x: width / 2 - 120,
-    y: height - 250,
-    size: 24,
-    color: rgb(0.8, 0.68, 0.22),
-    font: await pdfDoc.embedFont("Helvetica-Bold"),
-  });
-
-  // Underline for name
   page.drawLine({
-    start: { x: 100, y: height - 260 },
-    end: { x: width - 100, y: height - 260 },
+    start: { x: width / 2 - 75, y: y + 16 },
+    end: { x: width / 2 + 75, y: y + 16 },
     thickness: 1,
-    color: rgb(0.8, 0.68, 0.22),
+    color: goldDark,
   });
 
-  // Registration details
-  page.drawText("has successfully registered for the Models Call Out event", {
-    x: width / 2 - 140,
-    y: height - 300,
-    size: 12,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
+  y -= 20;
 
-  // Event details box
-  const detailsY = height - 380;
-  page.drawRectangle({
-    x: 100,
-    y: detailsY - 80,
-    width: width - 200,
-    height: 80,
-    borderColor: rgb(0.8, 0.68, 0.22),
-    borderWidth: 1,
-    color: rgb(0.29, 0.1, 0.16),
-    opacity: 0.05,
-  });
+  drawCenteredText("This is to certify that", fontRegular, 16, goldBright, 30);
 
-  // Details text
-  const detailsX = 120;
-  page.drawText(`Category: ${getCategoryLabel(data.category)}`, {
-    x: detailsX,
-    y: detailsY - 20,
-    size: 11,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
+  // Participant Name
+  drawCenteredText(data.participantName, fontBold, 26, whiteColor, 10);
+  page.drawLine({
+    start: { x: width / 2 - 120, y: y - 5 },
+    end: { x: width / 2 + 120, y: y - 5 },
+    thickness: 2,
+    color: gold,
   });
+  y -= 40;
 
-  page.drawText(`Registration ID: ${data.registrationId}`, {
-    x: detailsX,
-    y: detailsY - 40,
-    size: 11,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
+  drawCenteredText("has successfully registered for the Models Call Out event", fontRegular, 14, goldBright, 30);
+  drawCenteredText(`Category: ${getCategoryLabel(data.category)}`, fontBold, 16, gold, 20);
+  drawCenteredText(`Registration ID: ${data.registrationId}`, fontBold, 16, gold, 40);
 
-  page.drawText(`Event Date: ${data.eventDate} | Venue: ${data.venue}`, {
-    x: detailsX,
-    y: detailsY - 60,
-    size: 11,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
+  // Divider
+  page.drawLine({
+    start: { x: width / 2 - 60, y: y + 20 },
+    end: { x: width / 2 + 60, y: y + 20 },
+    thickness: 1,
+    color: gold,
   });
+  y -= 20;
 
-  // Signature and stamp area
-  const signatureY = 100;
-  page.drawText("Authorized by:", {
-    x: 100,
-    y: signatureY + 40,
-    size: 10,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
+  // Two Column Layout
+  const leftCenter = width * 0.35;
+  const rightCenter = width * 0.65;
+  const colY = y;
 
-  page.drawText("Royals Icon Events", {
-    x: 100,
-    y: signatureY + 20,
-    size: 11,
-    color: rgb(0.8, 0.68, 0.22),
-    font: await pdfDoc.embedFont("Helvetica-Bold"),
-  });
+  const dateLabel = "Event Date:";
+  const dateVal = data.eventDate || "September 12, 2026";
+  const venueLabel = "Venue:";
+  const venueVal = data.venue || "Chuka Grounds";
 
-  // Stamp placeholder
-  page.drawText("[Official Stamp]", {
-    x: width - 200,
-    y: signatureY + 30,
-    size: 10,
-    color: rgb(0.8, 0.68, 0.22),
-    font: await pdfDoc.embedFont("Helvetica-Oblique"),
-  });
+  page.drawText(dateLabel, { x: leftCenter - fontRegular.widthOfTextAtSize(dateLabel, 12)/2, y: colY, size: 12, font: fontRegular, color: goldBright });
+  page.drawText(dateVal, { x: leftCenter - fontBold.widthOfTextAtSize(dateVal, 14)/2, y: colY - 20, size: 14, font: fontBold, color: whiteColor });
 
-  // Date issued
-  const today = new Date();
-  const dateStr = today.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  page.drawText(venueLabel, { x: rightCenter - fontRegular.widthOfTextAtSize(venueLabel, 12)/2, y: colY, size: 12, font: fontRegular, color: goldBright });
+  page.drawText(venueVal, { x: rightCenter - fontBold.widthOfTextAtSize(venueVal, 14)/2, y: colY - 20, size: 14, font: fontBold, color: whiteColor });
 
-  page.drawText(`Date Issued: ${dateStr}`, {
-    x: width / 2 - 60,
-    y: 30,
-    size: 9,
-    color: rgb(0.29, 0.1, 0.16),
-    font: await pdfDoc.embedFont("Helvetica"),
-  });
+  y -= 80;
+
+  // Authorized by
+  drawCenteredText("Authorized by:", fontRegular, 12, goldBright, 20);
+  drawCenteredText("Royals Icon Events", fontItalic, 20, gold, 30);
+
+  // Date Issued
+  const issueDate = data.registrationDate ? new Date(data.registrationDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : new Date().toLocaleDateString();
+  drawCenteredText(`Date Issued: ${issueDate}`, fontRegular, 12, goldBright, 40);
+
+  // Official Seal
+  const sealY = y - 40;
+  const sealR = 40;
+  page.drawCircle({ x: width/2, y: sealY, size: sealR, borderColor: gold, borderWidth: 2 });
+  page.drawCircle({ x: width/2, y: sealY, size: sealR - 6, borderColor: goldDark, borderWidth: 1 });
+  
+  const sealText = "OFFICIAL SEAL";
+  page.drawText(sealText, { x: width/2 - fontBold.widthOfTextAtSize(sealText, 10)/2, y: sealY, size: 10, font: fontBold, color: gold });
+
+  // Bottom section
+  y = 80;
+  drawCenteredText("Fashion | Talent | Celebration", fontItalic, 14, goldBright, 20);
+  drawCenteredText("Organized by Royals Icon Events", fontRegular, 10, gold, 0);
 
   // Save PDF to bytes
   const pdfBytes = await pdfDoc.save();

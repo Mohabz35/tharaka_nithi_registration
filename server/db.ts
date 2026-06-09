@@ -1,15 +1,18 @@
-import { eq } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRegistration, InsertUser, registrations, users } from "../drizzle/schema";
+import { eq, or, ilike } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import { InsertRegistration, InsertUser, registrations, users, partner_logos, InsertPartnerLogo } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _client = postgres(process.env.DATABASE_URL, { max: 1 });
+      _db = drizzle(_client);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -54,7 +57,8 @@ export async function createRegistration(data: InsertRegistration) {
   if (!db) {
     throw new Error("Database not available");
   }
-  await db.insert(registrations).values(data);
+  const result = await db.insert(registrations).values(data).returning({ id: registrations.id });
+  return result[0].id;
 }
 
 export async function getRegistrationsByCategory(category: "adults" | "teens" | "little_stars") {
@@ -158,4 +162,38 @@ export async function searchAndFilterRegistrations(query: string, filters: {
     if (filters.county && !r.countySubLocation.toLowerCase().includes(filters.county.toLowerCase())) return false;
     return true;
   });
+}
+
+// --- Partner Logos ---
+
+export async function getPartnerLogos() {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  return await db.select().from(partner_logos);
+}
+
+export async function createPartnerLogo(data: InsertPartnerLogo) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.insert(partner_logos).values(data);
+}
+
+export async function togglePartnerLogoStatus(id: number, isActive: boolean) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.update(partner_logos).set({ isActive, updatedAt: new Date() }).where(eq(partner_logos.id, id));
+}
+
+export async function deletePartnerLogo(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.delete(partner_logos).where(eq(partner_logos.id, id));
 }
