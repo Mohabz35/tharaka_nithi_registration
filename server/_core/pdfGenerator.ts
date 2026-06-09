@@ -22,25 +22,47 @@ export async function generateRegistrationPDF(registration: Registration): Promi
 
   let cursorY = height - margin;
 
-  const drawText = (text: string, font = timesRomanFont, size = fontSize, offset = 20) => {
+  // Colors
+  const burgundy = rgb(0.29, 0.1, 0.16);
+  const gold = rgb(0.83, 0.68, 0.22);
+  const black = rgb(0, 0, 0);
+
+  // Borders
+  const border = 20;
+  page.drawRectangle({
+    x: border,
+    y: border,
+    width: width - border * 2,
+    height: height - border * 2,
+    borderColor: gold,
+    borderWidth: 3,
+  });
+  page.drawRectangle({
+    x: border + 6,
+    y: border + 6,
+    width: width - (border + 6) * 2,
+    height: height - (border + 6) * 2,
+    borderColor: burgundy,
+    borderWidth: 2,
+  });
+
+  const drawText = (text: string, font = timesRomanFont, size = fontSize, offset = 20, color = black) => {
     page.drawText(text, {
       x: margin,
       y: cursorY,
       size,
       font,
-      color: rgb(0, 0, 0),
+      color,
     });
     cursorY -= offset;
   };
 
   // Header
-  drawText("REGISTRATION CONFIRMATION", timesBoldFont, 18, 30);
-  drawText("Mr & Miss Face of Tharaka-Nithi County 2026", timesRomanFont, 14, 30);
-  
-  drawText("========================================", timesRomanFont, 12, 20);
+  drawText("REGISTRATION CONFIRMATION", timesBoldFont, 22, 30, gold);
+  drawText("Mr & Miss Face of Tharaka-Nithi County 2026", timesBoldFont, 16, 40, burgundy);
 
   // Participant Details
-  drawText("PARTICIPANT DETAILS", timesBoldFont, 14, 20);
+  drawText("PARTICIPANT DETAILS", timesBoldFont, 14, 25, burgundy);
   drawText(`Name: ${registration.fullName}`);
   drawText(`Date of Birth: ${registration.dateOfBirth}`);
   drawText(`Age: ${registration.age}`);
@@ -49,35 +71,25 @@ export async function generateRegistrationPDF(registration: Registration): Promi
   drawText(`Email: ${registration.email}`);
   drawText(`County Sub-Location: ${registration.countySubLocation}`);
   
-  cursorY -= 10;
-  drawText("========================================", timesRomanFont, 12, 20);
+  cursorY -= 15;
 
   // Registration Info
-  drawText("REGISTRATION INFORMATION", timesBoldFont, 14, 20);
+  drawText("REGISTRATION INFORMATION", timesBoldFont, 14, 25, burgundy);
   drawText(`Registration Date: ${new Date(registration.registrationDate).toLocaleDateString()}`);
-  drawText(`Payment Status: ${registration.paymentStatus}`);
+  drawText(`Payment Status: FREE`);
   
-  cursorY -= 10;
-  drawText("========================================", timesRomanFont, 12, 20);
+  cursorY -= 15;
 
   // Next steps
-  drawText("NEXT STEPS", timesBoldFont, 14, 20);
-  drawText("1. Complete M-PESA payment to confirm your registration");
-  drawText("2. Paybill Number: 522522");
-  drawText("3. Account Name: ROYALS2026");
-  drawText(`4. Amount: ${
-    registration.category === "adults"
-      ? "KSh 1,000"
-      : registration.category === "teens"
-        ? "KSh 500"
-        : "KSh 300"
-  }`);
+  drawText("IMPORTANT INFORMATION", timesBoldFont, 14, 25, burgundy);
+  drawText("1. Registration is completely FREE of charge.", timesBoldFont, 12, 20, black);
+  drawText("2. Keep this document safe as proof of your registration.", timesRomanFont, 12, 20, black);
+  drawText("3. You will be contacted regarding audition dates and venues.", timesRomanFont, 12, 20, black);
 
-  cursorY -= 10;
-  drawText("========================================", timesRomanFont, 12, 20);
+  cursorY -= 20;
   
   // Physical Signature Section
-  drawText("OFFICIAL DECLARATION & SIGNATURE", timesBoldFont, 14, 25);
+  drawText("OFFICIAL DECLARATION & SIGNATURE", timesBoldFont, 14, 25, burgundy);
   drawText("I confirm that the information provided above is true and accurate. I agree to");
   drawText("the terms and conditions of Mr & Miss Face of Tharaka-Nithi County 2026.");
   

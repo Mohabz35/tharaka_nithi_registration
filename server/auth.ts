@@ -12,14 +12,14 @@ export const authRouter = Router();
 
 export function hashPassword(password: string): string {
   const salt = crypto.randomBytes(16).toString("hex");
-  const derivedKey = crypto.scryptSync(password, salt, 64).toString("hex");
+  const derivedKey = crypto.scryptSync(password, salt, 64, { N: 1024, r: 8, p: 1 }).toString("hex");
   return `${salt}:${derivedKey}`;
 }
 
 function verifyPassword(password: string, hash: string): boolean {
   const [salt, key] = hash.split(":");
   if (!salt || !key) return false;
-  const derivedKey = crypto.scryptSync(password, salt, 64).toString("hex");
+  const derivedKey = crypto.scryptSync(password, salt, 64, { N: 1024, r: 8, p: 1 }).toString("hex");
   return key === derivedKey;
 }
 
