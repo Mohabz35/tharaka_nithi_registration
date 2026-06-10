@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Search, Filter, Loader2, MessageCircle, Heart } from "lucide-react";
+import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram } from "lucide-react";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 
 export default function Gallery() {
   const [, setLocation] = useLocation();
@@ -166,24 +167,56 @@ export default function Gallery() {
                       )}
 
                       {/* Social Sharing Buttons */}
-                      <div className="flex gap-2 mt-3">
+                      <div className="grid grid-cols-4 gap-1 mt-3">
+                        {/* WhatsApp */}
                         <button
+                          title="Share on WhatsApp"
                           onClick={() => {
                             const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026! Register at https://www.faceoftharakanithi.app`;
                             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="flex-1 bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          className="bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
                         >
-                          <MessageCircle className="w-3 h-3" /> Share
+                          <MessageCircle className="w-3 h-3" />
                         </button>
+                        {/* Facebook */}
                         <button
+                          title="Share on Facebook"
+                          onClick={() => {
+                            const url = encodeURIComponent("https://www.faceoftharakanithi.app");
+                            const quote = encodeURIComponent(`🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026!`);
+                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`, "_blank");
+                          }}
+                          className="bg-blue-700 hover:bg-blue-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                        >
+                          <Facebook className="w-3 h-3" />
+                        </button>
+                        {/* Twitter / X */}
+                        <button
+                          title="Share on Twitter/X"
                           onClick={() => {
                             const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! #FaceOfTharakaNithi`;
                             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="flex-1 bg-sky-700 hover:bg-sky-600 text-white text-xs py-2 rounded flex items-center justify-center gap-1 transition-colors"
+                          className="bg-sky-700 hover:bg-sky-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
                         >
-                          <Heart className="w-3 h-3" /> Tweet
+                          <Share2 className="w-3 h-3" />
+                        </button>
+                        {/* Instagram */}
+                        <button
+                          title="Share on Instagram"
+                          onClick={() => {
+                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026! Check out the gallery at https://www.faceoftharakanithi.app #FaceOfTharakaNithi #TharakaNithiModels2026`;
+                            if (navigator.share) {
+                              navigator.share({ title: "Face of Tharaka-Nithi 2026", text }).catch(() => {});
+                            } else {
+                              navigator.clipboard.writeText(text);
+                              toast.success("Caption copied! Paste it on Instagram.");
+                            }
+                          }}
+                          className="bg-gradient-to-br from-pink-600 to-purple-700 hover:from-pink-500 hover:to-purple-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                        >
+                          <Instagram className="w-3 h-3" />
                         </button>
                       </div>
                     </CardContent>

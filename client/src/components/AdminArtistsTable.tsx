@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 
 export default function AdminArtistsTable() {
-  const { data, isLoading } = trpc.artist.getAll.useQuery();
+  const { data, isLoading } = trpc.admin.getArtists.useQuery();
 
   if (isLoading) return <div className="text-center py-8 text-white"><Loader2 className="animate-spin mx-auto w-8 h-8 text-[#d4af37]" /></div>;
 

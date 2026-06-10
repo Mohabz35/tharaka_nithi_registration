@@ -85,6 +85,15 @@ export async function getAllRegistrations() {
   return await db.select().from(registrations).orderBy(desc(registrations.createdAt));
 }
 
+export async function deleteRegistration(id: number) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.delete(registrations).where(eq(registrations.id, id));
+  return true;
+}
+
 export async function getRegistrationById(registrationIdStr: string) {
   const db = await getDb();
   if (!db) {

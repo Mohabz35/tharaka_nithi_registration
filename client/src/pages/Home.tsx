@@ -289,8 +289,12 @@ export default function Home() {
             >
               Download Printable Form
             </Button>
-            <Button className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg">
-              Contact Support Panel
+            <Button 
+              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg flex flex-col h-auto"
+              onClick={() => window.open("https://wa.me/254702894309", "_blank")}
+            >
+              <span>Contact Support Panel</span>
+              <span className="text-sm font-normal mt-1">+254702894309</span>
             </Button>
           </div>
         </div>

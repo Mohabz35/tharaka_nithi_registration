@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
-import { Download, LogOut, Loader2 } from "lucide-react";
+import { Download, LogOut, Loader2, Trash2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { toast } from "sonner";
 import PartnerLogosManager from "@/components/PartnerLogosManager";
 import AdminSponsorsTable from "@/components/AdminSponsorsTable";
 import AdminArtistsTable from "@/components/AdminArtistsTable";
 import AdminShowcasesTable from "@/components/AdminShowcasesTable";
 import AdminSiteSettings from "@/components/AdminSiteSettings";
+import AdminAddContestantModal from "@/components/AdminAddContestantModal";
 
 const PAGE_SIZE = 50;
 
@@ -33,10 +36,27 @@ export default function AdminDashboard() {
   // Fetch registrations - always call all hooks, use enabled flag for auth
   const { data: stats, isLoading: isLoadingStats } = trpc.admin.getStats.useQuery(undefined, { enabled: isAdmin });
   const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isAdmin && !isSearchMode });
+  const utils = trpc.useContext();
   const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
     { query: searchQuery, filters: activeFilters, page: currentPage, limit: PAGE_SIZE },
     { enabled: isAdmin && isSearchMode }
   );
+
+  const deleteMutation = trpc.admin.deleteRegistration.useMutation({
+    onSuccess: () => {
+      toast.success("Contestant deleted successfully");
+      utils.admin.getRegistrationsByCategory.invalidate();
+      utils.admin.searchAndFilter.invalidate();
+      utils.admin.getStats.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to delete contestant");
+    }
+  });
+
+  const handleDelete = (id: number) => {
+    deleteMutation.mutate(id);
+  };
 
   const isLoading = loading || isLoadingStats || (isSearchMode ? isSearching : isLoadingCategory);
 
@@ -231,14 +251,21 @@ export default function AdminDashboard() {
                     : `Registrations by Category (${displayRegistrations?.length || 0})`}
                 </CardTitle>
               </div>
-              <Button
-                onClick={exportToCSV}
-                disabled={!displayRegistrations || displayRegistrations.length === 0}
-                className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Export CSV
-              </Button>
+              <div className="flex">
+                <Button
+                  onClick={exportToCSV}
+                  disabled={!displayRegistrations || displayRegistrations.length === 0}
+                  className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export CSV
+                </Button>
+                <AdminAddContestantModal onSuccess={() => {
+                  utils.admin.getRegistrationsByCategory.invalidate();
+                  utils.admin.searchAndFilter.invalidate();
+                  utils.admin.getStats.invalidate();
+                }} />
+              </div>
             </CardHeader>
 
             <CardContent>
@@ -261,6 +288,7 @@ export default function AdminDashboard() {
                             <TableHead className="text-[#d4af37]">Location</TableHead>
                             <TableHead className="text-[#d4af37]">Status</TableHead>
                             <TableHead className="text-[#d4af37]">Date</TableHead>
+                            <TableHead className="text-[#d4af37] text-right">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -296,6 +324,32 @@ export default function AdminDashboard() {
                               </TableCell>
                               <TableCell className="text-white text-xs">
                                 {new Date(registration.registrationDate).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="bg-[#2a0a1a] border-[#d4af37]">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle className="text-white">Delete Contestant</AlertDialogTitle>
+                                      <AlertDialogDescription className="text-gray-300">
+                                        Are you sure you want to delete {registration.fullName}? This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel className="bg-transparent text-white border-white hover:bg-white/10">Cancel</AlertDialogCancel>
+                                      <AlertDialogAction 
+                                        className="bg-red-600 hover:bg-red-700 text-white border-none"
+                                        onClick={() => handleDelete(registration.id)}
+                                      >
+                                        Delete
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -378,6 +432,7 @@ export default function AdminDashboard() {
                               <TableHead className="text-[#d4af37]">Location</TableHead>
                               <TableHead className="text-[#d4af37]">Status</TableHead>
                               <TableHead className="text-[#d4af37]">Date</TableHead>
+                              <TableHead className="text-[#d4af37] text-right">Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -404,11 +459,37 @@ export default function AdminDashboard() {
                                     {registration.paymentStatus}
                                   </span>
                                 </TableCell>
-                                <TableCell className="text-white text-xs">
-                                  {new Date(registration.registrationDate).toLocaleDateString()}
-                                </TableCell>
-                              </TableRow>
-                            ))}
+                                  <TableCell className="text-white text-xs">
+                                    {new Date(registration.registrationDate).toLocaleDateString()}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/50">
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent className="bg-[#2a0a1a] border-[#d4af37]">
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle className="text-white">Delete Contestant</AlertDialogTitle>
+                                          <AlertDialogDescription className="text-gray-300">
+                                            Are you sure you want to delete {registration.fullName}? This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel className="bg-transparent text-white border-white hover:bg-white/10">Cancel</AlertDialogCancel>
+                                          <AlertDialogAction 
+                                            className="bg-red-600 hover:bg-red-700 text-white border-none"
+                                            onClick={() => handleDelete(registration.id)}
+                                          >
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
                           </TableBody>
                         </Table>
                       </div>

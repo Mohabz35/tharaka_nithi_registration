@@ -130,16 +130,16 @@
 ## Phase 3 Enhancements
 
 ### Error Handling & Validation
-- [ ] Add error messages to registration form fields
-- [ ] Display validation feedback for each input
-- [ ] Show error toast notifications for submission failures
-- [ ] Add field-level error highlighting
+- [x] Add error messages to registration form fields
+- [x] Display validation feedback for each input
+- [x] Show error toast notifications for submission failures
+- [x] Add field-level error highlighting
 
 ### Free Registration
-- [ ] Remove all payment/fee references
-- [ ] Update messaging to "FREE Registration"
-- [ ] Remove M-PESA payment modal
-- [ ] Update confirmation message
+- [x] Remove all payment/fee references
+- [x] Update messaging to "FREE Registration"
+- [x] Remove M-PESA payment modal
+- [x] Update confirmation message
 
 ### Certificate Design
 - [ ] Design custom certificate template with poster theme
@@ -155,10 +155,11 @@
 - [ ] Optimize for mobile viewing
 
 ### Social Sharing
-- [ ] Add WhatsApp share button to gallery cards
-- [ ] Add Instagram share button to gallery cards
-- [ ] Add Facebook share button to gallery cards
-- [ ] Generate shareable links with model profile
+- [x] Add WhatsApp share button to gallery cards
+- [x] Add Instagram share button to gallery cards
+- [x] Add Facebook share button to gallery cards
+- [x] Add Twitter/X share button to gallery cards
+- [x] Generate shareable links with model profile
 
 ### Featured Models Carousel
 - [ ] Create rotating carousel component
@@ -167,10 +168,15 @@
 - [ ] Add manual navigation controls
 
 ### Gallery Enhancements
-- [ ] Add sorting by newest registration
-- [ ] Add sorting by specific talents
-- [ ] Add filter by talent categories
-- [ ] Improve gallery UI/UX
+- [x] Add sorting by newest registration
+- [x] Add sorting by specific talents
+- [x] Add filter by talent categories
+- [x] Improve gallery UI/UX
+
+### Admin Dashboard Bug Fixes
+- [x] Fix AdminArtistsTable tRPC path (artist.getAll → admin.getArtists)
+- [x] Fix AdminSponsorsTable tRPC path (sponsor.getAll → admin.getSponsors)
+- [x] Fix AdminShowcasesTable tRPC path (showcase.getAll → admin.getShowcases)
 
 ### New Sections
 - [ ] Create Sponsors section

@@ -4,6 +4,7 @@ import { z } from "zod";
 import {
   createRegistration, getAllRegistrations, getRegistrationById, getRegistrationsByCategory,
   getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations,
+  deleteRegistration,
   createEventSponsor, getAllEventSponsors, deleteEventSponsor,
   createArtistRegistration, getAllArtistRegistrations, deleteArtistRegistration,
   createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
@@ -281,6 +282,44 @@ export const appRouter = router({
       if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
       return await getAllRegistrations();
     }),
+
+    addRegistration: protectedProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1),
+          category: z.enum(["adults", "teens", "little_stars"]),
+          age: z.number(),
+          phoneNumber: z.string(),
+          email: z.string(),
+          countySubLocation: z.string(),
+          talents: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        
+        // Default values for an admin-added contestant
+        const registrationData = {
+          ...input,
+          dateOfBirth: new Date(new Date().getFullYear() - input.age, 0, 1).toISOString().split('T')[0], // Estimate DOB based on age
+          paymentStatus: "completed",
+          amountPaid: 0,
+          paymentReference: "ADMIN-ADDED",
+          consentPhotoVideo: true,
+          consentDataProcessing: true,
+          consentTerms: true,
+        };
+
+        const id = await createRegistration(registrationData);
+        return { success: true, id };
+      }),
+
+    deleteRegistration: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteRegistration(input);
+      }),
 
     getStats: protectedProcedure.query(async ({ ctx }) => {
       if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
