@@ -4,7 +4,7 @@ import { z } from "zod";
 import {
   createRegistration, getAllRegistrations, getRegistrationById, getRegistrationsByCategory,
   getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations,
-  deleteRegistration,
+  deleteRegistration, updateRegistration,
   createEventSponsor, getAllEventSponsors, deleteEventSponsor,
   createArtistRegistration, getAllArtistRegistrations, deleteArtistRegistration,
   createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
@@ -18,6 +18,7 @@ import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
 import { generateCertificate } from "./_core/certificateGenerator.js";
 import { storageGetSignedUrl } from "./storage.js";
+import { sendEmail, buildCertificateEmail, buildRegistrationEmail } from "./_core/emailService.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -322,6 +323,109 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         return await deleteRegistration(input);
+      }),
+
+    updateRegistration: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          fullName: z.string().optional(),
+          dateOfBirth: z.string().optional(),
+          age: z.number().optional(),
+          category: z.enum(["adults", "teens", "little_stars"]).optional(),
+          phoneNumber: z.string().optional(),
+          email: z.string().optional(),
+          countySubLocation: z.string().optional(),
+          talents: z.string().optional(),
+          socialMediaHandles: z.string().optional(),
+          paymentStatus: z.enum(["pending", "completed"]).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { id, ...data } = input;
+        return await updateRegistration(id, data);
+      }),
+
+    updatePhoto: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          photoUrl: z.string(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await updateRegistration(input.id, { photoUrl: input.photoUrl });
+      }),
+
+    sendBulkEmail: protectedProcedure
+      .input(
+        z.object({
+          type: z.enum(["certificate", "registration_pdf"]),
+          registrationIds: z.array(z.number()),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        
+        let sentCount = 0;
+        let failedCount = 0;
+
+        for (const id of input.registrationIds) {
+          try {
+            const regStr = "REG-" + String(id).padStart(3, "0");
+            const registration = await getRegistrationById(regStr);
+            if (!registration) {
+              failedCount++;
+              continue;
+            }
+
+            let attachmentUrl = "";
+            let emailContent;
+
+            if (input.type === "certificate") {
+              const { url, key } = await generateCertificate({
+                participantName: registration.fullName,
+                category: registration.category as any,
+                registrationId: regStr,
+                registrationDate: registration.registrationDate,
+                eventDate: "September 12, 2026", // Default or from settings
+                venue: "Chuka Grounds",
+              });
+              attachmentUrl = await storageGetSignedUrl(key);
+              emailContent = buildCertificateEmail(registration.fullName);
+            } else {
+              const { url, key } = await generateRegistrationPDF(registration);
+              attachmentUrl = await storageGetSignedUrl(key);
+              emailContent = buildRegistrationEmail(registration.fullName);
+            }
+
+            // Fetch the PDF to attach it
+            const pdfResponse = await fetch(attachmentUrl);
+            const pdfBuffer = await pdfResponse.arrayBuffer();
+
+            const sent = await sendEmail({
+              to: registration.email,
+              subject: emailContent.subject,
+              html: emailContent.html,
+              attachments: [
+                {
+                  filename: input.type === "certificate" ? "Certificate.pdf" : "Registration_Form.pdf",
+                  content: Buffer.from(pdfBuffer),
+                }
+              ]
+            });
+
+            if (sent) sentCount++;
+            else failedCount++;
+          } catch (e) {
+            console.error(`Failed to send email to ${id}:`, e);
+            failedCount++;
+          }
+        }
+        
+        return { success: true, sentCount, failedCount };
       }),
 
     getStats: protectedProcedure.query(async ({ ctx }) => {

@@ -8,4 +8,9 @@ export const ENV = {
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET ?? "",
   openaiApiUrl: process.env.OPENAI_API_URL ?? "",
   openaiApiKey: process.env.OPENAI_API_KEY ?? "",
+  smtpHost: process.env.SMTP_HOST ?? "smtp.gmail.com",
+  smtpPort: parseInt(process.env.SMTP_PORT ?? "587"),
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: process.env.SMTP_PASS ?? "",
+  smtpFrom: process.env.SMTP_FROM ?? "Royals Icon Events <noreply@faceoftharakanithi.app>",
 };

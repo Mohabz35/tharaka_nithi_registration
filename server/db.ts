@@ -94,6 +94,15 @@ export async function deleteRegistration(id: number) {
   return true;
 }
 
+export async function updateRegistration(id: number, data: Partial<InsertRegistration>) {
+  const db = await getDb();
+  if (!db) {
+    throw new Error("Database not available");
+  }
+  await db.update(registrations).set({ ...data, updatedAt: new Date() }).where(eq(registrations.id, id));
+  return true;
+}
+
 export async function getRegistrationById(registrationIdStr: string) {
   const db = await getDb();
   if (!db) {

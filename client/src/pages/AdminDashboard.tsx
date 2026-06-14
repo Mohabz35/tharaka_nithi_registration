@@ -16,6 +16,9 @@ import AdminArtistsTable from "@/components/AdminArtistsTable";
 import AdminShowcasesTable from "@/components/AdminShowcasesTable";
 import AdminSiteSettings from "@/components/AdminSiteSettings";
 import AdminAddContestantModal from "@/components/AdminAddContestantModal";
+import AdminEditContestantModal from "@/components/AdminEditContestantModal";
+import AdminPhotoEditor from "@/components/AdminPhotoEditor";
+import AdminBulkEmailPanel from "@/components/AdminBulkEmailPanel";
 
 const PAGE_SIZE = 50;
 
@@ -251,7 +254,8 @@ export default function AdminDashboard() {
                     : `Registrations by Category (${displayRegistrations?.length || 0})`}
                 </CardTitle>
               </div>
-              <div className="flex">
+              <div className="flex flex-wrap gap-2 justify-end">
+                <AdminBulkEmailPanel registrations={displayRegistrations || []} />
                 <Button
                   onClick={exportToCSV}
                   disabled={!displayRegistrations || displayRegistrations.length === 0}
@@ -326,7 +330,18 @@ export default function AdminDashboard() {
                                 {new Date(registration.registrationDate).toLocaleDateString()}
                               </TableCell>
                               <TableCell className="text-right">
-                                <AlertDialog>
+                                <div className="flex justify-end items-center gap-1">
+                                  <AdminPhotoEditor 
+                                    id={registration.id} 
+                                    fullName={registration.fullName} 
+                                    photoUrl={registration.photoUrl}
+                                    onSuccess={() => utils.admin.searchAndFilter.invalidate()}
+                                  />
+                                  <AdminEditContestantModal 
+                                    contestant={registration as any} 
+                                    onSuccess={() => utils.admin.searchAndFilter.invalidate()} 
+                                  />
+                                  <AlertDialog>
                                   <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/50">
                                       <Trash2 className="w-4 h-4" />
@@ -350,6 +365,7 @@ export default function AdminDashboard() {
                                     </AlertDialogFooter>
                                   </AlertDialogContent>
                                 </AlertDialog>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
@@ -463,7 +479,18 @@ export default function AdminDashboard() {
                                     {new Date(registration.registrationDate).toLocaleDateString()}
                                   </TableCell>
                                   <TableCell className="text-right">
-                                    <AlertDialog>
+                                    <div className="flex justify-end items-center gap-1">
+                                      <AdminPhotoEditor 
+                                        id={registration.id} 
+                                        fullName={registration.fullName} 
+                                        photoUrl={registration.photoUrl}
+                                        onSuccess={() => utils.admin.getRegistrationsByCategory.invalidate()}
+                                      />
+                                      <AdminEditContestantModal 
+                                        contestant={registration as any} 
+                                        onSuccess={() => utils.admin.getRegistrationsByCategory.invalidate()} 
+                                      />
+                                      <AlertDialog>
                                       <AlertDialogTrigger asChild>
                                         <Button variant="ghost" size="sm" className="text-red-400 hover:text-red-300 hover:bg-red-900/50">
                                           <Trash2 className="w-4 h-4" />
@@ -487,6 +514,7 @@ export default function AdminDashboard() {
                                         </AlertDialogFooter>
                                       </AlertDialogContent>
                                     </AlertDialog>
+                                    </div>
                                   </TableCell>
                                 </TableRow>
                               ))}
