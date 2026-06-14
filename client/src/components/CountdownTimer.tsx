@@ -65,21 +65,21 @@ export default function CountdownTimer() {
   return (
     <div className="bg-gradient-to-r from-[#4a1a2a] to-[#5a2a3a] border-2 border-[#d4af37] text-white py-8 px-8 rounded-lg text-center shadow-lg">
       <p className="text-lg font-bold mb-6 uppercase tracking-widest text-[#d4af37]">Registration Closes In</p>
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-[#d4af37] bg-opacity-30 border border-[#d4af37] rounded-lg p-5 transform hover:scale-105 transition-transform">
-          <div className="text-4xl font-bold text-black">{String(timeRemaining.days).padStart(2, "0")}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-black">{String(timeRemaining.days).padStart(2, "0")}</div>
           <div className="text-xs uppercase tracking-wider mt-2 text-white font-semibold">Days</div>
         </div>
         <div className="bg-[#d4af37] bg-opacity-30 border border-[#d4af37] rounded-lg p-5 transform hover:scale-105 transition-transform">
-          <div className="text-4xl font-bold text-black">{String(timeRemaining.hours).padStart(2, "0")}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-black">{String(timeRemaining.hours).padStart(2, "0")}</div>
           <div className="text-xs uppercase tracking-wider mt-2 text-white font-semibold">Hours</div>
         </div>
         <div className="bg-[#d4af37] bg-opacity-30 border border-[#d4af37] rounded-lg p-5 transform hover:scale-105 transition-transform">
-          <div className="text-4xl font-bold text-black">{String(timeRemaining.minutes).padStart(2, "0")}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-black">{String(timeRemaining.minutes).padStart(2, "0")}</div>
           <div className="text-xs uppercase tracking-wider mt-2 text-white font-semibold">Minutes</div>
         </div>
         <div className="bg-[#d4af37] bg-opacity-30 border border-[#d4af37] rounded-lg p-5 transform hover:scale-105 transition-transform">
-          <div className="text-4xl font-bold text-black">{String(timeRemaining.seconds).padStart(2, "0")}</div>
+          <div className="text-3xl sm:text-4xl font-bold text-black">{String(timeRemaining.seconds).padStart(2, "0")}</div>
           <div className="text-xs uppercase tracking-wider mt-2 text-white font-semibold">Seconds</div>
         </div>
       </div>

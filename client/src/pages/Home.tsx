@@ -69,7 +69,7 @@ export default function Home() {
             <CountdownTimer />
           </div>
 
-          <div className="flex gap-4 justify-center flex-wrap">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
             <Button
               onClick={() => {
                 const element = document.getElementById("register-section");
@@ -77,13 +77,13 @@ export default function Home() {
                   element.scrollIntoView({ behavior: "smooth" });
                 }
               }}
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg"
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
             >
               Register Now
             </Button>
             <Button
               onClick={() => setLocation("/gallery")}
-              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg"
+              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
             >
               <Image className="w-5 h-5 mr-2" />
               View Gallery
@@ -182,7 +182,7 @@ export default function Home() {
                 value={selectedCategory}
                 onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
               >
-                <TabsList className="grid w-full grid-cols-3 bg-[#4a1a2a]">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-[#4a1a2a] h-auto gap-1 p-1">
                   <TabsTrigger
                     value="adults"
                     className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
@@ -275,9 +275,9 @@ export default function Home() {
             Need a physical form for the bootcamp? Download the printable registration form below.
             For any queries, our support panel is always ready to assist you.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
             <Button 
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold px-8 py-6 rounded-lg text-lg"
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
               onClick={() => {
                 const link = document.createElement("a");
                 link.href = "/printable_form.pdf";
@@ -290,7 +290,7 @@ export default function Home() {
               Download Printable Form
             </Button>
             <Button 
-              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg"
+              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
               onClick={() => window.open("https://wa.me/254702894309", "_blank")}
             >
               Contact Support Panel
