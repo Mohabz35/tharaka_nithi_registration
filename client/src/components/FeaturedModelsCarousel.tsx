@@ -136,7 +136,7 @@ export default function FeaturedModelsCarousel() {
         </div>
 
         {/* Indicators */}
-        <div className="flex justify-center gap-2 mt-8">
+        <div className="flex justify-center gap-1 mt-8">
           {models.map((_: any, idx: number) => (
             <button
               key={idx}
@@ -144,13 +144,15 @@ export default function FeaturedModelsCarousel() {
                 setCurrentIndex(idx);
                 setAutoPlay(false);
               }}
-              className={`w-2 h-2 rounded-full transition-all ${
+              className="p-3"
+              aria-label={`Go to slide ${idx + 1}`}
+            >
+              <div className={`h-2 rounded-full transition-all ${
                 idx === currentIndex
                   ? "bg-[#d4af37] w-8"
-                  : "bg-gray-600 hover:bg-gray-400"
-              }`}
-              aria-label={`Go to slide ${idx + 1}`}
-            />
+                  : "bg-gray-600 hover:bg-gray-400 w-2"
+              }`} />
+            </button>
           ))}
         </div>
 

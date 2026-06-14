@@ -304,8 +304,9 @@ export default function MultiStepRegistrationForm({
             </div>
 
             <div>
-              <label className="text-white block mb-2">Date of Birth *</label>
+              <label htmlFor={`${category}-dateOfBirth`} className="text-white block mb-2">Date of Birth *</label>
               <Input
+                id={`${category}-dateOfBirth`}
                 name="dateOfBirth"
                 type="date"
                 value={formData.dateOfBirth}
@@ -372,8 +373,9 @@ export default function MultiStepRegistrationForm({
             </div>
 
             <div>
-              <label className="text-white block mb-2">Upload Your Photo *</label>
+              <label htmlFor={`${category}-photo`} className="text-white block mb-2">Upload Your Photo *</label>
               <Input
+                id={`${category}-photo`}
                 type="file"
                 accept="image/*"
                 onChange={handlePhotoChange}
@@ -491,12 +493,13 @@ export default function MultiStepRegistrationForm({
               </div>
             ) : (
               <div>
-                <label className="text-white block mb-2">Upload Portfolio (Optional)</label>
+                <label htmlFor={`${category}-portfolio`} className="text-white block mb-2">Upload Portfolio (Optional)</label>
                 <p className="text-gray-400 text-sm mb-2">
                   Upload your modeling portfolio or performance videos. <br/>
                   <span className="text-[#d4af37]">Tip: For large Canva or PDF portfolios, please paste the link in the "Describe Your Talents" box above instead of uploading to save space.</span>
                 </p>
                 <Input
+                  id={`${category}-portfolio`}
                   type="file"
                   onChange={handlePortfolioChange}
                   className="bg-[#4a1a2a] text-white border-[#d4af37]"

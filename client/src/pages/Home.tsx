@@ -29,7 +29,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-black" style={{ backgroundImage: "url('/royal_icon_events_logo_new.png')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
+    <main className="min-h-screen bg-black" style={{ backgroundImage: "url('/royal_icon_events_logo_new.png')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
@@ -83,7 +83,7 @@ export default function Home() {
             </Button>
             <Button
               onClick={() => setLocation("/gallery")}
-              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
+              className="border-2 border-[#d4af37] bg-[#2a0a1a] bg-opacity-70 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
             >
               <Image className="w-5 h-5 mr-2" />
               View Gallery
@@ -290,7 +290,7 @@ export default function Home() {
               Download Printable Form
             </Button>
             <Button 
-              className="border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
+              className="border-2 border-[#d4af37] bg-[#1a0a1a] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
               onClick={() => window.open("https://wa.me/254702894309", "_blank")}
             >
               Contact Support Panel
@@ -318,6 +318,6 @@ export default function Home() {
           </a>
         </div>
       </footer>
-    </div>
+    </main>
   );
 }
