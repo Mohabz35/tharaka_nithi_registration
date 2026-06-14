@@ -1,7 +1,13 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Search } from "lucide-react";
 
@@ -19,7 +25,11 @@ export interface FilterOptions {
   county?: string;
 }
 
-export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilterProps) {
+export function AdminSearchFilter({
+  onSearch,
+  onReset,
+  isLoading,
+}: SearchFilterProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [filters, setFilters] = useState<FilterOptions>({});
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,7 +44,9 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
     onReset();
   };
 
-  const hasActiveFilters = searchQuery || Object.values(filters).some(v => v !== undefined && v !== "");
+  const hasActiveFilters =
+    searchQuery ||
+    Object.values(filters).some(v => v !== undefined && v !== "");
 
   return (
     <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 mb-6">
@@ -46,7 +58,9 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
           </div>
           {hasActiveFilters && (
             <span className="text-sm font-normal text-white bg-[#d4af37] text-black px-3 py-1 rounded-full">
-              {Object.values(filters).filter(v => v !== undefined && v !== "").length + (searchQuery ? 1 : 0)} active
+              {Object.values(filters).filter(v => v !== undefined && v !== "")
+                .length + (searchQuery ? 1 : 0)}{" "}
+              active
             </span>
           )}
         </CardTitle>
@@ -58,9 +72,9 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
           <Input
             placeholder="Search by name, email, phone, or location..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="bg-[#4a1a2a] border-[#d4af37] text-white placeholder:text-gray-400"
-            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+            onKeyPress={e => e.key === "Enter" && handleSearch()}
           />
           <Button
             onClick={handleSearch}
@@ -77,7 +91,15 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
           className="text-[#d4af37] hover:text-[#e5c158] text-sm font-medium flex items-center gap-2"
         >
           {isExpanded ? "Hide Filters" : "Show Filters"}
-          <span className="text-xs">({Object.keys(filters).filter(k => filters[k as keyof FilterOptions] !== undefined).length})</span>
+          <span className="text-xs">
+            (
+            {
+              Object.keys(filters).filter(
+                k => filters[k as keyof FilterOptions] !== undefined
+              ).length
+            }
+            )
+          </span>
         </button>
 
         {/* Expandable Filters */}
@@ -85,15 +107,20 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-[#d4af37]">
             {/* Category Filter */}
             <div>
-              <label className="text-[#d4af37] text-sm font-medium block mb-2">Category</label>
+              <label className="text-[#d4af37] text-sm font-medium block mb-2">
+                Category
+              </label>
               <Select
                 value={filters.category || ""}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   if (value === "") {
                     const { category, ...rest } = filters;
                     setFilters(rest);
                   } else {
-                    setFilters({ ...filters, category: value as "adults" | "teens" | "little_stars" });
+                    setFilters({
+                      ...filters,
+                      category: value as "adults" | "teens" | "little_stars",
+                    });
                   }
                 }}
               >
@@ -104,22 +131,29 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
                   <SelectItem value="">All Categories</SelectItem>
                   <SelectItem value="adults">Adults (18–26)</SelectItem>
                   <SelectItem value="teens">Teens (13–17)</SelectItem>
-                  <SelectItem value="little_stars">Little Stars (5–12)</SelectItem>
+                  <SelectItem value="little_stars">
+                    Little Stars (5–12)
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             {/* Payment Status Filter */}
             <div>
-              <label className="text-[#d4af37] text-sm font-medium block mb-2">Payment Status</label>
+              <label className="text-[#d4af37] text-sm font-medium block mb-2">
+                Payment Status
+              </label>
               <Select
                 value={filters.paymentStatus || ""}
-                onValueChange={(value) => {
+                onValueChange={value => {
                   if (value === "") {
                     const { paymentStatus, ...rest } = filters;
                     setFilters(rest);
                   } else {
-                    setFilters({ ...filters, paymentStatus: value as "pending" | "completed" });
+                    setFilters({
+                      ...filters,
+                      paymentStatus: value as "pending" | "completed",
+                    });
                   }
                 }}
               >
@@ -136,14 +170,18 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
 
             {/* Age Range */}
             <div>
-              <label className="text-[#d4af37] text-sm font-medium block mb-2">Age Range</label>
+              <label className="text-[#d4af37] text-sm font-medium block mb-2">
+                Age Range
+              </label>
               <div className="flex gap-2">
                 <Input
                   type="number"
                   placeholder="Min"
                   value={filters.ageMin || ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : undefined;
+                  onChange={e => {
+                    const value = e.target.value
+                      ? parseInt(e.target.value)
+                      : undefined;
                     setFilters({ ...filters, ageMin: value });
                   }}
                   className="bg-[#4a1a2a] border-[#d4af37] text-white placeholder:text-gray-400 w-1/2"
@@ -152,8 +190,10 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
                   type="number"
                   placeholder="Max"
                   value={filters.ageMax || ""}
-                  onChange={(e) => {
-                    const value = e.target.value ? parseInt(e.target.value) : undefined;
+                  onChange={e => {
+                    const value = e.target.value
+                      ? parseInt(e.target.value)
+                      : undefined;
                     setFilters({ ...filters, ageMax: value });
                   }}
                   className="bg-[#4a1a2a] border-[#d4af37] text-white placeholder:text-gray-400 w-1/2"
@@ -163,11 +203,13 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
 
             {/* County Filter */}
             <div className="md:col-span-2 lg:col-span-1">
-              <label className="text-[#d4af37] text-sm font-medium block mb-2">County/Location</label>
+              <label className="text-[#d4af37] text-sm font-medium block mb-2">
+                County/Location
+              </label>
               <Input
                 placeholder="Search location..."
                 value={filters.county || ""}
-                onChange={(e) => {
+                onChange={e => {
                   if (e.target.value === "") {
                     const { county, ...rest } = filters;
                     setFilters(rest);

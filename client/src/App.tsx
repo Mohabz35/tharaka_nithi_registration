@@ -1,4 +1,5 @@
 import { Suspense, lazy } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
@@ -16,7 +17,9 @@ const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-black flex items-center justify-center">
-    <div className="text-[#d4af37] text-xl font-semibold animate-pulse">Loading...</div>
+    <div className="text-[#d4af37] text-xl font-semibold animate-pulse">
+      Loading...
+    </div>
   </div>
 );
 
@@ -38,7 +41,6 @@ function Router() {
   );
 }
 
-
 // NOTE: About Theme
 // - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
 //   to keep consistent foreground/background color across components
@@ -54,6 +56,7 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <Router />
+          <Analytics />
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>
