@@ -302,9 +302,7 @@ export const appRouter = router({
         const registrationData = {
           ...input,
           dateOfBirth: new Date(new Date().getFullYear() - input.age, 0, 1).toISOString().split('T')[0], // Estimate DOB based on age
-          paymentStatus: "completed",
-          amountPaid: 0,
-          paymentReference: "ADMIN-ADDED",
+          paymentStatus: "completed" as const,
           consentPhotoVideo: true,
           consentDataProcessing: true,
           consentTerms: true,

@@ -106,8 +106,8 @@ export default function PartnerLogosManager() {
                   onChange={(e) => {
                     const selected = e.target.files?.[0];
                     if (selected) {
-                      if (selected.size > 4.5 * 1024 * 1024) {
-                        toast.error("Logo is too large. Please upload an image smaller than 4.5MB.");
+                      if (selected.size > 20 * 1024 * 1024) {
+                        toast.error("Logo is too large. Please upload an image smaller than 20MB.");
                         e.target.value = "";
                         return;
                       }
@@ -156,7 +156,7 @@ export default function PartnerLogosManager() {
                 {logos.map((logo) => (
                   <TableRow key={logo.id} className="border-[#4a1a2a] hover:bg-[#4a1a2a]">
                     <TableCell>
-                      <img src={logo.logoUrl} alt={logo.name} className="w-16 h-16 object-contain bg-white rounded p-1" />
+                      <img src={logo.logoUrl} alt={logo.name} loading="lazy" className="w-16 h-16 object-contain bg-white rounded p-1" />
                     </TableCell>
                     <TableCell className="text-white font-medium">{logo.name}</TableCell>
                     <TableCell>

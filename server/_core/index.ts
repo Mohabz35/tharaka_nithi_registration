@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import compression from "compression";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { authRouter } from "../auth.js";
 import uploadRouter from "./uploadHandler.js";
@@ -29,6 +30,7 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 }
 
 export const app = express();
+app.use(compression());
 
 // Configure body parser with larger size limit for file uploads
 app.use(express.json({ limit: "50mb" }));
