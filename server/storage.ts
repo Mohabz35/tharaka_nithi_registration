@@ -66,6 +66,8 @@ export async function storagePut(
         {
           public_id: publicId,
           resource_type: resourceType,
+          // Make raw files (PDFs) publicly accessible
+          access_mode: "public",
           // Auto-quality + format for images (reduces file size by ~50-80%)
           ...(resourceType === "image"
             ? { quality: "auto", fetch_format: "auto" }
@@ -92,10 +94,13 @@ export async function storageGet(relKey: string): Promise<{ key: string; url: st
 
 export async function storageGetSignedUrl(relKey: string): Promise<string> {
   const cl = getCloudinary();
+  // Detect if this is a raw file (e.g., PDF) by checking the extension in the public_id
+  const isRaw = /\.(pdf|doc|docx|txt|csv|zip)$/i.test(relKey);
   // Signed URL valid for 1 hour
   const url = cl.url(relKey, {
     secure: true,
     sign_url: true,
+    ...(isRaw ? { resource_type: "raw" } : {}),
     expires_at: Math.floor(Date.now() / 1000) + 3600,
   });
   return url;

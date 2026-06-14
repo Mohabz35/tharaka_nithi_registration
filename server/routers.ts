@@ -17,6 +17,7 @@ import { systemRouter } from "./_core/systemRouter.js";
 import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
 import { generateCertificate } from "./_core/certificateGenerator.js";
+import { storageGetSignedUrl } from "./storage.js";
 
 export const appRouter = router({
   system: systemRouter,
@@ -181,7 +182,9 @@ export const appRouter = router({
             eventDate: input.eventDate,
             venue: input.venue,
           });
-          return { success: true, certificateUrl: url, certificateKey: key };
+          // Use signed URL to avoid 401 on Cloudinary raw files
+          const signedUrl = await storageGetSignedUrl(key);
+          return { success: true, certificateUrl: signedUrl, certificateKey: key };
         } catch (error) {
           console.error("Certificate generation error:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate certificate" });
@@ -202,7 +205,9 @@ export const appRouter = router({
           }
 
           const { url, key } = await generateRegistrationPDF(registration);
-          return { success: true, pdfUrl: url, pdfKey: key };
+          // Use signed URL to avoid 401 on Cloudinary raw files
+          const signedUrl = await storageGetSignedUrl(key);
+          return { success: true, pdfUrl: signedUrl, pdfKey: key };
         } catch (error) {
           console.error("PDF generation error:", error);
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate PDF" });
