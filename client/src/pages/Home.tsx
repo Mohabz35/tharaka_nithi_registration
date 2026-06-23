@@ -6,7 +6,7 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image } from "lucide-react";
+import { Image, Sparkles } from "lucide-react";
 import { useLocation } from "wouter";
 
 // Lazy-load heavy below-the-fold components
@@ -87,6 +87,13 @@ export default function Home() {
             >
               <Image className="w-5 h-5 mr-2" />
               View Gallery
+            </Button>
+            <Button
+              onClick={() => setLocation("/poster-generator")}
+              className="border-2 border-[#d4af37] bg-[#2a0a1a] bg-opacity-70 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
+            >
+              <Sparkles className="w-5 h-5 mr-2" />
+              Generate Poster
             </Button>
           </div>
         </div>

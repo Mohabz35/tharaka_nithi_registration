@@ -19,9 +19,11 @@ import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdf
 import { generateCertificate } from "./_core/certificateGenerator.js";
 import { storageGetSignedUrl } from "./storage.js";
 import { sendEmail, buildCertificateEmail, buildRegistrationEmail } from "./_core/emailService.js";
+import { contestantRouter } from "./contestant.js";
 
 export const appRouter = router({
   system: systemRouter,
+  contestant: contestantRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

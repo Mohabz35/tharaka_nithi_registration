@@ -38,6 +38,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use("/api/auth", authRouter);
 app.use("/api", uploadRouter);
+
 // tRPC API
 app.use(
   "/api/trpc",

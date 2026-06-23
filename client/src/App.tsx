@@ -12,6 +12,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Gallery = lazy(() => import("@/pages/Gallery"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const EventSections = lazy(() => import("@/pages/EventSections"));
+const ContestantPoster = lazy(() => import("@/pages/ContestantPoster"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const PageLoader = () => (
@@ -30,6 +31,7 @@ function Router() {
         <Route path={"/gallery"} component={Gallery} />
         <Route path={"/admin"} component={AdminDashboard} />
         <Route path={"/event-sections"} component={EventSections} />
+        <Route path={"/poster-generator"} component={ContestantPoster} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />
