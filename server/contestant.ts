@@ -3,14 +3,14 @@ import { publicProcedure, router } from "./_core/trpc.js";
 import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
-import { storagePut } from "./storage.js";
+import { storagePut, storageGetSignedUrl } from "./storage.js";
 import { ENV } from "./_core/env.js";
 
 const FRAME_CONFIG = {
-  x: 186,
-  y: 585,
-  width: 1244,
-  height: 1549,
+  x: 90,
+  y: 260,
+  width: 530,
+  height: 1240,
 };
 
 const TEMPLATE_PATH = path.join(
@@ -20,15 +20,30 @@ const TEMPLATE_PATH = path.join(
   "contestant_profile_template.png"
 );
 
+const TEMPLATE_KEY = "tharaka-nithi/contestant_profile_template.png";
+
+let cachedTemplateUrl: string | null = null;
+
 async function loadTemplate(): Promise<Buffer> {
   if (ENV.contestantTemplateUrl) {
     const res = await fetch(ENV.contestantTemplateUrl);
-    if (!res.ok) throw new Error(`Failed to fetch template from URL: ${res.status}`);
-    const arrayBuffer = await res.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    if (!res.ok) throw new Error(`Failed to fetch template: ${res.status}`);
+    return Buffer.from(await res.arrayBuffer());
   }
 
-  return await fs.readFile(TEMPLATE_PATH);
+  if (cachedTemplateUrl) {
+    const res = await fetch(cachedTemplateUrl);
+    if (res.ok) return Buffer.from(await res.arrayBuffer());
+  }
+
+  try {
+    const localBuffer = await fs.readFile(TEMPLATE_PATH);
+    const { url } = await storagePut(TEMPLATE_KEY, localBuffer, "image/png");
+    cachedTemplateUrl = url;
+    return localBuffer;
+  } catch {
+    throw new Error("Template not found. Set CONTESTANT_TEMPLATE_URL env var or place template at public/assets/contestant_profile_template.png");
+  }
 }
 
 export const contestantRouter = router({
