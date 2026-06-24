@@ -4,6 +4,7 @@ import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
 import { storagePut } from "./storage.js";
+import { ENV } from "./_core/env.js";
 
 const FRAME_CONFIG = {
   x: 186,
@@ -18,6 +19,17 @@ const TEMPLATE_PATH = path.join(
   "assets",
   "contestant_profile_template.png"
 );
+
+async function loadTemplate(): Promise<Buffer> {
+  if (ENV.contestantTemplateUrl) {
+    const res = await fetch(ENV.contestantTemplateUrl);
+    if (!res.ok) throw new Error(`Failed to fetch template from URL: ${res.status}`);
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
+
+  return await fs.readFile(TEMPLATE_PATH);
+}
 
 export const contestantRouter = router({
   generatePoster: publicProcedure
@@ -40,7 +52,7 @@ export const contestantRouter = router({
           .png()
           .toBuffer();
 
-        const templateBuffer = await fs.readFile(TEMPLATE_PATH);
+        const templateBuffer = await loadTemplate();
 
         const finalImageBuffer = await sharp(templateBuffer)
           .composite([

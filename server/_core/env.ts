@@ -13,4 +13,5 @@ export const ENV = {
   smtpUser: process.env.SMTP_USER ?? "",
   smtpPass: process.env.SMTP_PASS ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "Royals Icon Events <noreply@faceoftharakanithi.app>",
+  contestantTemplateUrl: process.env.CONTESTANT_TEMPLATE_URL ?? "",
 };
