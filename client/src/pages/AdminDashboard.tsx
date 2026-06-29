@@ -99,7 +99,7 @@ export default function AdminDashboard() {
       reg.fullName,
       reg.dateOfBirth,
       reg.age,
-      reg.category === "adults" ? "Adults (18-26)" : reg.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)",
+      reg.category === "adults" ? "Adults (18-35)" : reg.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)",
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
 
               <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
                 <CardHeader>
-                  <CardTitle className="text-[#d4af37] text-sm">Adults (18–26)</CardTitle>
+                  <CardTitle className="text-[#d4af37] text-sm">Adults (18–35)</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-4xl font-bold text-white">{stats.adults}</p>
@@ -416,7 +416,7 @@ export default function AdminDashboard() {
                       value="adults"
                       className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
                     >
-                      Adults (18–26)
+                      Adults (18–35)
                     </TabsTrigger>
                     <TabsTrigger
                       value="teens"

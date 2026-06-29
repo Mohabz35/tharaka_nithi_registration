@@ -19,7 +19,7 @@
 - [x] Add talent information section
 
 ## Frontend - Registration System
-- [x] Build category tabs component (Adults 18–26, Teens 13–17, Little Stars 5–12)
+- [x] Build category tabs component (Adults 18–35, Teens 13–17, Little Stars 5–12)
 - [x] Create multi-step registration form with progress indicator
 - [x] Add portfolio/talent submission field
 - [x] Add consent forms (Data Protection & Photography Consent)

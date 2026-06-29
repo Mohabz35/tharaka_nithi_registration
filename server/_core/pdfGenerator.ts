@@ -5,7 +5,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 export async function generateRegistrationPDF(registration: Registration): Promise<{ url: string; key: string }> {
   const categoryLabel =
     registration.category === "adults"
-      ? "Adults (18-26)"
+      ? "Adults (18-35)"
       : registration.category === "teens"
         ? "Teens (13-17)"
         : "Little Stars (5-12)";

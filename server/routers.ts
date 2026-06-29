@@ -92,7 +92,7 @@ export const appRouter = router({
         z.object({
           fullName: z.string().min(1, "Full name is required"),
           dateOfBirth: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Invalid date format"),
-          age: z.number().int().min(5).max(26),
+          age: z.number().int().min(5).max(35),
           category: z.enum(["adults", "teens", "little_stars"]),
           phoneNumber: z.string().min(9, "Phone number is required"),
           email: z.string().email("Invalid email"),
@@ -151,7 +151,7 @@ export const appRouter = router({
       )
       .mutation(async ({ input }) => {
         try {
-          const categoryLabel = input.category === "adults" ? "Adults (18-26)" : input.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
+          const categoryLabel = input.category === "adults" ? "Adults (18-35)" : input.category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)";
           const prompt = `Create a glamorous event poster for a modeling competition. The image should feature the photo provided, with the following text overlaid: Name: ${input.fullName}, Category: ${categoryLabel}, Event: Mr & Miss Face of Tharaka-Nithi County 2026. Use burgundy and gold colors. Make it professional and elegant.`;
 
           const posterImage = await generateImage({

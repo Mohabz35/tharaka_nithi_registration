@@ -194,7 +194,7 @@ export default function Home() {
                     value="adults"
                     className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
                   >
-                    Adults (18–26)
+                    Adults (18–35)
                   </TabsTrigger>
                   <TabsTrigger
                     value="teens"

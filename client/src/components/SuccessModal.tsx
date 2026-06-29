@@ -27,7 +27,7 @@ export default function SuccessModal({
   const downloadPdf = trpc.registration.downloadRegistrationPdf.useMutation();
 
   const categoryNames: Record<string, string> = {
-    adults: "Adults (18-26)",
+    adults: "Adults (18-35)",
     teens: "Teens (13-17)",
     little_stars: "Little Stars (5-12)",
   };

@@ -101,7 +101,7 @@ export default function FeaturedModelsCarousel() {
                     </h3>
                     <p className="text-gray-300 text-sm">
                       {model.category === "adults"
-                        ? "Adults (18-26)"
+                        ? "Adults (18-35)"
                         : model.category === "teens"
                         ? "Teens (13-17)"
                         : "Little Stars (5-12)"}

@@ -132,8 +132,8 @@ export default function MultiStepRegistrationForm({
       }
 
       // Validate age based on category
-      if (category === "adults" && (formData.age < 18 || formData.age > 26)) {
-        errors.dateOfBirth = "Adults must be between 18 and 26 years old";
+      if (category === "adults" && (formData.age < 18 || formData.age > 35)) {
+        errors.dateOfBirth = "Adults must be between 18 and 35 years old";
       } else if (category === "teens" && (formData.age < 13 || formData.age > 17)) {
         errors.dateOfBirth = "Teens must be between 13 and 17 years old";
       } else if (category === "little_stars" && (formData.age < 5 || formData.age > 12)) {
@@ -616,7 +616,7 @@ export default function MultiStepRegistrationForm({
               <div>
                 <p className="text-[#d4af37] font-semibold">Category</p>
                 <p className="text-white capitalize">
-                  {category === "adults" ? "Adults (18-26)" : category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)"}
+                  {category === "adults" ? "Adults (18-35)" : category === "teens" ? "Teens (13-17)" : "Little Stars (5-12)"}
                 </p>
               </div>
             </div>

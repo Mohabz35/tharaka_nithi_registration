@@ -102,7 +102,7 @@ export function AdminSearchFilter({ onSearch, onReset, isLoading }: SearchFilter
                 </SelectTrigger>
                 <SelectContent className="bg-[#4a1a2a] border-[#d4af37]">
                   <SelectItem value="">All Categories</SelectItem>
-                  <SelectItem value="adults">Adults (18–26)</SelectItem>
+                  <SelectItem value="adults">Adults (18–35)</SelectItem>
                   <SelectItem value="teens">Teens (13–17)</SelectItem>
                   <SelectItem value="little_stars">Little Stars (5–12)</SelectItem>
                 </SelectContent>
