@@ -12,6 +12,7 @@ const Auth = lazy(() => import("./pages/Auth"));
 const Gallery = lazy(() => import("@/pages/Gallery"));
 const AdminDashboard = lazy(() => import("@/pages/AdminDashboard"));
 const EventSections = lazy(() => import("@/pages/EventSections"));
+const RegisterModel = lazy(() => import("@/pages/RegisterModel"));
 const ContestantPoster = lazy(() => import("@/pages/ContestantPoster"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -28,6 +29,7 @@ function Router() {
       <Switch>
         <Route path={"/"} component={Home} />
         <Route path={"/login"} component={Auth} />
+        <Route path={"/register"} component={RegisterModel} />
         <Route path={"/gallery"} component={Gallery} />
         <Route path={"/admin"} component={AdminDashboard} />
         <Route path={"/event-sections"} component={EventSections} />

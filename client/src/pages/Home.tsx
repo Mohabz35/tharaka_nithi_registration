@@ -6,8 +6,9 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image, Sparkles } from "lucide-react";
+import { Image, Sparkles, Vote } from "lucide-react";
 import { useLocation } from "wouter";
+import { VOTE_URL } from "@shared/const";
 
 // Lazy-load heavy below-the-fold components
 const FeaturedModelsCarousel = lazy(() => import("@/components/FeaturedModelsCarousel"));
@@ -33,6 +34,16 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
         <div className="max-w-4xl mx-auto">
+          {/* Event Banner */}
+          <div className="mb-8">
+            <img
+              src="/mr_miss_tharaka_nithi_banner.png"
+              alt="Mr and Miss Face of Tharaka-Nithi County 2026 official event banner"
+              className="w-full max-w-3xl mx-auto rounded-xl border-2 border-[#d4af37] shadow-2xl"
+              fetchPriority="high"
+            />
+          </div>
+
           {/* Logo */}
           <div className="flex justify-center mb-6">
             <img src="/royal_icon_events_logo_new.png" alt="Royals Icon Events - Mr and Miss Face of Tharaka-Nithi County 2026 organizer" className="w-40 h-40 drop-shadow-lg animate-lively-logo rounded-full border-2 border-[#d4af37]" fetchPriority="high" />
@@ -69,17 +80,19 @@ export default function Home() {
             <CountdownTimer />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
             <Button
-              onClick={() => {
-                const element = document.getElementById("register-section");
-                if (element) {
-                  element.scrollIntoView({ behavior: "smooth" });
-                }
-              }}
+              onClick={() => setLocation("/register")}
               className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
             >
               Register Now
+            </Button>
+            <Button
+              onClick={() => window.open(VOTE_URL, "_blank", "noopener,noreferrer")}
+              className="bg-[#4a1a2a] border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
+            >
+              <Vote className="w-5 h-5 mr-2" />
+              Vote Now
             </Button>
             <Button
               onClick={() => setLocation("/gallery")}
@@ -166,7 +179,27 @@ export default function Home() {
                 <span>Social media presence and influence</span>
               </li>
             </ul>
+            <p className="text-[#d4af37] text-sm mt-6 italic">
+              Note: Add your talents, portfolio, or social media links during registration so our judges can discover you.
+            </p>
           </div>
+        </div>
+      </section>
+
+      {/* Vote Section */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#4a1a2a] to-[#2a0a1a] border-t border-b border-[#d4af37]">
+        <div className="max-w-3xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-[#d4af37] mb-4">Vote for Your Favourite</h2>
+          <p className="text-white text-lg mb-8">
+            Support the contestants you love. Cast your vote and help crown the next Mr &amp; Miss Face of Tharaka-Nithi County 2026.
+          </p>
+          <Button
+            onClick={() => window.open(VOTE_URL, "_blank", "noopener,noreferrer")}
+            className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-10 py-6 rounded-lg"
+          >
+            <Vote className="w-5 h-5 mr-2" />
+            Vote Now
+          </Button>
         </div>
       </section>
 
@@ -260,7 +293,7 @@ export default function Home() {
       </section>
 
       {/* Artists & Showcasing Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60">
+      <section id="artists-section" className="py-16 px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60">
         <div className="max-w-6xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-[#d4af37] mb-12">More Opportunities</h2>
           <div className="grid md:grid-cols-2 gap-8 text-left">
@@ -311,7 +344,7 @@ export default function Home() {
         <p className="text-lg mb-2">Organized by</p>
         <p className="text-2xl font-bold text-[#d4af37]">Royals Icon Events</p>
         <p className="text-sm mt-4 text-gray-400">
-          Email: contact@royalsiconevents.co.ke | Website: www.royalsiconevents.co.ke
+          Email: support@royaliconevents.co.ke | Website: www.royaliconevents.co.ke
         </p>
 
         <SocialMediaFooter />

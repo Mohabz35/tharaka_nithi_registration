@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { REGISTRATION_DEADLINE_ISO } from "@shared/const";
+import { trpc } from "@/lib/trpc";
 
 interface TimeRemaining {
   days: number;
@@ -9,6 +11,7 @@ interface TimeRemaining {
 }
 
 export default function CountdownTimer() {
+  const { data: settings } = trpc.siteSettings.getAll.useQuery();
   const [timeRemaining, setTimeRemaining] = useState<TimeRemaining>({
     days: 0,
     hours: 0,
@@ -17,10 +20,12 @@ export default function CountdownTimer() {
     isExpired: false,
   });
 
+  const isManuallyClosed = settings?.registration_closed === "true";
+  const deadlineIso = settings?.registration_deadline || REGISTRATION_DEADLINE_ISO;
+
   useEffect(() => {
     const calculateTimeRemaining = () => {
-      // Registration ends July 1, 2026 at 23:59:59
-      const registrationDeadline = new Date(2026, 6, 1, 23, 59, 59).getTime();
+      const registrationDeadline = new Date(deadlineIso).getTime();
       const now = new Date().getTime();
       const difference = registrationDeadline - now;
 
@@ -52,7 +57,15 @@ export default function CountdownTimer() {
     const timer = setInterval(calculateTimeRemaining, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [deadlineIso]);
+
+  if (isManuallyClosed) {
+    return (
+      <div className="bg-red-900 text-white py-4 px-6 rounded-lg text-center font-semibold">
+        Registration is currently closed. Thank you for your interest!
+      </div>
+    );
+  }
 
   if (timeRemaining.isExpired) {
     return (

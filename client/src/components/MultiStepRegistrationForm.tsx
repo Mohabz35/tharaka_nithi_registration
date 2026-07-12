@@ -42,6 +42,7 @@ export default function MultiStepRegistrationForm({
 
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
 
   const submitMutation = trpc.registration.submit.useMutation();
 
@@ -59,6 +60,18 @@ export default function MultiStepRegistrationForm({
         setPhotoPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        toast.error("Document is too large. Please upload a file smaller than 20MB.");
+        e.target.value = "";
+        return;
+      }
+      setDocumentFile(file);
     }
   };
 
@@ -208,6 +221,28 @@ export default function MultiStepRegistrationForm({
         portfolioKey = data.key;
       }
 
+      // Upload identity document if provided (optional)
+      let documentUrl = "";
+      let documentKey = "";
+      if (documentFile) {
+        toast.loading("Uploading your document... Please wait", { id: toastId });
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: documentFile,
+          headers: {
+            "x-file-name": documentFile.name,
+            "content-type": documentFile.type,
+          },
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Document upload failed: ${response.status}`);
+        }
+        const data = await response.json();
+        documentUrl = data.url;
+        documentKey = data.key;
+      }
+
       // Build social media handles JSON
       const socialHandles = portfolioChoice === "social" ? JSON.stringify({
         instagram: formData.instagram,
@@ -237,6 +272,8 @@ export default function MultiStepRegistrationForm({
         consentDataProcessing: formData.consentDataProcessing,
         consentTerms: formData.consentTerms,
         parentalConsentSigned: formData.parentalConsentSigned,
+        documentUrl: documentUrl || undefined,
+        documentKey: documentKey || undefined,
       });
 
       toast.success("Registration submitted successfully! 🎉", { id: toastId });
@@ -392,6 +429,25 @@ export default function MultiStepRegistrationForm({
                   alt="Photo preview"
                   className="mt-4 w-32 h-32 object-cover rounded-lg"
                 />
+              )}
+            </div>
+
+            <div>
+              <label htmlFor={`${category}-document`} className="text-white block mb-2">
+                {category === "adults" ? "Upload National ID (Optional)" : "Upload Birth Certificate (Optional)"}
+              </label>
+              <p className="text-gray-400 text-sm mb-2">
+                You may attach your {category === "adults" ? "National ID" : "Birth Certificate"} now for faster verification. Our team will review it to confirm your eligibility. You can also bring it later.
+              </p>
+              <Input
+                id={`${category}-document`}
+                type="file"
+                accept="image/*,application/pdf"
+                onChange={handleDocumentChange}
+                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+              />
+              {documentFile && (
+                <p className="text-[#d4af37] text-sm mt-2">File selected: {documentFile.name}</p>
               )}
             </div>
           </CardContent>
@@ -636,6 +692,13 @@ export default function MultiStepRegistrationForm({
               <div>
                 <p className="text-[#d4af37] font-semibold">Talents</p>
                 <p className="text-white">{formData.talents}</p>
+              </div>
+            )}
+
+            {documentFile && (
+              <div>
+                <p className="text-[#d4af37] font-semibold">Identity Document</p>
+                <p className="text-white">{documentFile.name}</p>
               </div>
             )}
           </CardContent>

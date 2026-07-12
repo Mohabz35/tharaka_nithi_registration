@@ -133,10 +133,10 @@ export default function AdminBulkEmailPanel({ registrations }: Props) {
           </Button>
           <Button 
             onClick={handleSend} 
-            disabled={bulkEmailMutation.isLoading || targets.length === 0}
+            disabled={bulkEmailMutation.isPending || targets.length === 0}
             className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
           >
-            {bulkEmailMutation.isLoading ? "Sending..." : "Send Emails"}
+            {bulkEmailMutation.isPending ? "Sending..." : "Send Emails"}
           </Button>
         </DialogFooter>
       </DialogContent>

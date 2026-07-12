@@ -1,4 +1,4 @@
-import { COOKIE_NAME } from "../shared/const.js";
+import { COOKIE_NAME, SUPPORT_EMAIL } from "../shared/const.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
@@ -8,9 +8,10 @@ import {
   createEventSponsor, getAllEventSponsors, deleteEventSponsor,
   createArtistRegistration, getAllArtistRegistrations, deleteArtistRegistration,
   createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
-  getSiteSettings, upsertSiteSetting,
+  getSiteSettings, getSiteSetting, upsertSiteSetting,
   getPartnerLogos, createPartnerLogo, togglePartnerLogoStatus, deletePartnerLogo,
 } from "./db.js";
+import { REGISTRATION_DEADLINE_ISO } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies.js";
 import { protectedProcedure, publicProcedure, router } from "./_core/trpc.js";
 import { systemRouter } from "./_core/systemRouter.js";
@@ -18,7 +19,7 @@ import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
 import { generateCertificate } from "./_core/certificateGenerator.js";
 import { storageGetSignedUrl } from "./storage.js";
-import { sendEmail, buildCertificateEmail, buildRegistrationEmail } from "./_core/emailService.js";
+import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail } from "./_core/emailService.js";
 import { contestantRouter } from "./contestant.js";
 
 export const appRouter = router({
@@ -108,9 +109,33 @@ export const appRouter = router({
           consentTerms: z.boolean().default(false),
           parentalConsentSigned: z.boolean().optional(),
           parentalConsentUrl: z.string().optional(),
+          documentUrl: z.string().optional(),
+          documentKey: z.string().optional(),
         })
       )
       .mutation(async ({ input }) => {
+        // Enforce registration window (admin-configurable)
+        try {
+          const closedSetting = await getSiteSetting("registration_closed");
+          if (closedSetting === "true") {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Registration is currently closed. Please check back later.",
+            });
+          }
+          const deadlineSetting = await getSiteSetting("registration_deadline");
+          const deadlineIso = deadlineSetting || REGISTRATION_DEADLINE_ISO;
+          if (new Date(deadlineIso).getTime() < Date.now()) {
+            throw new TRPCError({
+              code: "FORBIDDEN",
+              message: "Registration has closed. The deadline has passed.",
+            });
+          }
+        } catch (err) {
+          if (err instanceof TRPCError) throw err;
+          // If settings can't be read, fall back to allowing registration
+        }
+
         const insertId = await createRegistration(input);
         const registrationId = `REG-${insertId.toString().padStart(3, '0')}`;
 
@@ -132,6 +157,28 @@ export const appRouter = router({
 
             if (input.category !== "adults" && input.parentalConsentSigned) {
               await generateParentalConsentPDF(mockRegistration);
+            }
+
+            // Send a confirmation email to the registrant
+            try {
+              const confirmation = buildRegistrationConfirmationEmail(input.fullName);
+              await sendEmail({ to: input.email, ...confirmation });
+            } catch (emailErr) {
+              console.error("[Registration] Confirmation email failed:", emailErr);
+            }
+
+            // If documents were uploaded, notify the organizing team for manual confirmation
+            if (input.documentUrl) {
+              try {
+                const docNotify = buildDocumentConfirmationEmail(
+                  input.fullName,
+                  input.category,
+                  input.documentUrl
+                );
+                await sendEmail({ to: SUPPORT_EMAIL, ...docNotify });
+              } catch (emailErr) {
+                console.error("[Registration] Document notification failed:", emailErr);
+              }
             }
           } catch (error) {
             console.error("Error generating PDFs:", error);

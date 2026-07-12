@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
+import type { ReactElement } from "react";
 
-const SOCIAL_ICONS: Record<string, { label: string; icon: JSX.Element }> = {
+const SOCIAL_ICONS: Record<string, { label: string; icon: ReactElement }> = {
   instagram: {
     label: "Instagram",
     icon: (

@@ -44,6 +44,8 @@ export const registrations = pgTable("registrations", {
   consentTerms: boolean("consentTerms").default(false).notNull(),
   parentalConsentSigned: boolean("parentalConsentSigned").default(false),
   parentalConsentUrl: text("parentalConsentUrl"),
+  documentUrl: text("documentUrl"),
+  documentKey: text("documentKey"),
   paymentStatus: paymentStatusEnum("paymentStatus").default("pending").notNull(),
   registrationDate: timestamp("registrationDate").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

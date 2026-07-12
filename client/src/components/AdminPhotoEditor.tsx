@@ -134,10 +134,10 @@ export default function AdminPhotoEditor({ id, fullName, photoUrl, onSuccess }: 
           </Button>
           <Button 
             onClick={handleSave} 
-            disabled={!photoUrl || updatePhotoMutation.isLoading} 
+            disabled={!photoUrl || updatePhotoMutation.isPending} 
             className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
           >
-            {updatePhotoMutation.isLoading ? "Saving..." : "Save Photo"}
+            {updatePhotoMutation.isPending ? "Saving..." : "Save Photo"}
           </Button>
         </DialogFooter>
       </DialogContent>

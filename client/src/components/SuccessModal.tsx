@@ -220,7 +220,7 @@ export default function SuccessModal({
           {/* Support Message */}
           <div className="bg-[#4a1a2a] border border-[#d4af37] rounded-lg p-4 text-center">
             <p className="text-white text-sm">
-              Have questions? Contact us at <span className="text-[#d4af37] font-semibold">support@royalsicon.events</span>
+              Have questions? Contact us at <span className="text-[#d4af37] font-semibold">support@royaliconevents.co.ke</span>
             </p>
           </div>
         </div>

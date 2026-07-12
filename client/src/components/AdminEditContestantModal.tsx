@@ -180,8 +180,8 @@ export default function AdminEditContestantModal({ contestant, onSuccess }: Prop
             <Button type="button" variant="outline" onClick={() => setOpen(false)} className="border-[#d4af37] text-white hover:bg-white/10">
               Cancel
             </Button>
-            <Button type="submit" disabled={updateMutation.isLoading} className="bg-[#d4af37] text-black hover:bg-[#e5c158]">
-              {updateMutation.isLoading ? "Saving..." : "Save Changes"}
+            <Button type="submit" disabled={updateMutation.isPending} className="bg-[#d4af37] text-black hover:bg-[#e5c158]">
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </form>

@@ -141,8 +141,14 @@ export async function initializeAdmin() {
   const adminEmail = ENV.adminEmail;
   if (!adminEmail) return;
 
-  // Use env var if set, otherwise fall back to the hardcoded default
-  const adminPassword = process.env.ADMIN_PASSWORD || "Mohab@35*";
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (!adminPassword) {
+    console.warn(
+      "[Auth] ADMIN_PASSWORD is not set; skipping admin account seeding. " +
+        "Set ADMIN_EMAIL and ADMIN_PASSWORD to provision the admin account."
+    );
+    return;
+  }
 
   try {
     const existing = await db.getUserByEmail(adminEmail);
@@ -155,18 +161,7 @@ export async function initializeAdmin() {
         role: "admin",
       });
     } else {
-      // Always sync the password hash in case it was changed in env or code
-      const { getDb } = await import("./db.js");
-      const drizzleDb = await getDb();
-      if (drizzleDb) {
-        const { users } = await import("../drizzle/schema.js");
-        const { eq } = await import("drizzle-orm");
-        await drizzleDb
-          .update(users)
-          .set({ passwordHash: hashPassword(adminPassword), role: "admin" })
-          .where(eq(users.email, adminEmail));
-        console.log(`[Auth] Admin password synced for ${adminEmail}`);
-      }
+      console.log(`[Auth] Admin account already exists for ${adminEmail}`);
     }
   } catch (error) {
     console.error("[Auth] Failed to seed admin account:", error);
