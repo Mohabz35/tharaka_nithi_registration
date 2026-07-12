@@ -13,6 +13,30 @@ import { ENV } from "./_core/env.js";
 let _db: ReturnType<typeof drizzle> | null = null;
 let _client: ReturnType<typeof postgres> | null = null;
 
+let _schemaEnsured = false;
+let _ensurePromise: Promise<void> | null = null;
+
+// Idempotently ensure additive schema changes exist on the live database.
+// This lets deployments self-heal when a migration has not been run manually,
+// without ever touching or removing existing data (uses ADD COLUMN IF NOT EXISTS).
+export async function ensureSchema(): Promise<void> {
+  if (_schemaEnsured || !_client) return;
+  if (_ensurePromise) return _ensurePromise;
+  _ensurePromise = (async () => {
+    try {
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentUrl" text`;
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentKey" text`;
+      _schemaEnsured = true;
+      console.log("[Database] Schema ensured (registration document columns present).");
+    } catch (error) {
+      console.error("[Database] ensureSchema failed:", error);
+    } finally {
+      _ensurePromise = null;
+    }
+  })();
+  return _ensurePromise;
+}
+
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
@@ -29,6 +53,9 @@ export async function getDb() {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
+  }
+  if (_db && !_schemaEnsured) {
+    await ensureSchema();
   }
   return _db;
 }

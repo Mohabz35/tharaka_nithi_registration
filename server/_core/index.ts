@@ -49,6 +49,8 @@ app.use(
 );
 
 import { initializeAdmin } from "../auth.js";
+import { ensureSchema } from "../db.js";
+ensureSchema().catch(console.error);
 initializeAdmin().catch(console.error);
 
 async function startServer() {
