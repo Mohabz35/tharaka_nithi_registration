@@ -32,7 +32,8 @@ export default function Home() {
     setShowSuccessModal(true);
   };
 
-  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
+  const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
+  const TICKETS_URL = "https://www.royaliconevents.co.ke/events/mr-and-miss-tharaka-nithi-2026";
 
   const scrollToRegistration = () => {
     document.getElementById("register-section")?.scrollIntoView({ behavior: "smooth" });
@@ -42,7 +43,7 @@ export default function Home() {
     <main className="min-h-screen bg-black font-sans text-white selection:bg-[#d4af37] selection:text-black">
       {/* Dynamic Top Banner */}
       {announcementText && (
-        <div className="bg-[#d4af37] text-black text-center py-6 px-4 font-bold text-lg sm:text-2xl md:text-3xl animate-pulse shadow-lg">
+        <div className="bg-[#d4af37] text-black text-center py-6 px-4 font-bold text-lg sm:text-2xl md:text-3xl animate-pulse shadow-lg shadow-[#d4af37]/20 tracking-wide">
           {announcementText}
         </div>
       )}
@@ -97,8 +98,9 @@ export default function Home() {
               Apply As Contestant
             </Button>
             <Button
-              onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
-              className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest text-sm px-10 py-7 rounded-none transition-all duration-300 w-full sm:w-auto"
+              variant="outline" 
+              className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+              onClick={() => window.open(VOTING_URL, "_blank", "noopener,noreferrer")}
             >
               <Vote className="w-4 h-4 mr-3" />
               Vote Now
@@ -128,7 +130,7 @@ export default function Home() {
                 Phase 2 Voting has officially begun! Every vote counts towards crowning the next Face of Tharaka Nithi. Show your support and make history.
               </p>
               <Button
-                onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(VOTING_URL, "_blank", "noopener,noreferrer")}
                 className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest px-8 py-6 rounded-none w-full max-w-xs"
               >
                 Cast Your Vote
@@ -142,7 +144,7 @@ export default function Home() {
                 Join us live on September 12, 2026, at Chuka Grounds for a night of fashion, talent, and celebration. Secure your spot at the grand finale.
               </p>
               <Button
-                onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
+                onClick={() => window.open(TICKETS_URL, "_blank", "noopener,noreferrer")}
                 className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest px-8 py-6 rounded-none w-full max-w-xs"
               >
                 Buy Tickets
@@ -231,25 +233,26 @@ export default function Home() {
                 defaultValue="adults"
                 value={selectedCategory}
                 onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
+                className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-[#0a0508] h-auto gap-2 p-2 border border-[#3a1c28]">
+                <TabsList className="flex flex-col sm:flex-row w-full bg-transparent p-0 mb-8 border-b border-[#3a1c28]">
                   <TabsTrigger
                     value="adults"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
+                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
                   >
                     Adults (18–35)
                   </TabsTrigger>
                   <TabsTrigger
                     value="teens"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
+                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
                   >
                     Teens (13–17)
                   </TabsTrigger>
                   <TabsTrigger
                     value="little_stars"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
+                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
                   >
-                    Stars (5–12)
+                    Little Stars (5–12)
                   </TabsTrigger>
                 </TabsList>
 
@@ -258,11 +261,21 @@ export default function Home() {
                 </TabsContent>
 
                 <TabsContent value="teens" className="mt-8">
-                  <RegistrationForm category="teens" onSuccess={handleRegistrationSuccess} />
+                    <p className="text-gray-400 mb-6">
+                      Registration for teen contestants aiming for greatness.
+                    </p>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+                      <RegistrationForm category="teens" onSuccess={handleRegistrationSuccess} />
+                    </div>
                 </TabsContent>
 
                 <TabsContent value="little_stars" className="mt-8">
-                  <RegistrationForm category="little_stars" onSuccess={handleRegistrationSuccess} />
+                    <p className="text-gray-400 mb-6">
+                      Registration for our youngest, brightest upcoming stars.
+                    </p>
+                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+                      <RegistrationForm category="little_stars" onSuccess={handleRegistrationSuccess} />
+                    </div>
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -285,7 +298,7 @@ export default function Home() {
       )}
 
       {/* Sponsor & Partner Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#1a0c14] border-t border-[#3a1c28]">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#140a10] border-t border-[#3a1c28]">
         <div className="max-w-5xl mx-auto">
           <Suspense fallback={<SectionLoader />}>
             <SponsorRegistrationForm />
@@ -300,12 +313,67 @@ export default function Home() {
             More <span className="text-[#d4af37]">Opportunities</span>
           </h2>
           <div className="grid md:grid-cols-2 gap-12 text-left">
-            <Suspense fallback={<SectionLoader />}>
-              <ArtistRegistrationForm />
-            </Suspense>
-            <Suspense fallback={<SectionLoader />}>
-              <ShowcaseRegistrationForm />
-            </Suspense>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+              <Suspense fallback={<SectionLoader />}>
+                <ArtistRegistrationForm />
+              </Suspense>
+            </div>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+              <Suspense fallback={<SectionLoader />}>
+                <ShowcaseRegistrationForm />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Official Documents Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#140a10] border-t border-b border-[#3a1c28]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-4 uppercase tracking-wider">Official Resources & Downloads</h2>
+            <div className="w-16 h-1 bg-[#d4af37] mx-auto mb-6"></div>
+            <p className="text-gray-400 font-light max-w-2xl mx-auto">
+              Access everything you need to know about the Mr & Miss Face of Tharaka-Nithi County pageant. Download handbooks, legal documents, and terms.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="bg-[#0a0508] border border-[#d4af37]/20 p-6 flex flex-col justify-between hover:border-[#d4af37] transition-colors duration-300">
+              <div>
+                <h4 className="font-serif text-[#d4af37] text-xl mb-2">Models Handbook</h4>
+                <p className="text-gray-400 text-sm mb-4">Complete guide, rules, and expectations for all contestants.</p>
+              </div>
+              <Button variant="outline" className="w-full rounded-none border-[#3a1c28] text-white hover:bg-[#d4af37] hover:text-black">
+                Download PDF
+              </Button>
+            </div>
+            <div className="bg-[#0a0508] border border-[#d4af37]/20 p-6 flex flex-col justify-between hover:border-[#d4af37] transition-colors duration-300">
+              <div>
+                <h4 className="font-serif text-[#d4af37] text-xl mb-2">Partners Handbook</h4>
+                <p className="text-gray-400 text-sm mb-4">Sponsorship packages, benefits, and partnership guidelines.</p>
+              </div>
+              <Button variant="outline" className="w-full rounded-none border-[#3a1c28] text-white hover:bg-[#d4af37] hover:text-black">
+                Download PDF
+              </Button>
+            </div>
+            <div className="bg-[#0a0508] border border-[#d4af37]/20 p-6 flex flex-col justify-between hover:border-[#d4af37] transition-colors duration-300">
+              <div>
+                <h4 className="font-serif text-[#d4af37] text-xl mb-2">Consent for Under 18</h4>
+                <p className="text-gray-400 text-sm mb-4">Mandatory parental consent form for Teens & Little Stars.</p>
+              </div>
+              <Button variant="outline" className="w-full rounded-none border-[#3a1c28] text-white hover:bg-[#d4af37] hover:text-black">
+                Download PDF
+              </Button>
+            </div>
+            <div className="bg-[#0a0508] border border-[#d4af37]/20 p-6 flex flex-col justify-between hover:border-[#d4af37] transition-colors duration-300 md:col-span-2 lg:col-span-3 lg:w-1/2 lg:mx-auto">
+              <div>
+                <h4 className="font-serif text-[#d4af37] text-xl mb-2">Legal & Terms of Service</h4>
+                <p className="text-gray-400 text-sm mb-4">Comprehensive terms, conditions, and legal agreements for participation.</p>
+              </div>
+              <Button variant="outline" className="w-full rounded-none border-[#3a1c28] text-white hover:bg-[#d4af37] hover:text-black">
+                Download PDF
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -333,10 +401,10 @@ export default function Home() {
               Download Printable Form
             </Button>
             <Button 
-              className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
-              onClick={() => window.open("https://wa.me/254702894309", "_blank")}
+              className="bg-[#d4af37] text-black hover:bg-white hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+              onClick={() => window.open(TICKETS_URL, "_blank", "noopener,noreferrer")}
             >
-              Contact Support Panel
+              Buy Tickets
             </Button>
             <Button 
               className="bg-transparent border border-white text-white hover:bg-white hover:text-black font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"

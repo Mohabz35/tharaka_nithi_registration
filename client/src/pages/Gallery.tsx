@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram, ChevronLeft } from "lucide-react";
 import { useLocation } from "wouter";
@@ -28,7 +29,8 @@ export default function Gallery() {
     little_stars: "Little Stars (5–12)",
   };
 
-  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
+  const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
+  const SOCIAL_URL = "https://www.youtube.com/@royaliconevents"; // Replace with actual social link
   const SITE_URL = "https://www.faceoftharakanithi.app";
 
   return (
@@ -160,7 +162,7 @@ export default function Gallery() {
                           Age {model.age} · {categoryLabels[model.category]}
                         </p>
                         <a
-                          href={ROYAL_EVENTS_URL}
+                          href={VOTING_URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-black text-[#d4af37] px-6 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors"
@@ -182,7 +184,7 @@ export default function Gallery() {
 
                       {/* Vote link */}
                       <a
-                        href={ROYAL_EVENTS_URL}
+                        href={VOTING_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-4 block text-center border border-[#d4af37]/40 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-[10px] uppercase tracking-widest font-semibold transition-all duration-300"
@@ -190,54 +192,36 @@ export default function Gallery() {
                         Support & Vote
                       </a>
 
-                      {/* Social sharing */}
-                      <div className="grid grid-cols-4 gap-1 mt-2">
-                        <button
-                          title="Share on WhatsApp"
-                          onClick={() => {
-                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! Vote at ${ROYAL_EVENTS_URL}`;
-                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
-                          }}
-                          className="bg-green-900/60 hover:bg-green-700 text-white py-2 flex items-center justify-center transition-colors"
+                      <div className="mt-4 flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 rounded-none border-[#d4af37]/30 text-gray-400 hover:text-[#d4af37] hover:border-[#d4af37] bg-transparent text-xs uppercase tracking-wider"
+                          onClick={() => window.open(SOCIAL_URL, "_blank")}
                         >
-                          <MessageCircle className="w-3 h-3" />
-                        </button>
-                        <button
-                          title="Share on Facebook"
+                          ▶ Intro Video
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 rounded-none border-[#d4af37]/30 text-gray-400 hover:text-[#d4af37] hover:border-[#d4af37] bg-transparent text-xs uppercase tracking-wider"
                           onClick={() => {
-                            const url = encodeURIComponent(SITE_URL);
-                            const quote = encodeURIComponent(`🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026!`);
-                            window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`, "_blank");
-                          }}
-                          className="bg-blue-900/60 hover:bg-blue-700 text-white py-2 flex items-center justify-center transition-colors"
-                        >
-                          <Facebook className="w-3 h-3" />
-                        </button>
-                        <button
-                          title="Share on X/Twitter"
-                          onClick={() => {
-                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! #FaceOfTharakaNithi`;
-                            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
-                          }}
-                          className="bg-sky-900/60 hover:bg-sky-700 text-white py-2 flex items-center justify-center transition-colors"
-                        >
-                          <Share2 className="w-3 h-3" />
-                        </button>
-                        <button
-                          title="Share on Instagram"
-                          onClick={() => {
-                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! Vote at ${ROYAL_EVENTS_URL} #FaceOfTharakaNithi`;
+                            const shareText = `Support ${model.fullName} (#${String(globalIdx + 1).padStart(2, "0")}) in Mr & Miss Face of Tharaka-Nithi!\nVote here: ${VOTING_URL}`;
                             if (navigator.share) {
-                              navigator.share({ title: "Face of Tharaka-Nithi 2026", text }).catch(() => {});
+                              navigator.share({
+                                title: `Vote for ${model.fullName}`,
+                                text: shareText,
+                                url: VOTING_URL
+                              }).catch(console.error);
                             } else {
-                              navigator.clipboard.writeText(text);
-                              toast.success("Caption copied! Paste it on Instagram.");
+                              navigator.clipboard.writeText(shareText);
+                              toast.success("Share link copied to clipboard!");
                             }
                           }}
-                          className="bg-gradient-to-br from-pink-900/60 to-purple-900/60 hover:from-pink-700 hover:to-purple-700 text-white py-2 flex items-center justify-center transition-colors"
                         >
-                          <Instagram className="w-3 h-3" />
-                        </button>
+                          <Share2 className="w-3 h-3 mr-1" />
+                          Share
+                        </Button>
                       </div>
                     </div>
                   </div>

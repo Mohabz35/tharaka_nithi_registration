@@ -28,7 +28,8 @@ export default function FeaturedModelsCarousel() {
   const goToNext = () => { setCurrentIndex((prev) => (prev + 1) % models.length); setAutoPlay(false); };
   const visibleModels = Array.from({ length: visibleCount }, (_, i) => models[(currentIndex + i) % models.length]);
 
-  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
+  const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
+  const SOCIAL_URL = "https://www.youtube.com/@royaliconevents"; // Replace with actual social link
 
   const categoryLabel = (cat: string) =>
     cat === "adults" ? "ADULTS" : cat === "teens" ? "TEENS" : "LITTLE STARS";
@@ -109,7 +110,7 @@ export default function FeaturedModelsCarousel() {
                         <p className="text-black font-serif text-2xl font-bold mb-2 text-center px-4">{model.fullName}</p>
                         <p className="text-black/70 text-xs uppercase tracking-widest mb-6">{categoryLabel(model.category)}</p>
                         <a
-                          href={ROYAL_EVENTS_URL}
+                          href={VOTING_URL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="bg-black text-[#d4af37] px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors"
@@ -130,12 +131,20 @@ export default function FeaturedModelsCarousel() {
                         </p>
                       )}
                       <a
-                        href={ROYAL_EVENTS_URL}
+                        href={VOTING_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="mt-4 block text-center border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300"
                       >
                         Support & Vote
+                      </a>
+                      <a
+                        href={SOCIAL_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2 block text-center border border-[#d4af37]/30 text-gray-400 hover:text-[#d4af37] hover:border-[#d4af37] py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300"
+                      >
+                        ▶ Intro Video
                       </a>
                     </div>
                   </div>
