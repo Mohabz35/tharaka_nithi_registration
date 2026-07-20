@@ -6,9 +6,8 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image, Sparkles, Vote } from "lucide-react";
+import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart } from "lucide-react";
 import { useLocation } from "wouter";
-import { VOTE_URL } from "@shared/const";
 
 // Lazy-load heavy below-the-fold components
 const FeaturedModelsCarousel = lazy(() => import("@/components/FeaturedModelsCarousel"));
@@ -29,239 +28,235 @@ export default function Home() {
     setShowSuccessModal(true);
   };
 
+  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
+
+  const scrollToRegistration = () => {
+    document.getElementById("register-section")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
-    <main className="min-h-screen bg-black" style={{ backgroundImage: "url('/royal_icon_events_logo_new.png')", backgroundSize: 'cover', backgroundAttachment: 'fixed', backgroundPosition: 'center', backgroundBlendMode: 'overlay', backgroundColor: 'rgba(74, 26, 42, 0.92)' }}>
+    <main className="min-h-screen bg-black font-sans text-white selection:bg-[#d4af37] selection:text-black">
+      {/* Dynamic Top Banner */}
+      <div className="bg-[#d4af37] text-black text-center py-3 px-4 font-bold text-sm sm:text-base animate-pulse">
+        ⏳ REGISTRATION CLOSES IN 5 DAYS | PHASE 2 VOTING BEGUN TODAY @ 2PM | INTRODUCTIONS RESULTS TOMORROW @ 8AM ⏳
+      </div>
+
       {/* Hero Section */}
-      <section className="relative py-16 px-4 sm:px-6 lg:px-8 text-center">
-        <div className="max-w-4xl mx-auto">
-          {/* Event Banner */}
-          <div className="mb-8">
+      <section 
+        className="relative pt-12 pb-24 px-4 sm:px-6 lg:px-8 text-center border-b border-[#3a1c28]"
+        style={{ 
+          backgroundImage: "url('/royal_icon_events_logo_new.png')", 
+          backgroundSize: 'cover', 
+          backgroundAttachment: 'fixed', 
+          backgroundPosition: 'center', 
+          backgroundBlendMode: 'overlay', 
+          backgroundColor: 'rgba(20, 5, 10, 0.95)' 
+        }}
+      >
+        <div className="max-w-5xl mx-auto">
+          {/* Logo & Banner */}
+          <div className="flex flex-col items-center justify-center mb-10 space-y-8">
+            <img 
+              src="/royal_icon_events_logo_new.png" 
+              alt="Royals Icon Events" 
+              className="w-32 h-32 drop-shadow-2xl animate-lively-logo rounded-full border border-[#d4af37]/50" 
+              fetchPriority="high" 
+            />
             <img
               src="/mr_miss_tharaka_nithi_banner.png"
-              alt="Mr and Miss Face of Tharaka-Nithi County 2026 official event banner"
-              className="w-full max-w-3xl mx-auto rounded-xl border-2 border-[#d4af37] shadow-2xl"
+              alt="Mr and Miss Face of Tharaka-Nithi County 2026"
+              className="w-full max-w-4xl mx-auto rounded-none shadow-2xl border border-[#d4af37]/30"
               fetchPriority="high"
             />
           </div>
 
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            <img src="/royal_icon_events_logo_new.png" alt="Royals Icon Events - Mr and Miss Face of Tharaka-Nithi County 2026 organizer" className="w-40 h-40 drop-shadow-lg animate-lively-logo rounded-full border-2 border-[#d4af37]" fetchPriority="high" />
-          </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-[#d4af37] mb-2 drop-shadow-lg leading-tight">
-            OFFICIAL THARAKA NITHI MODELS 2026
+          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold text-[#d4af37] mb-6 drop-shadow-xl leading-tight uppercase tracking-wider">
+            Mr & Miss Face of Tharaka-Nithi
           </h1>
 
-          <p className="text-xl sm:text-2xl text-white mb-2 font-medium">
-            Mr & Miss Face of Tharaka-Nithi County
+          <p className="font-serif text-xl sm:text-3xl text-gray-200 mb-4 italic tracking-wide">
+            "Redefining Modern Masculinity & Femininity"
           </p>
 
-          <p className="text-md sm:text-lg text-gray-300 mb-4">
-            Featuring: <span className="text-[#d4af37] font-semibold">Chuka University (Eagles)</span> | <span className="text-[#d4af37] font-semibold">Tharaka Nithi University</span> | <span className="text-[#d4af37] font-semibold">Chuka TC</span>
+          <p className="text-md sm:text-lg text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            The ultimate platform for models who embody leadership, talent, and community service. <br/>
+            Featuring top talents from Chuka University, Tharaka Nithi University, and Chuka TC.
           </p>
 
-          <div className="flex flex-col sm:flex-row justify-center gap-6 text-white text-lg mb-8">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-[#d4af37] font-bold">📅</span>
-              <span>September 12, 2026</span>
-            </div>
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-[#d4af37] font-bold">📍</span>
-              <span>Chuka Grounds</span>
-            </div>
-          </div>
-
-          <p className="text-[#d4af37] italic text-lg mb-8">
-            Fashion | Talent | Celebration
-          </p>
-
-          <div className="mb-8 max-w-2xl mx-auto">
-            <CountdownTimer />
-          </div>
-
-          <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-6 justify-center items-center w-full max-w-md mx-auto sm:max-w-none mb-12">
             <Button
-              onClick={() => setLocation("/register")}
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
+              onClick={scrollToRegistration}
+              className="bg-[#d4af37] text-black hover:bg-white hover:text-black font-semibold uppercase tracking-widest text-sm px-10 py-7 rounded-none transition-all duration-300 w-full sm:w-auto"
             >
-              Register Now
+              Apply As Contestant
             </Button>
             <Button
-              onClick={() => window.open(VOTE_URL, "_blank", "noopener,noreferrer")}
-              className="bg-[#4a1a2a] border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
+              onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
+              className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest text-sm px-10 py-7 rounded-none transition-all duration-300 w-full sm:w-auto"
             >
-              <Vote className="w-5 h-5 mr-2" />
+              <Vote className="w-4 h-4 mr-3" />
               Vote Now
             </Button>
-            <Button
-              onClick={() => setLocation("/gallery")}
-              className="border-2 border-[#d4af37] bg-[#2a0a1a] bg-opacity-70 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
-            >
-              <Image className="w-5 h-5 mr-2" />
-              View Gallery
-            </Button>
-            <Button
-              onClick={() => setLocation("/poster-generator")}
-              className="border-2 border-[#d4af37] bg-[#2a0a1a] bg-opacity-70 text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold text-lg px-8 py-6 rounded-lg w-full sm:w-auto"
-            >
-              <Sparkles className="w-5 h-5 mr-2" />
-              Generate Poster
-            </Button>
+          </div>
+
+          <div className="max-w-2xl mx-auto border-t border-[#d4af37]/20 pt-8">
+            <p className="text-[#d4af37] text-sm uppercase tracking-[0.2em] mb-4">Time Remaining</p>
+            <CountdownTimer />
           </div>
         </div>
       </section>
 
-      {/* Eligibility Rules Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-black bg-opacity-30">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-8 text-center">
-            Eligibility Guidelines
+      {/* The Crown Awaits (Two Columns) */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0508]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-white mb-4 uppercase tracking-wider">The Crown Awaits</h2>
+            <div className="w-24 h-1 bg-[#d4af37] mx-auto"></div>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-12">
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-10 flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <Vote className="w-16 h-16 text-[#d4af37] mb-6" />
+              <h3 className="font-serif text-3xl text-white mb-4">Support Your Favourite</h3>
+              <p className="text-gray-400 mb-8 font-light">
+                Phase 2 Voting has officially begun! Every vote counts towards crowning the next Face of Tharaka Nithi. Show your support and make history.
+              </p>
+              <Button
+                onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
+                className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest px-8 py-6 rounded-none w-full max-w-xs"
+              >
+                Cast Your Vote
+              </Button>
+            </div>
+
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-10 flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <Ticket className="w-16 h-16 text-[#d4af37] mb-6" />
+              <h3 className="font-serif text-3xl text-white mb-4">Grab Your Tickets</h3>
+              <p className="text-gray-400 mb-8 font-light">
+                Join us live on September 12, 2026, at Chuka Grounds for a night of fashion, talent, and celebration. Secure your spot at the grand finale.
+              </p>
+              <Button
+                onClick={() => window.open(ROYAL_EVENTS_URL, "_blank", "noopener,noreferrer")}
+                className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest px-8 py-6 rounded-none w-full max-w-xs"
+              >
+                Buy Tickets
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Us (New Section) */}
+      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#1a0c14] relative overflow-hidden">
+        <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+          <img src="/royal_icon_events_logo_new.png" alt="bg watermark" className="w-96 h-96 object-cover" />
+        </div>
+        <div className="max-w-4xl mx-auto text-center relative z-10">
+          <h2 className="font-serif text-4xl sm:text-5xl font-bold text-[#d4af37] mb-8 uppercase tracking-widest">
+            A New Legacy Begins
           </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37]">✓ Registration is FREE</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                Registration is completely free. Come showcase your talent and compete for the title.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37]">✓ All Are Welcome</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                No height restrictions. Tattoos and scars do not disqualify applicants. Your uniqueness is celebrated.
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
-              <CardHeader>
-                <CardTitle className="text-[#d4af37]">✓ Simple Documentation</CardTitle>
-              </CardHeader>
-              <CardContent className="text-white">
-                Only National ID (adults) or Birth Certificate (minors) needed at registration.
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Talents Section */}
-      <section className="py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-8 text-center">
-            Showcase Your Talents
-          </h2>
-          <div className="bg-[#2a0a1a] border-2 border-[#d4af37] rounded-lg p-8">
-            <p className="text-white text-lg mb-6">
-              This is your opportunity to shine! We celebrate diverse talents including modeling, dancing, singing, acting, and more. 
-              Submit your portfolio or talent video to stand out from the crowd.
-            </p>
-            <ul className="text-white space-y-3 ml-6">
-              <li className="flex items-start gap-3">
-                <span className="text-[#d4af37] font-bold">•</span>
-                <span>Professional modeling portfolio or headshots</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#d4af37] font-bold">•</span>
-                <span>Dance, singing, or performance videos</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#d4af37] font-bold">•</span>
-                <span>Acting or creative talent demonstrations</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-[#d4af37] font-bold">•</span>
-                <span>Social media presence and influence</span>
-              </li>
-            </ul>
-            <p className="text-[#d4af37] text-sm mt-6 italic">
-              Note: Add your talents, portfolio, or social media links during registration so our judges can discover you.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Vote Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#4a1a2a] to-[#2a0a1a] border-t border-b border-[#d4af37]">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-4">Vote for Your Favourite</h2>
-          <p className="text-white text-lg mb-8">
-            Support the contestants you love. Cast your vote and help crown the next Mr &amp; Miss Face of Tharaka-Nithi County 2026.
+          <div className="w-16 h-[2px] bg-white mx-auto mb-10"></div>
+          <p className="text-xl sm:text-2xl text-gray-300 font-serif italic mb-8 leading-relaxed">
+            Welcome to the inaugural edition of Mr & Miss Face of Tharaka-Nithi County.
           </p>
-          <Button
-            onClick={() => window.open(VOTE_URL, "_blank", "noopener,noreferrer")}
-            className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg px-10 py-6 rounded-lg"
-          >
-            <Vote className="w-5 h-5 mr-2" />
-            Vote Now
-          </Button>
+          <p className="text-lg text-gray-400 font-light leading-relaxed mb-6">
+            Deeply rooted in the rich cultural heritage of Tharaka Nithi, this premier pageant is more than just a competition; it is a movement. Royals Icon Events is on a mission to uncover, mentor, and elevate the hidden gems of our community. We believe in the power of the youth to drive change, inspire greatness, and redefine beauty standards through intellect and purpose.
+          </p>
+          <p className="text-lg text-[#d4af37] font-light leading-relaxed">
+            This first edition marks the beginning of a legacy—a celebration of resilience, elegance, and the vibrant spirit of Tharaka Nithi.
+          </p>
         </div>
       </section>
 
-      {/* Featured Models Carousel */}
-      <Suspense fallback={<SectionLoader />}>
-        <FeaturedModelsCarousel />
-      </Suspense>
+      {/* Our Pillars */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0508]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-white mb-4 uppercase tracking-wider">Our Core Pillars</h2>
+            <div className="w-24 h-1 bg-[#d4af37] mx-auto"></div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="p-8 text-center border-l-4 border-transparent hover:border-[#d4af37] hover:bg-[#140a10] transition-all duration-300">
+              <Star className="w-12 h-12 text-[#d4af37] mx-auto mb-4" />
+              <h4 className="font-serif text-2xl text-white mb-2">Talent</h4>
+              <p className="text-gray-500 font-light">Showcasing extraordinary gifts and creative brilliance.</p>
+            </div>
+            <div className="p-8 text-center border-l-4 border-transparent hover:border-[#d4af37] hover:bg-[#140a10] transition-all duration-300">
+              <Users className="w-12 h-12 text-[#d4af37] mx-auto mb-4" />
+              <h4 className="font-serif text-2xl text-white mb-2">Leadership</h4>
+              <p className="text-gray-500 font-light">Empowering the youth to take charge and inspire.</p>
+            </div>
+            <div className="p-8 text-center border-l-4 border-transparent hover:border-[#d4af37] hover:bg-[#140a10] transition-all duration-300">
+              <MapPin className="w-12 h-12 text-[#d4af37] mx-auto mb-4" />
+              <h4 className="font-serif text-2xl text-white mb-2">Culture</h4>
+              <p className="text-gray-500 font-light">Celebrating the rich heritage of Tharaka Nithi County.</p>
+            </div>
+            <div className="p-8 text-center border-l-4 border-transparent hover:border-[#d4af37] hover:bg-[#140a10] transition-all duration-300">
+              <Heart className="w-12 h-12 text-[#d4af37] mx-auto mb-4" />
+              <h4 className="font-serif text-2xl text-white mb-2">Service</h4>
+              <p className="text-gray-500 font-light">Giving back and creating a lasting community impact.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Models Carousel / Gallery */}
+      <div className="bg-[#1a0c14] border-t border-b border-[#3a1c28]">
+        <Suspense fallback={<SectionLoader />}>
+          <FeaturedModelsCarousel />
+        </Suspense>
+      </div>
 
       {/* Registration Section */}
-      <section id="register-section" className="py-16 px-4 sm:px-6 lg:px-8">
+      <section id="register-section" className="py-24 px-4 sm:px-6 lg:px-8 bg-[#0a0508]">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-8 text-center">
-            Register Now
-          </h2>
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-[#d4af37] mb-4 uppercase tracking-wider">Become Part of Us</h2>
+            <div className="w-24 h-1 bg-white mx-auto mb-6"></div>
+            <p className="text-gray-400 font-light max-w-2xl mx-auto">
+              Registration is completely free. No height restrictions. Tattoos and scars do not disqualify applicants. Your uniqueness is celebrated.
+            </p>
+          </div>
 
-          <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
-            <CardContent className="pt-6">
+          <Card className="bg-[#140a10] border-[#3a1c28] border rounded-none shadow-2xl">
+            <CardContent className="pt-8">
               <Tabs
                 defaultValue="adults"
                 value={selectedCategory}
                 onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
               >
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-[#4a1a2a] h-auto gap-1 p-1">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3 bg-[#0a0508] h-auto gap-2 p-2 border border-[#3a1c28]">
                   <TabsTrigger
                     value="adults"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
                   >
                     Adults (18–35)
                   </TabsTrigger>
                   <TabsTrigger
                     value="teens"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
                   >
                     Teens (13–17)
                   </TabsTrigger>
                   <TabsTrigger
                     value="little_stars"
-                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white"
+                    className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-gray-400 rounded-none py-3 uppercase tracking-wider text-sm font-semibold transition-all"
                   >
-                    Little Stars (5–12)
+                    Stars (5–12)
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="adults" className="mt-6">
-                  <RegistrationForm
-                    category="adults"
-                    onSuccess={handleRegistrationSuccess}
-                  />
+                <TabsContent value="adults" className="mt-8">
+                  <RegistrationForm category="adults" onSuccess={handleRegistrationSuccess} />
                 </TabsContent>
 
-                <TabsContent value="teens" className="mt-6">
-                  <RegistrationForm
-                    category="teens"
-                    onSuccess={handleRegistrationSuccess}
-                  />
+                <TabsContent value="teens" className="mt-8">
+                  <RegistrationForm category="teens" onSuccess={handleRegistrationSuccess} />
                 </TabsContent>
 
-                <TabsContent value="little_stars" className="mt-6">
-                  <RegistrationForm
-                    category="little_stars"
-                    onSuccess={handleRegistrationSuccess}
-                  />
+                <TabsContent value="little_stars" className="mt-8">
+                  <RegistrationForm category="little_stars" onSuccess={handleRegistrationSuccess} />
                 </TabsContent>
               </Tabs>
             </CardContent>
@@ -284,8 +279,8 @@ export default function Home() {
       )}
 
       {/* Sponsor & Partner Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#2a0a1a] to-[#4a1a2a]">
-        <div className="max-w-4xl mx-auto">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#1a0c14] border-t border-[#3a1c28]">
+        <div className="max-w-5xl mx-auto">
           <Suspense fallback={<SectionLoader />}>
             <SponsorRegistrationForm />
           </Suspense>
@@ -293,10 +288,12 @@ export default function Home() {
       </section>
 
       {/* Artists & Showcasing Section */}
-      <section id="artists-section" className="py-16 px-4 sm:px-6 lg:px-8 bg-black bg-opacity-60">
+      <section id="artists-section" className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0508] border-t border-[#3a1c28]">
         <div className="max-w-6xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-12">More Opportunities</h2>
-          <div className="grid md:grid-cols-2 gap-8 text-left">
+          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-white mb-16 uppercase tracking-wider">
+            More <span className="text-[#d4af37]">Opportunities</span>
+          </h2>
+          <div className="grid md:grid-cols-2 gap-12 text-left">
             <Suspense fallback={<SectionLoader />}>
               <ArtistRegistrationForm />
             </Suspense>
@@ -307,17 +304,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Know More & Support Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#1a0a1a] border-t border-b border-[#d4af37]">
+      {/* Know More & Support (Pill Layout) */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#140a10] border-t border-[#3a1c28]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-[#d4af37] mb-6">Know More & Support</h2>
-          <p className="text-white mb-8">
-            Need a physical form for the bootcamp? Download the printable registration form below.
+          <h2 className="font-serif text-3xl font-bold text-[#d4af37] mb-6 uppercase tracking-wider">Contact & Support</h2>
+          <p className="text-gray-400 mb-10 font-light">
+            Need a physical form for the bootcamp? Download the printable registration form below.<br/>
             For any queries, our support panel is always ready to assist you.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center w-full max-w-md mx-auto sm:max-w-none">
             <Button 
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
+              className="bg-transparent border border-white text-white hover:bg-white hover:text-black font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
               onClick={() => {
                 const link = document.createElement("a");
                 link.href = "/printable_form.pdf";
@@ -330,29 +327,44 @@ export default function Home() {
               Download Printable Form
             </Button>
             <Button 
-              className="border-2 border-[#d4af37] bg-[#1a0a1a] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold px-8 py-6 rounded-lg text-lg w-full sm:w-auto"
+              className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
               onClick={() => window.open("https://wa.me/254702894309", "_blank")}
             >
               Contact Support Panel
+            </Button>
+            <Button 
+              className="bg-transparent border border-white text-white hover:bg-white hover:text-black font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
+              onClick={() => setLocation("/poster-generator")}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate Poster
+            </Button>
+            <Button 
+              className="bg-transparent border border-white text-white hover:bg-white hover:text-black font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
+              onClick={() => setLocation("/gallery")}
+            >
+              <Image className="w-4 h-4 mr-2" />
+              View Full Gallery
             </Button>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-black bg-opacity-50 py-8 px-4 text-center text-white border-t border-[#d4af37]">
-        <p className="text-lg mb-2">Organized by</p>
-        <p className="text-2xl font-bold text-[#d4af37]">Royals Icon Events</p>
-        <p className="text-sm mt-4 text-gray-400">
-          Email: support@royaliconevents.co.ke | Website: www.royaliconevents.co.ke
+      <footer className="bg-[#050204] py-12 px-4 text-center text-white border-t border-[#d4af37]/30">
+        <p className="text-sm text-gray-500 uppercase tracking-widest mb-3">Organized by</p>
+        <p className="font-serif text-3xl text-[#d4af37] mb-6">Royals Icon Events</p>
+        <p className="text-sm font-light text-gray-400 mb-8">
+          <a href="mailto:support@royaliconevents.co.ke" className="hover:text-white transition-colors">support@royaliconevents.co.ke</a> | 
+          <a href="https://www.royaliconevents.co.ke" className="hover:text-white transition-colors ml-2">www.royaliconevents.co.ke</a>
         </p>
 
         <SocialMediaFooter />
 
-        <div className="mt-2 pt-6 border-t border-[#d4af37] border-opacity-30">
+        <div className="mt-8 pt-8 border-t border-[#3a1c28]">
           <a
             href="/admin"
-            className="text-[#d4af37] hover:text-[#e5c158] text-sm underline"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
           >
             Admin Dashboard
           </a>

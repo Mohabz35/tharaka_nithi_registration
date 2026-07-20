@@ -1,171 +1,190 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
 
 export default function FeaturedModelsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [autoPlay, setAutoPlay] = useState(true);
-  
+
   const { data: registrations, isLoading } = trpc.gallery.getPublicRegistrations.useQuery({
     category: undefined,
     search: undefined,
   });
 
-  const models = (registrations as any)?.filter((r: any) => r.photoUrl)?.slice(0, 6) || [];
+  const models = (registrations as any)?.filter((r: any) => r.photoUrl)?.slice(0, 12) || [];
 
   useEffect(() => {
     if (!autoPlay || models.length === 0) return;
-
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % Math.max(models.length, 1));
-    }, 5000); // Change every 5 seconds
-
+    }, 5000);
     return () => clearInterval(interval);
   }, [autoPlay, models.length]);
 
-  if (isLoading || models.length === 0) {
-    return null; // Still no models at all
-  }
+  if (isLoading || models.length === 0) return null;
 
-  // Only show as many cards as we have models (up to 3)
   const visibleCount = Math.min(models.length, 3);
+  const goToPrevious = () => { setCurrentIndex((prev) => (prev - 1 + models.length) % models.length); setAutoPlay(false); };
+  const goToNext = () => { setCurrentIndex((prev) => (prev + 1) % models.length); setAutoPlay(false); };
+  const visibleModels = Array.from({ length: visibleCount }, (_, i) => models[(currentIndex + i) % models.length]);
 
-  const goToPrevious = () => {
-    setCurrentIndex((prev) => (prev - 1 + models.length) % models.length);
-    setAutoPlay(false);
-  };
+  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
 
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev + 1) % models.length);
-    setAutoPlay(false);
-  };
-
-  // Show unique models only — no duplicates when fewer than 3
-  const visibleModels = Array.from({ length: visibleCount }, (_, i) =>
-    models[(currentIndex + i) % models.length]
-  );
+  const categoryLabel = (cat: string) =>
+    cat === "adults" ? "ADULTS" : cat === "teens" ? "TEENS" : "LITTLE STARS";
 
   return (
-    <div className="relative w-full bg-gradient-to-b from-[#2a0a1a] to-[#1a0a1a] py-12 overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-[#d4af37] rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#d4af37] rounded-full blur-3xl"></div>
+    <section className="relative w-full bg-[#0a0508] py-20 overflow-hidden">
+      {/* Decorative top ornament */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
+
+      {/* Background glow blobs */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-[#d4af37]/5 rounded-full blur-[120px]" />
+        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-[#d4af37]/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4">
-        {/* Title */}
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-[#d4af37] mb-2">Featured Models</h2>
-          <p className="text-white text-lg">Meet our amazing participants</p>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8">
+        {/* Section heading — editorial style */}
+        <div className="text-center mb-14">
+          <p className="text-[#d4af37] uppercase tracking-[0.3em] text-xs mb-3 font-semibold">Season 1 · 2026</p>
+          <h2 className="font-serif text-5xl sm:text-6xl font-bold text-white mb-3 uppercase tracking-wider">
+            Meet the Contestants
+          </h2>
+          <div className="flex items-center justify-center gap-4 mt-4">
+            <div className="h-px w-24 bg-gradient-to-r from-transparent to-[#d4af37]" />
+            <span className="text-[#d4af37] text-xl">✦</span>
+            <div className="h-px w-24 bg-gradient-to-l from-transparent to-[#d4af37]" />
+          </div>
+          <p className="text-gray-500 font-light mt-4 text-sm uppercase tracking-widest">
+            Phase 2 Voting · Now Open
+          </p>
         </div>
 
         {/* Carousel */}
-        <div className="relative">
-          <div className={`grid gap-6 ${
-            visibleCount === 1 ? 'grid-cols-1 max-w-sm mx-auto' :
-            visibleCount === 2 ? 'grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto' :
-            'grid-cols-1 md:grid-cols-3'
+        <div className="relative px-8 sm:px-16">
+          <div className={`grid gap-6 transition-all duration-500 ${
+            visibleCount === 1 ? "grid-cols-1 max-w-sm mx-auto" :
+            visibleCount === 2 ? "grid-cols-1 sm:grid-cols-2 max-w-2xl mx-auto" :
+            "grid-cols-1 md:grid-cols-3"
           }`}>
-            {visibleModels.map((model, idx) => (
-              <div
-                key={`${model.id}-${idx}`}
-                className={`transform transition-all duration-500 ${
-                  idx === 1 ? "md:scale-110 md:z-20" : "md:scale-95 opacity-75"
-                }`}
-              >
-                <div className="bg-[#4a1a2a] rounded-lg overflow-hidden border-2 border-[#d4af37] shadow-2xl hover:shadow-[#d4af37]/50 transition-shadow">
-                  {/* Model Photo */}
-                  <div className="relative h-64 md:h-80 overflow-hidden bg-[#2a0a1a]">
-                    {model.photoUrl ? (
+            {visibleModels.map((model, idx) => {
+              const isCenter = idx === 1 && visibleCount === 3;
+              const contestantNum = models.indexOf(model) + 1;
+              return (
+                <div
+                  key={`${model.id}-${idx}`}
+                  className={`transform transition-all duration-500 ${
+                    isCenter ? "md:scale-[1.06] md:z-20" : "md:scale-95 opacity-80"
+                  }`}
+                >
+                  {/* Card */}
+                  <div className={`relative group bg-[#140a10] overflow-hidden shadow-2xl transition-shadow duration-300 ${
+                    isCenter ? "border-2 border-[#d4af37] shadow-[0_0_40px_rgba(212,175,55,0.2)]" : "border border-[#d4af37]/30"
+                  }`}>
+                    {/* Contestant number badge */}
+                    <div className="absolute top-3 left-3 z-30 bg-[#d4af37] text-black text-xs font-black px-3 py-1 uppercase tracking-widest">
+                      #{String(contestantNum).padStart(2, "0")}
+                    </div>
+
+                    {/* Category badge */}
+                    <div className="absolute top-3 right-3 z-30 bg-black/70 text-[#d4af37] text-xs font-semibold px-3 py-1 border border-[#d4af37]/50 uppercase tracking-wider">
+                      {categoryLabel(model.category)}
+                    </div>
+
+                    {/* Photo */}
+                    <div className="relative h-80 md:h-96 overflow-hidden bg-[#0a0508]">
                       <img
                         src={model.photoUrl}
                         alt={model.fullName}
                         loading="lazy"
-                        className="w-full h-full object-cover hover:scale-110 transition-transform duration-300"
+                        className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-[#d4af37] to-[#4a1a2a]">
-                        <span className="text-[#2a0a1a] text-4xl">👤</span>
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#140a10] via-[#140a10]/20 to-transparent" />
+
+                      {/* Hover overlay with vote CTA */}
+                      <div className="absolute inset-0 bg-[#d4af37]/90 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <p className="text-black font-serif text-2xl font-bold mb-2 text-center px-4">{model.fullName}</p>
+                        <p className="text-black/70 text-xs uppercase tracking-widest mb-6">{categoryLabel(model.category)}</p>
+                        <a
+                          href={ROYAL_EVENTS_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-black text-[#d4af37] px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors"
+                        >
+                          Vote Now →
+                        </a>
                       </div>
-                    )}
-                    {/* Gold overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#2a0a1a] via-transparent to-transparent opacity-60"></div>
                   </div>
 
-                  {/* Model Info */}
-                  <div className="p-4">
-                    <h3 className="text-[#d4af37] font-bold text-lg truncate">
-                      {model.fullName}
-                    </h3>
-                    <p className="text-gray-300 text-sm">
-                      {model.category === "adults"
-                        ? "Adults (18-35)"
-                        : model.category === "teens"
-                        ? "Teens (13-17)"
-                        : "Little Stars (5-12)"}
-                    </p>
-                    {model.talents && (
-                      <p className="text-gray-400 text-xs mt-2 line-clamp-2">
-                        {model.talents}
-                      </p>
-                    )}
+                    {/* Info bar */}
+                    <div className="p-5 border-t border-[#d4af37]/20">
+                      <h3 className="font-serif text-xl text-[#d4af37] font-bold truncate mb-1">
+                        {model.fullName}
+                      </h3>
+                      {model.talents && (
+                        <p className="text-gray-500 text-xs font-light italic line-clamp-2">
+                          {model.talents}
+                        </p>
+                      )}
+                      <a
+                        href={ROYAL_EVENTS_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 block text-center border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300"
+                      >
+                        Support & Vote
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
-          {/* Navigation Buttons */}
+          {/* Nav arrows */}
           <button
             onClick={goToPrevious}
-            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-6 md:-translate-x-12 z-30 bg-[#d4af37] hover:bg-[#e5c158] text-black p-2 rounded-full transition-all"
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center border border-[#d4af37]/60 text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-all duration-300"
             aria-label="Previous"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
-
           <button
             onClick={goToNext}
-            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-6 md:translate-x-12 z-30 bg-[#d4af37] hover:bg-[#e5c158] text-black p-2 rounded-full transition-all"
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-30 w-10 h-10 flex items-center justify-center border border-[#d4af37]/60 text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-all duration-300"
             aria-label="Next"
           >
-            <ChevronRight className="w-6 h-6" />
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Indicators */}
-        <div className="flex justify-center gap-1 mt-8">
+        {/* Dots indicator */}
+        <div className="flex justify-center gap-2 mt-10">
           {models.map((_: any, idx: number) => (
             <button
               key={idx}
-              onClick={() => {
-                setCurrentIndex(idx);
-                setAutoPlay(false);
-              }}
-              className="p-3"
+              onClick={() => { setCurrentIndex(idx); setAutoPlay(false); }}
               aria-label={`Go to slide ${idx + 1}`}
-            >
-              <div className={`h-2 rounded-full transition-all ${
-                idx === currentIndex
-                  ? "bg-[#d4af37] w-8"
-                  : "bg-gray-600 hover:bg-gray-400 w-2"
-              }`} />
-            </button>
+              className={`h-[3px] rounded-none transition-all duration-300 ${
+                idx === currentIndex ? "bg-[#d4af37] w-10" : "bg-white/20 hover:bg-white/40 w-4"
+              }`}
+            />
           ))}
         </div>
 
-        {/* Auto-play toggle */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => setAutoPlay(!autoPlay)}
-            className="text-[#d4af37] hover:text-[#e5c158] text-sm transition-colors"
+        {/* Footer CTA */}
+        <div className="text-center mt-12">
+          <a
+            href="/gallery"
+            className="inline-block border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-12 py-4 text-xs uppercase tracking-[0.2em] font-semibold transition-all duration-300"
           >
-            {autoPlay ? "⏸ Pause" : "▶ Play"} Auto-play
-          </button>
+            View Full Gallery
+          </a>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

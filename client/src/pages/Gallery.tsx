@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
-import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram } from "lucide-react";
+import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram, ChevronLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 
@@ -13,200 +11,222 @@ export default function Gallery() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "talents">("newest");
 
-  // Fetch gallery data
   const { data: galleryData, isLoading } = trpc.gallery.getPublicRegistrations.useQuery({
     category: selectedCategory,
     search: searchQuery,
   });
 
-  // Sort gallery data
   const sortedData = galleryData ? [...galleryData].sort((a, b) => {
-    if (sortBy === "newest") {
-      return new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime();
-    } else if (sortBy === "talents") {
-      return (a.talents || "").localeCompare(b.talents || "");
-    }
+    if (sortBy === "newest") return new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime();
+    if (sortBy === "talents") return (a.talents || "").localeCompare(b.talents || "");
     return 0;
   }) : [];
 
-  const categoryLabels = {
+  const categoryLabels: Record<string, string> = {
     adults: "Adults (18–35)",
     teens: "Teens (13–17)",
     little_stars: "Little Stars (5–12)",
   };
 
-  const categoryColors = {
-    adults: "bg-purple-600",
-    teens: "bg-pink-600",
-    little_stars: "bg-blue-600",
-  };
+  const ROYAL_EVENTS_URL = "https://www.royaliconevents.co.ke";
+  const SITE_URL = "https://www.faceoftharakanithi.app";
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a]">
+    <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      {/* Decorative top bar */}
+      <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
+
       {/* Header */}
-      <header className="bg-black bg-opacity-50 border-b border-[#d4af37] py-6 px-4 sm:px-6 lg:px-8">
+      <header className="bg-[#050204] border-b border-[#d4af37]/20 pt-10 pb-8 px-4 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-[#d4af37]">Models Gallery</h1>
-            <Button
+          {/* Back + Title row */}
+          <div className="flex items-center justify-between mb-8">
+            <button
               onClick={() => setLocation("/")}
-              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+              className="flex items-center gap-2 text-[#d4af37]/70 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
             >
+              <ChevronLeft className="w-4 h-4" />
               Back to Home
-            </Button>
+            </button>
+
+            <div className="text-center">
+              <p className="text-[#d4af37] text-xs uppercase tracking-[0.3em] mb-1">Season 1 · 2026</p>
+              <h1 className="font-serif text-3xl sm:text-5xl font-bold text-white uppercase tracking-wider">
+                Contestants Gallery
+              </h1>
+              <div className="flex items-center justify-center gap-3 mt-3">
+                <div className="h-px w-16 bg-gradient-to-r from-transparent to-[#d4af37]" />
+                <span className="text-[#d4af37] text-sm">✦</span>
+                <div className="h-px w-16 bg-gradient-to-l from-transparent to-[#d4af37]" />
+              </div>
+            </div>
+
+            <div className="w-28" />
           </div>
 
-          {/* Search Bar */}
-          <div className="flex gap-2 mb-4">
+          {/* Search + Sort Row */}
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-[#d4af37]" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#d4af37]/60" />
               <Input
-                placeholder="Search models by name or talents..."
+                placeholder="Search by name or talents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-[#2a0a1a] border-[#d4af37] text-white placeholder-gray-400"
+                className="pl-11 bg-[#140a10] border-[#d4af37]/30 text-white placeholder:text-gray-600 rounded-none focus:border-[#d4af37] transition-colors"
               />
             </div>
-          </div>
-
-          {/* Sort Options */}
-          <div className="flex gap-2 mb-4">
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as "newest" | "talents")}
-              className="bg-[#2a0a1a] border-2 border-[#d4af37] text-[#d4af37] px-4 py-2 rounded font-semibold hover:bg-[#3a1a2a] transition-colors"
+              className="bg-[#140a10] border border-[#d4af37]/30 text-[#d4af37] px-5 py-2 text-xs uppercase tracking-widest hover:border-[#d4af37] transition-colors focus:outline-none"
             >
-              <option value="newest">Sort by: Newest First</option>
-              <option value="talents">Sort by: Talents</option>
+              <option value="newest">Newest First</option>
+              <option value="talents">By Talents</option>
             </select>
           </div>
 
-          {/* Category Filters */}
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              onClick={() => setSelectedCategory(undefined)}
-              variant={selectedCategory === undefined ? "default" : "outline"}
-              className={`${
-                selectedCategory === undefined
-                  ? "bg-[#d4af37] text-black"
-                  : "border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black"
-              }`}
-            >
-              All Categories
-            </Button>
-            {(Object.keys(categoryLabels) as Array<keyof typeof categoryLabels>).map((cat) => (
-              <Button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                className={`${
-                  selectedCategory === cat
+          {/* Category filter pills */}
+          <div className="flex flex-wrap gap-3">
+            {[
+              { key: undefined, label: "All Contestants" },
+              ...Object.entries(categoryLabels).map(([k, v]) => ({ key: k as any, label: v }))
+            ].map(({ key, label }) => (
+              <button
+                key={String(key)}
+                onClick={() => setSelectedCategory(key)}
+                className={`px-6 py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-200 ${
+                  selectedCategory === key
                     ? "bg-[#d4af37] text-black"
-                    : "border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black"
+                    : "border border-[#d4af37]/40 text-[#d4af37]/70 hover:border-[#d4af37] hover:text-[#d4af37]"
                 }`}
               >
-                {categoryLabels[cat]}
-              </Button>
+                {label}
+              </button>
             ))}
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="py-12 px-4 sm:px-6 lg:px-8">
+      {/* Gallery Grid */}
+      <main className="py-16 px-4 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
           {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <Loader2 className="w-8 h-8 animate-spin text-[#d4af37]" />
+            <div className="flex flex-col items-center justify-center py-32 gap-4">
+              <Loader2 className="w-10 h-10 animate-spin text-[#d4af37]" />
+              <p className="text-gray-600 text-xs uppercase tracking-widest">Loading contestants…</p>
             </div>
-          ) : galleryData && galleryData.length > 0 ? (
+          ) : sortedData.length > 0 ? (
             <>
-              <p className="text-white text-center mb-8 text-lg">
-                Showing <span className="font-bold text-[#d4af37]">{galleryData.length}</span> registered models
+              <p className="text-gray-600 text-xs uppercase tracking-widest text-center mb-10">
+                Showing <span className="text-[#d4af37] font-bold">{sortedData.length}</span> registered contestants
               </p>
 
-              {/* Gallery Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {sortedData.map((model) => (
-                  <Card
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {sortedData.map((model, globalIdx) => (
+                  <div
                     key={model.id}
-                    className="bg-[#2a0a1a] border-[#d4af37] border-2 overflow-hidden hover:shadow-lg hover:shadow-[#d4af37]/50 transition-all duration-300 hover:scale-[1.02]"
+                    className="group relative bg-[#140a10] border border-[#d4af37]/20 hover:border-[#d4af37]/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(212,175,55,0.15)]"
                   >
+                    {/* Contestant # badge */}
+                    <div className="absolute top-0 left-0 z-20 bg-[#d4af37] text-black text-xs font-black px-3 py-[5px] uppercase tracking-widest">
+                      #{String(globalIdx + 1).padStart(2, "0")}
+                    </div>
+
+                    {/* Category badge */}
+                    <div className="absolute top-0 right-0 z-20 bg-black/80 text-[#d4af37] text-[10px] font-semibold px-2 py-1 border-b border-l border-[#d4af37]/30 uppercase tracking-wider">
+                      {categoryLabels[model.category] || model.category}
+                    </div>
+
                     {/* Photo */}
-                    <div className="relative h-72 bg-[#1a0a1a] overflow-hidden">
+                    <div className="relative h-72 sm:h-80 overflow-hidden bg-[#0a0508]">
                       {model.photoUrl ? (
                         <img
                           src={model.photoUrl}
-                          alt={`${model.fullName} - ${model.category} contestant at Mr & Miss Face of Tharaka-Nithi 2026`}
-                          className="w-full h-full object-cover object-top"
+                          alt={`${model.fullName} - ${model.category} contestant`}
+                          className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
                           loading="lazy"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
-                          <p className="text-gray-400">No photo available</p>
+                          <span className="text-gray-700 text-5xl">👤</span>
                         </div>
                       )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#140a10] via-[#140a10]/10 to-transparent" />
 
-                      {/* Category Badge */}
-                      <div
-                        className={`absolute top-2 right-2 px-2 py-1 rounded-full text-white text-xs font-bold ${
-                          categoryColors[model.category as keyof typeof categoryColors]
-                        }`}
-                      >
-                        {categoryLabels[model.category as keyof typeof categoryLabels]}
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-[#d4af37]/90 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-4">
+                        <p className="font-serif text-xl font-bold text-black text-center mb-1">{model.fullName}</p>
+                        <p className="text-black/70 text-[10px] uppercase tracking-widest mb-6">
+                          Age {model.age} · {categoryLabels[model.category]}
+                        </p>
+                        <a
+                          href={ROYAL_EVENTS_URL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bg-black text-[#d4af37] px-6 py-2 text-[10px] uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors"
+                        >
+                          Vote Now →
+                        </a>
                       </div>
                     </div>
 
-                    {/* Profile Info */}
-                    <CardContent className="pt-4 pb-4">
-                      <h3 className="text-base font-bold text-[#d4af37] mb-1 truncate">{model.fullName}</h3>
-                      <p className="text-gray-300 text-sm">Age: {model.age} &nbsp;|&nbsp; 📍 {(model as any).countySubLocation}</p>
-
+                    {/* Info */}
+                    <div className="p-4 border-t border-[#d4af37]/15">
+                      <h3 className="font-serif text-lg text-[#d4af37] font-bold truncate mb-1">{model.fullName}</h3>
+                      <p className="text-gray-500 text-xs font-light">
+                        Age {model.age} · 📍 {(model as any).countySubLocation || "Tharaka Nithi"}
+                      </p>
                       {model.talents && (
-                        <p className="text-white text-xs mt-2 line-clamp-2 italic">"{model.talents}"</p>
+                        <p className="text-gray-600 text-xs font-light italic mt-2 line-clamp-2">"{model.talents}"</p>
                       )}
 
-                      {/* Social Sharing Buttons */}
-                      <div className="grid grid-cols-4 gap-1 mt-3">
-                        {/* WhatsApp */}
+                      {/* Vote link */}
+                      <a
+                        href={ROYAL_EVENTS_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 block text-center border border-[#d4af37]/40 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-[10px] uppercase tracking-widest font-semibold transition-all duration-300"
+                      >
+                        Support & Vote
+                      </a>
+
+                      {/* Social sharing */}
+                      <div className="grid grid-cols-4 gap-1 mt-2">
                         <button
                           title="Share on WhatsApp"
                           onClick={() => {
-                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026! Register at https://www.faceoftharakanithi.app`;
+                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! Vote at ${ROYAL_EVENTS_URL}`;
                             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="bg-green-700 hover:bg-green-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                          className="bg-green-900/60 hover:bg-green-700 text-white py-2 flex items-center justify-center transition-colors"
                         >
                           <MessageCircle className="w-3 h-3" />
                         </button>
-                        {/* Facebook */}
                         <button
                           title="Share on Facebook"
                           onClick={() => {
-                            const url = encodeURIComponent("https://www.faceoftharakanithi.app");
-                            const quote = encodeURIComponent(`🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026!`);
+                            const url = encodeURIComponent(SITE_URL);
+                            const quote = encodeURIComponent(`🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026!`);
                             window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${quote}`, "_blank");
                           }}
-                          className="bg-blue-700 hover:bg-blue-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                          className="bg-blue-900/60 hover:bg-blue-700 text-white py-2 flex items-center justify-center transition-colors"
                         >
                           <Facebook className="w-3 h-3" />
                         </button>
-                        {/* Twitter / X */}
                         <button
-                          title="Share on Twitter/X"
+                          title="Share on X/Twitter"
                           onClick={() => {
                             const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! #FaceOfTharakaNithi`;
                             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`, "_blank");
                           }}
-                          className="bg-sky-700 hover:bg-sky-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                          className="bg-sky-900/60 hover:bg-sky-700 text-white py-2 flex items-center justify-center transition-colors"
                         >
                           <Share2 className="w-3 h-3" />
                         </button>
-                        {/* Instagram */}
                         <button
                           title="Share on Instagram"
                           onClick={() => {
-                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi County 2026! Check out the gallery at https://www.faceoftharakanithi.app #FaceOfTharakaNithi #TharakaNithiModels2026`;
+                            const text = `🌟 Support ${model.fullName} at Mr & Miss Face of Tharaka-Nithi 2026! Vote at ${ROYAL_EVENTS_URL} #FaceOfTharakaNithi`;
                             if (navigator.share) {
                               navigator.share({ title: "Face of Tharaka-Nithi 2026", text }).catch(() => {});
                             } else {
@@ -214,26 +234,35 @@ export default function Gallery() {
                               toast.success("Caption copied! Paste it on Instagram.");
                             }
                           }}
-                          className="bg-gradient-to-br from-pink-600 to-purple-700 hover:from-pink-500 hover:to-purple-600 text-white text-xs py-2 rounded flex items-center justify-center transition-colors"
+                          className="bg-gradient-to-br from-pink-900/60 to-purple-900/60 hover:from-pink-700 hover:to-purple-700 text-white py-2 flex items-center justify-center transition-colors"
                         >
                           <Instagram className="w-3 h-3" />
                         </button>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 ))}
               </div>
             </>
           ) : (
-            <div className="text-center py-20">
-              <p className="text-white text-lg mb-4">
-                {searchQuery || selectedCategory ? "No models found matching your search." : "No models registered yet."}
+            <div className="text-center py-32">
+              <p className="font-serif text-3xl text-white mb-4">
+                {searchQuery || selectedCategory ? "No Contestants Found" : "Gallery Coming Soon"}
               </p>
-              <p className="text-gray-400">Check back soon as more models register for the event!</p>
+              <div className="flex items-center justify-center gap-4 mb-8">
+                <div className="h-px w-16 bg-[#d4af37]/30" />
+                <span className="text-[#d4af37]">✦</span>
+                <div className="h-px w-16 bg-[#d4af37]/30" />
+              </div>
+              <p className="text-gray-600 text-sm font-light">
+                Check back soon as more contestants register for the event.
+              </p>
             </div>
           )}
         </div>
-      </div>
+      </main>
+
+      <div className="w-full h-px bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
     </div>
   );
 }
