@@ -8,6 +8,7 @@ import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
 import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart } from "lucide-react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 // Lazy-load heavy below-the-fold components
 const FeaturedModelsCarousel = lazy(() => import("@/components/FeaturedModelsCarousel"));
@@ -23,6 +24,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationData, setRegistrationData] = useState<{participantName: string, registrationId: string} | null>(null);
 
+  const { data: settings } = trpc.siteSettings.getAll.useQuery();
+  const announcementText = settings?.announcement_text;
+
   const handleRegistrationSuccess = (data: { participantName: string; registrationId: string }) => {
     setRegistrationData(data);
     setShowSuccessModal(true);
@@ -37,15 +41,17 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-black font-sans text-white selection:bg-[#d4af37] selection:text-black">
       {/* Dynamic Top Banner */}
-      <div className="bg-[#d4af37] text-black text-center py-3 px-4 font-bold text-sm sm:text-base animate-pulse">
-        ⏳ REGISTRATION CLOSES IN 5 DAYS | PHASE 2 VOTING BEGUN TODAY @ 2PM | INTRODUCTIONS RESULTS TOMORROW @ 8AM ⏳
-      </div>
+      {announcementText && (
+        <div className="bg-[#d4af37] text-black text-center py-6 px-4 font-bold text-lg sm:text-2xl md:text-3xl animate-pulse shadow-lg">
+          {announcementText}
+        </div>
+      )}
 
       {/* Hero Section */}
       <section 
         className="relative pt-12 pb-24 px-4 sm:px-6 lg:px-8 text-center border-b border-[#3a1c28]"
         style={{ 
-          backgroundImage: "url('/royal_icon_events_logo_new.png')", 
+          backgroundImage: "url('/ri_logo_transparent.png')", 
           backgroundSize: 'cover', 
           backgroundAttachment: 'fixed', 
           backgroundPosition: 'center', 
@@ -57,9 +63,9 @@ export default function Home() {
           {/* Logo & Banner */}
           <div className="flex flex-col items-center justify-center mb-10 space-y-8">
             <img 
-              src="/royal_icon_events_logo_new.png" 
+              src="/ri_logo_white.png" 
               alt="Royals Icon Events" 
-              className="w-32 h-32 drop-shadow-2xl animate-lively-logo rounded-full border border-[#d4af37]/50" 
+              className="w-48 md:w-64 drop-shadow-2xl mb-4" 
               fetchPriority="high" 
             />
             <img

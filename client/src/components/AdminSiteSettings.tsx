@@ -29,6 +29,7 @@ export default function AdminSiteSettings() {
     facebook: "",
     youtube: "",
     whatsapp: "",
+    announcement_text: "",
   });
 
   const [deadline, setDeadline] = useState("");
@@ -148,6 +149,37 @@ export default function AdminSiteSettings() {
               {updateMutation.isPending && updateMutation.variables?.key === "registration_closed"
                 ? "Updating..."
                 : isClosed ? "Re-open Registration" : "Close Registration"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Announcements Banner */}
+      <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
+        <CardHeader>
+          <CardTitle className="text-[#d4af37]">Announcements Banner</CardTitle>
+          <CardDescription className="text-gray-400">
+            Set the scrolling text banner that appears at the top of the homepage. Leave blank to hide.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <label className="text-white text-sm block mb-1">Banner Text</label>
+              <Input
+                name="announcement_text"
+                value={formData.announcement_text || ""}
+                onChange={handleChange}
+                placeholder="e.g. ⏳ REGISTRATION CLOSES IN 5 DAYS | PHASE 2 VOTING BEGUN..."
+                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+              />
+            </div>
+            <Button
+              onClick={() => handleSave("announcement_text")}
+              disabled={updateMutation.isPending && updateMutation.variables?.key === "announcement_text"}
+              className="mt-6 bg-[#d4af37] text-black hover:bg-[#e5c158]"
+            >
+              {updateMutation.isPending && updateMutation.variables?.key === "announcement_text" ? "Saving..." : "Save"}
             </Button>
           </div>
         </CardContent>
