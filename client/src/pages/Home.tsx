@@ -114,6 +114,37 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Phase 1 Results Announcement */}
+      <section className="bg-gradient-to-r from-[#1a0c14] via-[#3a1c2a] to-[#1a0c14] border-b border-[#d4af37]/50 py-16 px-4 sm:px-6 lg:px-8 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay"></div>
+        <div className="relative z-10 max-w-5xl mx-auto flex flex-col items-center justify-center gap-6">
+          <h2 className="text-[#d4af37] font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-wide flex items-center justify-center gap-3">
+            <Star className="w-8 h-8 sm:w-10 sm:h-10 text-[#d4af37] animate-pulse" />
+            Hurray! Phase 1 Results are out!
+            <Star className="w-8 h-8 sm:w-10 sm:h-10 text-[#d4af37] animate-pulse" />
+          </h2>
+          <p className="text-white/90 text-lg sm:text-xl font-light max-w-3xl mx-auto">
+            Congratulations to all our top performers who made it through the Introduction & Auditions phase. Visit the gallery to see our contestants and download the official results notice.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 mt-6">
+            <Button
+              onClick={() => setLocation("/gallery")}
+              className="bg-[#d4af37] text-black hover:bg-white px-8 py-6 font-bold uppercase tracking-widest text-sm rounded-none shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:shadow-[0_0_25px_rgba(212,175,55,0.8)] transition-all"
+            >
+              View Top Profiles
+            </Button>
+            <a
+              href="/downloads/phase1_results.pdf"
+              download
+              className="flex items-center justify-center gap-2 border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-8 py-6 font-bold uppercase tracking-widest text-sm transition-all rounded-none"
+            >
+              <Ticket className="w-4 h-4" />
+              Download Results Notice
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* The Crown Awaits (Two Columns) */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0508]">
         <div className="max-w-6xl mx-auto">

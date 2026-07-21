@@ -2,9 +2,16 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { trpc } from "@/lib/trpc";
-import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram, ChevronLeft } from "lucide-react";
+import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram, ChevronLeft, Download } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import confetti from "canvas-confetti";
+
+const TOP_CONTESTANTS = [
+  "Florence", "Bredda Karani", "Deborah Moraa", 
+  "Abigael Rose", "Jane Ndiga", "Macrine Awuor", "Rahman Ali",
+  "Pilly Ali", "Brian Murimi", "John Mutemi"
+];
 
 export default function Gallery() {
   const [, setLocation] = useLocation();
@@ -32,6 +39,20 @@ export default function Gallery() {
   const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
   const SOCIAL_URL = "https://www.youtube.com/@royaliconevents"; // Replace with actual social link
   const SITE_URL = "https://www.faceoftharakanithi.app";
+
+  const handleCardClick = (name: string) => {
+    if (TOP_CONTESTANTS.some(c => name.toLowerCase().includes(c.toLowerCase()))) {
+      confetti({
+        particleCount: 150,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#d4af37', '#ffffff', '#ffd700', '#ff0000', '#800020']
+      });
+      toast.success(`🎉 Celebrating ${name}'s excellent performance in Phase 1!`, {
+        style: { background: '#d4af37', color: '#000', border: 'none' }
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
@@ -109,6 +130,29 @@ export default function Gallery() {
         </div>
       </header>
 
+      {/* Phase 1 Results Banner */}
+      <div className="bg-gradient-to-r from-[#1a0c14] via-[#3a1c2a] to-[#1a0c14] border-y border-[#d4af37]/50 py-4 px-4 sm:px-8 text-center relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] mix-blend-overlay"></div>
+        <div className="relative z-10 max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="text-left flex-1">
+            <h2 className="text-[#d4af37] font-serif text-2xl font-bold tracking-wide flex items-center gap-2">
+              🎉 Hurray! Phase One Results are out!
+            </h2>
+            <p className="text-white/80 text-sm mt-1">
+              Congratulations to our top performers! Click on the profiles of our top three contestants to celebrate their outstanding introductions.
+            </p>
+          </div>
+          <a
+            href="/downloads/phase1_results.pdf"
+            download
+            className="flex items-center gap-2 bg-[#d4af37] text-black px-6 py-3 font-bold uppercase tracking-widest text-xs hover:bg-white transition-all shadow-[0_0_15px_rgba(212,175,55,0.4)] hover:shadow-[0_0_25px_rgba(212,175,55,0.8)] whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            Download Official Results Notice
+          </a>
+        </div>
+      </div>
+
       {/* Gallery Grid */}
       <main className="py-16 px-4 sm:px-8 lg:px-12">
         <div className="max-w-7xl mx-auto">
@@ -127,7 +171,8 @@ export default function Gallery() {
                 {sortedData.map((model, globalIdx) => (
                   <div
                     key={model.id}
-                    className="group relative bg-[#140a10] border border-[#d4af37]/20 hover:border-[#d4af37]/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(212,175,55,0.15)]"
+                    onClick={() => handleCardClick(model.fullName)}
+                    className="group relative bg-[#140a10] border border-[#d4af37]/20 hover:border-[#d4af37]/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(212,175,55,0.15)] cursor-pointer"
                   >
                     {/* Contestant # badge */}
                     <div className="absolute top-0 left-0 z-20 bg-[#d4af37] text-black text-xs font-black px-3 py-[5px] uppercase tracking-widest">
