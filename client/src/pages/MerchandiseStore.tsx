@@ -230,10 +230,22 @@ export default function MerchandiseStore() {
 
                     {/* Total */}
                     <div className="border-t border-[#d4af37]/30 pt-4 mb-6">
-                      <div className="flex justify-between text-lg">
-                        <span className="text-white">Total:</span>
-                        <span className="text-[#d4af37] font-bold">KES {totalAmount.toLocaleString()}</span>
-                      </div>
+                      {numberOfInstallments > 1 ? (
+                        <>
+                          <div className="flex justify-between text-lg">
+                            <span className="text-white">Pay Now:</span>
+                            <span className="text-[#d4af37] font-bold">KES {installmentAmount.toLocaleString()}</span>
+                          </div>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {numberOfInstallments}x installments of KES {installmentAmount.toLocaleString()}
+                          </p>
+                        </>
+                      ) : (
+                        <div className="flex justify-between text-lg">
+                          <span className="text-white">Total:</span>
+                          <span className="text-[#d4af37] font-bold">KES {totalAmount.toLocaleString()}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Payment Options */}
@@ -282,9 +294,12 @@ export default function MerchandiseStore() {
                             </Button>
                           </div>
                           <div className="bg-[#2a0a1a] p-3 rounded-lg text-sm">
-                            <p className="text-[#d4af37]">Installment Plan:</p>
+                            <p className="text-[#d4af37] font-semibold">Payment Plan</p>
                             <p className="text-white">
                               {numberOfInstallments} {installmentInterval} payments of KES {installmentAmount.toLocaleString()}
+                            </p>
+                            <p className="text-green-400 font-semibold mt-1">
+                              Pay now: KES {installmentAmount.toLocaleString()}
                             </p>
                             <p className="text-yellow-400 text-xs mt-1">
                               ⚠ Deadline: All payments must be completed by 1st September 2026
@@ -299,7 +314,7 @@ export default function MerchandiseStore() {
                       className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158]"
                     >
                       <CreditCard className="w-4 h-4 mr-2" />
-                      Proceed to Checkout
+                      {numberOfInstallments > 1 ? `Pay KES ${installmentAmount.toLocaleString()} Now` : 'Proceed to Payment'}
                     </Button>
                   </>
                 )}
@@ -369,18 +384,25 @@ export default function MerchandiseStore() {
                     </div>
                   ))}
                   <div className="border-t border-[#d4af37]/30 pt-2 mt-2">
-                    <div className="flex justify-between font-bold">
-                      <span className="text-white">Total:</span>
-                      <span className="text-[#d4af37]">KES {totalAmount.toLocaleString()}</span>
-                    </div>
-                    {numberOfInstallments > 1 && (
-                      <p className="text-sm text-[#d4af37] mt-1">
-                        {numberOfInstallments}x KES {installmentAmount.toLocaleString()} ({installmentInterval})
-                      </p>
+                    {numberOfInstallments > 1 ? (
+                      <>
+                        <div className="flex justify-between font-bold">
+                          <span className="text-white">Pay Now:</span>
+                          <span className="text-[#d4af37]">KES {installmentAmount.toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          {numberOfInstallments} installments of KES {installmentAmount.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-yellow-400 mt-1">
+                          ⚠ Deadline: 1st September 2026
+                        </p>
+                      </>
+                    ) : (
+                      <div className="flex justify-between font-bold">
+                        <span className="text-white">Total:</span>
+                        <span className="text-[#d4af37]">KES {totalAmount.toLocaleString()}</span>
+                      </div>
                     )}
-                    <p className="text-xs text-yellow-400 mt-1">
-                      ⚠ Deadline: 1st September 2026
-                    </p>
                   </div>
                 </div>
               </div>
@@ -406,8 +428,8 @@ export default function MerchandiseStore() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
                     <>
-                      <CheckCircle2 className="w-4 h-4 mr-2" />
-                      Place Order
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Pay KES {installmentAmount.toLocaleString()}
                     </>
                   )}
                 </Button>

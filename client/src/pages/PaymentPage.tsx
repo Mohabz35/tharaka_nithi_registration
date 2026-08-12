@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Smartphone, Building, CheckCircle2, Clock, AlertCircle, Loader2, ExternalLink } from "lucide-react";
+import { CreditCard, Smartphone, CheckCircle2, Clock, AlertCircle, Loader2, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useParams, useLocation } from "wouter";
@@ -11,11 +11,14 @@ export default function PaymentPage() {
   const params = useParams<{ orderId: string }>();
   const [, setLocation] = useLocation();
   const orderId = params?.orderId ? parseInt(params.orderId) : null;
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const { data: orderData, isLoading, error } = trpc.merchandise.getOrder.useQuery(
     { orderId: orderId! },
     { enabled: !!orderId }
   );
+
+  const payInstallment = trpc.merchandise.payInstallment.useMutation();
 
   if (isLoading) {
     return (
@@ -43,6 +46,55 @@ export default function PaymentPage() {
   }
 
   const { order, items, paymentPlan, installments } = orderData;
+  const pendingInstallments = installments.filter((i: any) => i.status === "pending");
+  const nextPaymentAmount = pendingInstallments.length > 0 ? pendingInstallments[0].amountDue - pendingInstallments[0].amountPaid : 0;
+
+  const handlePayInstallment = async (installmentId: number) => {
+    setIsProcessing(true);
+    try {
+      const result = await payInstallment.mutateAsync({
+        installmentId,
+        email: order.email,
+        phone: order.phoneNumber,
+      });
+
+      if (result.paymentLink) {
+        window.location.href = result.paymentLink;
+      } else {
+        toast.error("Failed to get payment link");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Payment failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayFullAmount = async () => {
+    const pendingInstallment = installments.find((i: any) => i.status === "pending");
+    if (!pendingInstallment) {
+      toast.error("No pending installments found");
+      return;
+    }
+    setIsProcessing(true);
+    try {
+      const result = await payInstallment.mutateAsync({
+        installmentId: pendingInstallment.id,
+        email: order.email,
+        phone: order.phoneNumber,
+      });
+
+      if (result.paymentLink) {
+        window.location.href = result.paymentLink;
+      } else {
+        toast.error("Failed to get payment link");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Payment failed");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -124,36 +176,52 @@ export default function PaymentPage() {
                 <>
                   {/* Payment Methods */}
                   <div className="space-y-3">
-                    <h4 className="text-white font-semibold">Payment Methods</h4>
+                    <h4 className="text-white font-semibold">Pay Next Installment</h4>
                     
-                    <Button className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white justify-start">
-                      <Smartphone className="w-5 h-5 mr-3" />
-                      Pay with M-Pesa
+                    <Button 
+                      onClick={handlePayFullAmount}
+                      disabled={isProcessing || pendingInstallments.length === 0}
+                      className="w-full bg-[#4CAF50] hover:bg-[#45a049] text-white justify-start"
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                      ) : (
+                        <Smartphone className="w-5 h-5 mr-3" />
+                      )}
+                      Pay KES {nextPaymentAmount.toLocaleString()} with M-Pesa
                     </Button>
                     
-                    <Button className="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white justify-start">
-                      <CreditCard className="w-5 h-5 mr-3" />
-                      Pay with Card
-                    </Button>
-                    
-                    <Button className="w-full bg-[#FF9800] hover:bg-[#F57C00] text-white justify-start">
-                      <Building className="w-5 h-5 mr-3" />
-                      Bank Transfer
+                    <Button 
+                      onClick={handlePayFullAmount}
+                      disabled={isProcessing || pendingInstallments.length === 0}
+                      className="w-full bg-[#1976D2] hover:bg-[#1565C0] text-white justify-start"
+                    >
+                      {isProcessing ? (
+                        <Loader2 className="w-5 h-5 mr-3 animate-spin" />
+                      ) : (
+                        <CreditCard className="w-5 h-5 mr-3" />
+                      )}
+                      Pay KES {nextPaymentAmount.toLocaleString()} with Card
                     </Button>
                   </div>
 
-                  {/* M-Pesa Instructions */}
+                  {/* Payment Summary */}
                   <div className="bg-[#2a0a1a] p-4 rounded-lg mt-4">
-                    <h4 className="text-[#d4af37] font-semibold mb-2">M-Pesa Instructions</h4>
-                    <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
-                      <li>Go to M-Pesa Lipa na M-Pesa</li>
-                      <li>Select Paybill</li>
-                      <li>Enter Business Number: <span className="text-[#d4af37]">522522</span></li>
-                      <li>Enter Account Number: <span className="text-[#d4af37]">ROYALS{order.id}</span></li>
-                      <li>Enter Amount: <span className="text-[#d4af37]">KES {order.totalAmount.toLocaleString()}</span></li>
-                      <li>Enter your M-Pesa PIN</li>
-                      <li>Confirm the transaction</li>
-                    </ol>
+                    <h4 className="text-[#d4af37] font-semibold mb-2">Payment Summary</h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Total Order:</span>
+                        <span className="text-white">KES {order.totalAmount.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Paid So Far:</span>
+                        <span className="text-green-400">KES {(order.totalAmount - pendingInstallments.reduce((sum: number, i: any) => sum + (i.amountDue - i.amountPaid), 0)).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between font-bold border-t border-[#d4af37]/30 pt-2">
+                        <span className="text-white">Remaining:</span>
+                        <span className="text-[#d4af37]">KES {pendingInstallments.reduce((sum: number, i: any) => sum + (i.amountDue - i.amountPaid), 0).toLocaleString()}</span>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -193,11 +261,27 @@ export default function PaymentPage() {
                             Due: {new Date(installment.dueDate).toLocaleDateString()}
                           </p>
                         </div>
-                        <div className="text-right">
-                          <p className="text-[#d4af37]">KES {installment.amountDue.toLocaleString()}</p>
-                          <Badge className={getInstallmentStatusColor(installment.status)}>
-                            {installment.status}
-                          </Badge>
+                        <div className="text-right flex items-center gap-3">
+                          <div>
+                            <p className="text-[#d4af37]">KES {installment.amountDue.toLocaleString()}</p>
+                            <Badge className={getInstallmentStatusColor(installment.status)}>
+                              {installment.status}
+                            </Badge>
+                          </div>
+                          {installment.status === "pending" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handlePayInstallment(installment.id)}
+                              disabled={isProcessing}
+                              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+                            >
+                              {isProcessing ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                "Pay"
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

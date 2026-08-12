@@ -239,17 +239,20 @@ export const merchandiseRouter = router({
     }))
     .mutation(async ({ input }) => {
       try {
-        const { getInstallmentById } = await import("./db.js");
+        const { getInstallmentById, getPaymentPlanById } = await import("./db.js");
         const installment = await getInstallmentById(input.installmentId);
         if (!installment) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Installment not found" });
         }
 
+        const paymentPlan = await getPaymentPlanById(installment.paymentPlanId);
+        const orderId = paymentPlan?.orderId || 0;
+
         const intasendResult = await createIntaSendPayment({
           amount: installment.amountDue - installment.amountPaid,
           email: input.email,
           phone: input.phone,
-          orderId: 0,
+          orderId,
           installmentId: installment.id,
           narration: `Installment #${installment.installmentNumber} - Payment`,
         });
