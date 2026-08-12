@@ -87,7 +87,7 @@ export default function MerchandiseStore() {
         fullName: formData.fullName,
         email: formData.email,
         phoneNumber: formData.phoneNumber,
-        registrationId: formData.registrationId ? parseInt(formData.registrationId) : undefined,
+        registrationId: formData.registrationId ? parseInt(formData.registrationId.replace(/\D/g, "")) || undefined : undefined,
         items: cart.map(item => ({
           merchandiseId: item.merchandiseId,
           quantity: item.quantity,
