@@ -16,6 +16,6 @@ export const ENV = {
   contestantTemplateUrl: process.env.CONTESTANT_TEMPLATE_URL ?? "",
   intasendPublishableKey: process.env.INTASEND_PUBLISHABLE_KEY ?? "",
   intasendSecretKey: process.env.INTASEND_SECRET_KEY ?? "",
-  intasendTestMode: process.env.INTASEND_TEST_MODE !== "false", // default true
+  intasendTestMode: process.env.INTASEND_TEST_MODE === "true", // default false (live mode)
   siteUrl: process.env.SITE_URL ?? "https://www.faceoftharakanithi.app",
 };
