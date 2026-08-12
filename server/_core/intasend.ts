@@ -4,46 +4,14 @@ const INTASEND_BASE_URL = ENV.intasendTestMode
   ? "https://sandbox.intasend.com/api/v1"
   : "https://api.intasend.com/api/v1";
 
-interface IntaSendPaymentRequest {
-  amount: number;
-  currency: string;
-  email: string;
-  phone_number?: string;
-  narration?: string;
-  metadata?: Record<string, string>;
-}
-
-interface IntaSendPaymentResponse {
+interface IntaSendCheckoutResponse {
   id: string;
-  status: string;
-  amount: number;
+  url: string;
+  paid: boolean;
+  amount: string;
   currency: string;
-  payment_link?: string;
   created_at: string;
-}
-
-interface IntaSendTokenResponse {
-  token: string;
-}
-
-async function getIntaSendToken(): Promise<string> {
-  const response = await fetch(`${INTASEND_BASE_URL}/token/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      public_key: ENV.intasendPublishableKey,
-      secret_key: ENV.intasendSecretKey,
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`IntaSend auth failed: ${response.status}`);
-  }
-
-  const data: IntaSendTokenResponse = await response.json();
-  return data.token;
+  updated_at: string;
 }
 
 export async function createIntaSendPayment(params: {
@@ -60,47 +28,43 @@ export async function createIntaSendPayment(params: {
   error?: string;
 }> {
   try {
-    const token = await getIntaSendToken();
+    const apiRef = params.installmentId
+      ? `order-${params.orderId}-installment-${params.installmentId}`
+      : `order-${params.orderId}`;
 
-    const metadata: Record<string, string> = {
-      orderId: params.orderId.toString(),
-    };
-    if (params.installmentId) {
-      metadata.installmentId = params.installmentId.toString();
-    }
-
-    const body: IntaSendPaymentRequest = {
+    const body: Record<string, any> = {
+      public_key: ENV.intasendPublishableKey,
       amount: params.amount,
       currency: "KES",
       email: params.email,
-      narration: params.narration || `Payment for Order #${params.orderId}`,
-      metadata,
+      api_ref: apiRef,
+      comment: params.narration || `Payment for Order #${params.orderId}`,
     };
 
     if (params.phone) {
       body.phone_number = params.phone;
     }
 
-    const response = await fetch(`${INTASEND_BASE_URL}/payment/`, {
+    const response = await fetch(`${INTASEND_BASE_URL}/checkout/`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
       },
       body: JSON.stringify(body),
     });
 
+    const rawData = await response.json();
+    console.log("[IntaSend] Checkout response:", JSON.stringify(rawData));
+
     if (!response.ok) {
-      const error = await response.json();
-      console.error("[IntaSend] Payment creation failed:", error);
-      return { success: false, error: error.message || "Payment creation failed" };
+      console.error("[IntaSend] Checkout creation failed:", rawData);
+      return { success: false, error: rawData.message || rawData.detail || "Payment creation failed" };
     }
 
-    const data: IntaSendPaymentResponse = await response.json();
     return {
       success: true,
-      paymentId: data.id,
-      paymentLink: data.payment_link,
+      paymentId: rawData.id,
+      paymentLink: rawData.url,
     };
   } catch (error) {
     console.error("[IntaSend] Error:", error);
@@ -114,12 +78,10 @@ export async function getIntaSendPaymentStatus(paymentId: string): Promise<{
   metadata?: Record<string, string>;
 } | null> {
   try {
-    const token = await getIntaSendToken();
-
-    const response = await fetch(`${INTASEND_BASE_URL}/payment/${paymentId}/`, {
+    const response = await fetch(`${INTASEND_BASE_URL}/checkout/${paymentId}/`, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
     });
 
@@ -127,7 +89,11 @@ export async function getIntaSendPaymentStatus(paymentId: string): Promise<{
       return null;
     }
 
-    return await response.json();
+    const data = await response.json();
+    return {
+      status: data.paid ? "completed" : "pending",
+      amount: parseFloat(data.amount),
+    };
   } catch (error) {
     console.error("[IntaSend] Status check failed:", error);
     return null;
