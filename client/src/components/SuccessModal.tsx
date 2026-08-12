@@ -117,11 +117,47 @@ export default function SuccessModal({
           <Card className="bg-gradient-to-r from-[#d4af37] to-[#e5c158] border-0">
             <CardContent className="pt-6">
               <div className="text-center">
-                <h3 className="text-black text-2xl font-bold mb-2">Registration is FREE! ✨</h3>
+                <h3 className="text-black text-2xl font-bold mb-2">Registration is FREE!</h3>
                 <p className="text-black text-lg">
-                  No payment required. You're all set for the event!
+                  No payment required to register. However, you can purchase optional items below.
                 </p>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Optional Payment Section */}
+          <Card className="bg-[#1a0a1a] border-[#d4af37] border-2">
+            <CardHeader>
+              <CardTitle className="text-[#d4af37]">Optional: Pay for Bootcamp & Merchandise</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-gray-300 text-sm">
+                Enhance your experience with our bootcamp training and official merchandise.
+              </p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="bg-[#2a0a1a] p-3 rounded">
+                  <p className="text-[#d4af37] font-semibold">Bootcamp</p>
+                  <p className="text-white">KES 3,000</p>
+                </div>
+                <div className="bg-[#2a0a1a] p-3 rounded">
+                  <p className="text-[#d4af37] font-semibold">T-Shirt</p>
+                  <p className="text-white">KES 1,000</p>
+                </div>
+                <div className="bg-[#2a0a1a] p-3 rounded">
+                  <p className="text-[#d4af37] font-semibold">Hoodie</p>
+                  <p className="text-white">KES 2,000</p>
+                </div>
+                <div className="bg-[#2a0a1a] p-3 rounded">
+                  <p className="text-[#d4af37] font-semibold">Kofia</p>
+                  <p className="text-white">KES 500</p>
+                </div>
+              </div>
+              <Button
+                onClick={() => window.location.href = "/merchandise"}
+                className="w-full bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold text-lg py-4"
+              >
+                🛒 Pay for Bootcamp & Merchandise
+              </Button>
             </CardContent>
           </Card>
 

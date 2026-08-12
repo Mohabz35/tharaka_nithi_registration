@@ -23,6 +23,7 @@ export default function Home() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars">("adults");
   const [registrationData, setRegistrationData] = useState<{participantName: string, registrationId: string} | null>(null);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
 
   const { data: settings } = trpc.siteSettings.getAll.useQuery();
   const announcementText = settings?.announcement_text;
@@ -36,7 +37,10 @@ export default function Home() {
   const TICKETS_URL = "https://www.royaliconevents.co.ke/events/mr-and-miss-tharaka-nithi-2026";
 
   const scrollToRegistration = () => {
-    document.getElementById("register-section")?.scrollIntoView({ behavior: "smooth" });
+    setShowRegistrationForm(true);
+    setTimeout(() => {
+      document.getElementById("register-section")?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   };
 
   return (
@@ -291,59 +295,89 @@ export default function Home() {
             </p>
           </div>
 
-          <Card className="bg-[#140a10] border-[#3a1c28] border rounded-none shadow-2xl">
-            <CardContent className="pt-8">
-              <Tabs
-                defaultValue="adults"
-                value={selectedCategory}
-                onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
-                className="w-full"
-              >
-                <TabsList className="flex flex-col sm:flex-row w-full bg-transparent p-0 mb-8 border-b border-[#3a1c28]">
-                  <TabsTrigger
-                    value="adults"
-                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
-                  >
-                    Adults (18–35)
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="teens"
-                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
-                  >
-                    Teens (13–17)
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="little_stars"
-                    className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
-                  >
-                    Little Stars (5–12)
-                  </TabsTrigger>
-                </TabsList>
+          {/* Registration Form - Collapsed State */}
+          {!showRegistrationForm && (
+            <Card className="bg-[#140a10] border-[#3a1c28] border rounded-none shadow-2xl">
+              <CardContent className="pt-8 pb-8 text-center">
+                <p className="text-gray-400 mb-6">
+                  Ready to showcase your talent? Click below to start your registration journey.
+                </p>
+                <Button
+                  onClick={() => setShowRegistrationForm(true)}
+                  className="bg-[#d4af37] text-black hover:bg-white hover:text-black font-semibold uppercase tracking-widest text-sm px-12 py-7 rounded-none transition-all duration-300"
+                >
+                  Start Registration
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-                <TabsContent value="adults" className="mt-8">
-                  <RegistrationForm category="adults" onSuccess={handleRegistrationSuccess} />
-                </TabsContent>
+          {/* Registration Form - Expanded State */}
+          {showRegistrationForm && (
+            <Card className="bg-[#140a10] border-[#3a1c28] border rounded-none shadow-2xl">
+              <CardContent className="pt-8">
+                <div className="flex justify-between items-center mb-6">
+                  <p className="text-gray-400 text-sm">Choose your category and fill in the details below</p>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowRegistrationForm(false)}
+                    className="text-gray-500 hover:text-white"
+                  >
+                    ✕ Close
+                  </Button>
+                </div>
+                <Tabs
+                  defaultValue="adults"
+                  value={selectedCategory}
+                  onValueChange={(value) => setSelectedCategory(value as "adults" | "teens" | "little_stars")}
+                  className="w-full"
+                >
+                  <TabsList className="flex flex-col sm:flex-row w-full bg-transparent p-0 mb-8 border-b border-[#3a1c28]">
+                    <TabsTrigger
+                      value="adults"
+                      className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
+                    >
+                      Adults (18–35)
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="teens"
+                      className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
+                    >
+                      Teens (13–17)
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="little_stars"
+                      className="flex-1 data-[state=active]:border-b-2 data-[state=active]:border-[#d4af37] data-[state=active]:text-[#d4af37] text-gray-500 rounded-none py-4 uppercase tracking-widest text-xs font-semibold transition-all duration-300 bg-transparent hover:text-white"
+                    >
+                      Little Stars (5–12)
+                    </TabsTrigger>
+                  </TabsList>
 
-                <TabsContent value="teens" className="mt-8">
-                    <p className="text-gray-400 mb-6">
-                      Registration for teen contestants aiming for greatness.
-                    </p>
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
-                      <RegistrationForm category="teens" onSuccess={handleRegistrationSuccess} />
-                    </div>
-                </TabsContent>
+                  <TabsContent value="adults" className="mt-8">
+                    <RegistrationForm category="adults" onSuccess={handleRegistrationSuccess} />
+                  </TabsContent>
 
-                <TabsContent value="little_stars" className="mt-8">
-                    <p className="text-gray-400 mb-6">
-                      Registration for our youngest, brightest upcoming stars.
-                    </p>
-                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
-                      <RegistrationForm category="little_stars" onSuccess={handleRegistrationSuccess} />
-                    </div>
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
+                  <TabsContent value="teens" className="mt-8">
+                      <p className="text-gray-400 mb-6">
+                        Registration for teen contestants aiming for greatness.
+                      </p>
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+                        <RegistrationForm category="teens" onSuccess={handleRegistrationSuccess} />
+                      </div>
+                  </TabsContent>
+
+                  <TabsContent value="little_stars" className="mt-8">
+                      <p className="text-gray-400 mb-6">
+                        Registration for our youngest, brightest upcoming stars.
+                      </p>
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-forwards">
+                        <RegistrationForm category="little_stars" onSuccess={handleRegistrationSuccess} />
+                      </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </section>
 
@@ -360,6 +394,89 @@ export default function Home() {
           registrationId={registrationData.registrationId}
         />
       )}
+
+      {/* Pay for Bootcamp & Merchandise Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-[#1a0c14] via-[#3a1c2a] to-[#1a0c14] border-t border-b border-[#d4af37]/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-[#d4af37] mb-4 uppercase tracking-wider">
+              Ready for Bootcamp?
+            </h2>
+            <div className="w-24 h-1 bg-[#d4af37] mx-auto mb-6"></div>
+            <p className="text-gray-300 font-light max-w-2xl mx-auto text-lg">
+              Secure your spot in the exclusive bootcamp training and get official event merchandise.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8">
+            {/* Bootcamp Card */}
+            <Card className="bg-[#140a10] border-[#d4af37]/30 hover:border-[#d4af37] transition-all duration-300">
+              <CardContent className="p-8 text-center">
+                <div className="text-5xl mb-4">🎓</div>
+                <h3 className="font-serif text-2xl text-[#d4af37] mb-3">Bootcamp Training</h3>
+                <p className="text-gray-400 mb-4">
+                  Intensive training sessions to prepare you for the grand finale. Learn runway, interview skills, and more.
+                </p>
+                <p className="text-3xl text-white font-bold mb-6">KES 3,000</p>
+                <ul className="text-gray-400 text-sm text-left mb-6 space-y-2">
+                  <li>✓ Professional runway training</li>
+                  <li>✓ Interview & public speaking coaching</li>
+                  <li>✓ Photo shoot preparation</li>
+                  <li>✓ Personal branding workshops</li>
+                </ul>
+                <Button
+                  onClick={() => setLocation("/merchandise")}
+                  className="w-full bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest"
+                >
+                  Register for Bootcamp
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Merchandise Card */}
+            <Card className="bg-[#140a10] border-[#d4af37]/30 hover:border-[#d4af37] transition-all duration-300">
+              <CardContent className="p-8 text-center">
+                <div className="text-5xl mb-4">👕</div>
+                <h3 className="font-serif text-2xl text-[#d4af37] mb-3">Official Merchandise</h3>
+                <p className="text-gray-400 mb-4">
+                  Represent the event with exclusive branded apparel and accessories.
+                </p>
+                <div className="grid grid-cols-2 gap-3 text-sm mb-6">
+                  <div className="bg-[#2a0a1a] p-3 rounded">
+                    <p className="text-white">T-Shirt</p>
+                    <p className="text-[#d4af37]">KES 1,000</p>
+                  </div>
+                  <div className="bg-[#2a0a1a] p-3 rounded">
+                    <p className="text-white">Hoodie</p>
+                    <p className="text-[#d4af37]">KES 2,000</p>
+                  </div>
+                  <div className="bg-[#2a0a1a] p-3 rounded">
+                    <p className="text-white">Kofia</p>
+                    <p className="text-[#d4af37]">KES 500</p>
+                  </div>
+                  <div className="bg-[#2a0a1a] p-3 rounded">
+                    <p className="text-white">Reflector</p>
+                    <p className="text-[#d4af37]">KES 300</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => setLocation("/merchandise")}
+                  className="w-full bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest"
+                >
+                  Shop Now
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment Info */}
+          <div className="mt-8 text-center">
+            <p className="text-gray-400 text-sm">
+              💡 <span className="text-[#d4af37]">Flexible Payment Plans Available!</span> Pay in up to 6 monthly installments.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {/* Sponsor & Partner Section */}
       <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#140a10] border-t border-[#3a1c28]">
