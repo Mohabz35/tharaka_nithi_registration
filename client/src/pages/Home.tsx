@@ -472,7 +472,7 @@ export default function Home() {
           {/* Payment Info */}
           <div className="mt-8 text-center">
             <p className="text-gray-400 text-sm">
-              💡 <span className="text-[#d4af37]">Flexible Payment Plans Available!</span> Pay in up to 6 monthly installments.
+              💡 <span className="text-[#d4af37]">Flexible Payment Plans Available!</span> Pay in installments (days or weeks). All payments due by 1st September 2026.
             </p>
           </div>
         </div>

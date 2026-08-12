@@ -22,6 +22,7 @@ export default function MerchandiseStore() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCheckout, setShowCheckout] = useState(false);
   const [numberOfInstallments, setNumberOfInstallments] = useState(1);
+  const [installmentInterval, setInstallmentInterval] = useState<"days" | "weeks">("days");
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -93,6 +94,7 @@ export default function MerchandiseStore() {
           quantity: item.quantity,
         })),
         numberOfInstallments: numberOfInstallments,
+        installmentInterval: numberOfInstallments > 1 ? installmentInterval : undefined,
       });
 
       toast.success("Order created successfully!");
@@ -100,8 +102,12 @@ export default function MerchandiseStore() {
       setShowCheckout(false);
       setFormData({ fullName: "", email: "", phoneNumber: "", registrationId: "" });
       
-      // Redirect to payment page or show payment instructions
-      setLocation(`/payment/${result.orderId}`);
+      // Redirect to IntaSend payment link or payment page
+      if (result.paymentLink) {
+        window.location.href = result.paymentLink;
+      } else {
+        setLocation(`/payment/${result.orderId}`);
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to create order");
     }
@@ -246,16 +252,44 @@ export default function MerchandiseStore() {
                           <SelectItem value="3">3 Installments - KES {Math.ceil(totalAmount / 3).toLocaleString()} each</SelectItem>
                           <SelectItem value="4">4 Installments - KES {Math.ceil(totalAmount / 4).toLocaleString()} each</SelectItem>
                           <SelectItem value="5">5 Installments - KES {Math.ceil(totalAmount / 5).toLocaleString()} each</SelectItem>
-                          <SelectItem value="6">6 Installments - KES {Math.ceil(totalAmount / 6).toLocaleString()} each</SelectItem>
                         </SelectContent>
                       </Select>
                       
                       {numberOfInstallments > 1 && (
-                        <div className="bg-[#2a0a1a] p-3 rounded-lg text-sm">
-                          <p className="text-[#d4af37]">Installment Plan:</p>
-                          <p className="text-white">
-                            {numberOfInstallments} monthly payments of KES {installmentAmount.toLocaleString()}
-                          </p>
+                        <div className="space-y-3">
+                          <div className="flex gap-3">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={installmentInterval === "days" ? "default" : "outline"}
+                              onClick={() => setInstallmentInterval("days")}
+                              className={installmentInterval === "days" 
+                                ? "bg-[#d4af37] text-black" 
+                                : "border-[#d4af37] text-[#d4af37]"}
+                            >
+                              Every few days
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={installmentInterval === "weeks" ? "default" : "outline"}
+                              onClick={() => setInstallmentInterval("weeks")}
+                              className={installmentInterval === "weeks" 
+                                ? "bg-[#d4af37] text-black" 
+                                : "border-[#d4af37] text-[#d4af37]"}
+                            >
+                              Every few weeks
+                            </Button>
+                          </div>
+                          <div className="bg-[#2a0a1a] p-3 rounded-lg text-sm">
+                            <p className="text-[#d4af37]">Installment Plan:</p>
+                            <p className="text-white">
+                              {numberOfInstallments} {installmentInterval} payments of KES {installmentAmount.toLocaleString()}
+                            </p>
+                            <p className="text-yellow-400 text-xs mt-1">
+                              ⚠ Deadline: All payments must be completed by 1st September 2026
+                            </p>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -341,14 +375,21 @@ export default function MerchandiseStore() {
                     </div>
                     {numberOfInstallments > 1 && (
                       <p className="text-sm text-[#d4af37] mt-1">
-                        {numberOfInstallments}x KES {installmentAmount.toLocaleString()}
+                        {numberOfInstallments}x KES {installmentAmount.toLocaleString()} ({installmentInterval})
                       </p>
                     )}
+                    <p className="text-xs text-yellow-400 mt-1">
+                      ⚠ Deadline: 1st September 2026
+                    </p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-6">
+              <div className="bg-[#2a0a1a] p-3 rounded-lg text-center text-sm text-gray-400">
+                Payment powered by <span className="text-[#d4af37] font-semibold">IntaSend</span> (M-Pesa, Cards)
+              </div>
+
+              <div className="flex gap-4 mt-4">
                 <Button 
                   variant="outline" 
                   onClick={() => setShowCheckout(false)}

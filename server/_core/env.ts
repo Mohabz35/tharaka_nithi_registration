@@ -14,4 +14,8 @@ export const ENV = {
   smtpPass: process.env.SMTP_PASS ?? "",
   smtpFrom: process.env.SMTP_FROM ?? "Royals Icon Events <noreply@faceoftharakanithi.app>",
   contestantTemplateUrl: process.env.CONTESTANT_TEMPLATE_URL ?? "",
+  intasendPublishableKey: process.env.INTASEND_PUBLISHABLE_KEY ?? "",
+  intasendSecretKey: process.env.INTASEND_SECRET_KEY ?? "",
+  intasendTestMode: process.env.INTASEND_TEST_MODE !== "false", // default true
+  siteUrl: process.env.SITE_URL ?? "https://www.faceoftharakanithi.app",
 };

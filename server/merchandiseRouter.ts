@@ -26,6 +26,8 @@ import {
   getAllOverdueInstallments,
 } from "./db.js";
 import { sendEmail, buildPaymentConfirmationEmail, buildInstallmentReminderEmail } from "./_core/emailService.js";
+import { createIntaSendPayment } from "./_core/intasend.js";
+import { ENV } from "./_core/env.js";
 
 export const merchandiseRouter = router({
   // Get all active merchandise items
@@ -66,7 +68,8 @@ export const merchandiseRouter = router({
           merchandiseId: z.number(),
           quantity: z.number().min(1),
         })).min(1, "At least one item is required"),
-        numberOfInstallments: z.number().min(1).max(12).optional(), // 1 = pay in full
+        numberOfInstallments: z.number().min(1).max(30).optional(),
+        installmentInterval: z.enum(["days", "weeks"]).optional(),
       })
     )
     .mutation(async ({ input }) => {
@@ -122,7 +125,7 @@ export const merchandiseRouter = router({
           
           paymentPlanId = await createPaymentPlan({
             orderId,
-            userId: null, // Will be linked when user logs in
+            userId: null,
             totalAmount,
             numberOfInstallments,
             installmentAmount,
@@ -130,13 +133,30 @@ export const merchandiseRouter = router({
             startDate: new Date(),
           });
 
-          // Create installment schedule
+          // Create installment schedule with flexible intervals, deadline Sept 1
           const installments = [];
-          const startDate = new Date();
+          const deadline = new Date("2026-09-01");
+          const now = new Date();
+          const interval = input.installmentInterval || "days";
+          
+          // Calculate available days/weeks until deadline
+          const msUntilDeadline = deadline.getTime() - now.getTime();
+          const daysUntilDeadline = Math.floor(msUntilDeadline / (1000 * 60 * 60 * 24));
           
           for (let i = 1; i <= numberOfInstallments; i++) {
-            const dueDate = new Date(startDate);
-            dueDate.setMonth(dueDate.getMonth() + i);
+            const dueDate = new Date(now);
+            if (interval === "weeks") {
+              // Spread evenly across available weeks
+              const weeksPerInstallment = Math.floor(daysUntilDeadline / 7 / numberOfInstallments);
+              dueDate.setDate(dueDate.getDate() + (weeksPerInstallment * i));
+            } else {
+              // Spread evenly across available days
+              const daysPerInstallment = Math.floor(daysUntilDeadline / numberOfInstallments);
+              dueDate.setDate(dueDate.getDate() + (daysPerInstallment * i));
+            }
+            
+            // Cap at deadline
+            if (dueDate > deadline) dueDate.setTime(deadline.getTime());
             
             installments.push({
               paymentPlanId,
@@ -151,6 +171,18 @@ export const merchandiseRouter = router({
           await createInstallmentPayments(installments);
         }
 
+        // Initialize IntaSend payment
+        const paymentAmount = numberOfInstallments > 1 ? installmentAmount : totalAmount;
+        const intasendResult = await createIntaSendPayment({
+          amount: paymentAmount,
+          email: input.email,
+          phone: input.phoneNumber,
+          orderId,
+          narration: numberOfInstallments > 1 
+            ? `Installment 1 of ${numberOfInstallments} - Order #${orderId}`
+            : `Order #${orderId}`,
+        });
+
         return {
           success: true,
           orderId,
@@ -158,11 +190,48 @@ export const merchandiseRouter = router({
           totalAmount,
           installmentAmount,
           numberOfInstallments,
+          paymentLink: intasendResult.paymentLink || null,
+          paymentId: intasendResult.paymentId || null,
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         console.error("Failed to create order:", error);
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create order" });
+      }
+    }),
+
+  // Pay next installment
+  payInstallment: publicProcedure
+    .input(z.object({
+      installmentId: z.number(),
+      email: z.string().email(),
+      phone: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      try {
+        const { getInstallmentById } = await import("./db.js");
+        const installment = await getInstallmentById(input.installmentId);
+        if (!installment) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Installment not found" });
+        }
+
+        const intasendResult = await createIntaSendPayment({
+          amount: installment.amountDue - installment.amountPaid,
+          email: input.email,
+          phone: input.phone,
+          orderId: 0,
+          installmentId: installment.id,
+          narration: `Installment #${installment.installmentNumber} - Payment`,
+        });
+
+        return {
+          success: true,
+          paymentLink: intasendResult.paymentLink || null,
+          paymentId: intasendResult.paymentId || null,
+        };
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to initialize payment" });
       }
     }),
 
