@@ -21,10 +21,12 @@ import { generateCertificate } from "./_core/certificateGenerator.js";
 import { storageGetSignedUrl } from "./storage.js";
 import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail } from "./_core/emailService.js";
 import { contestantRouter } from "./contestant.js";
+import { merchandiseRouter } from "./merchandiseRouter.js";
 
 export const appRouter = router({
   system: systemRouter,
   contestant: contestantRouter,
+  merchandise: merchandiseRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

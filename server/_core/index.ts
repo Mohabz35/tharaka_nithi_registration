@@ -6,6 +6,7 @@ import compression from "compression";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { authRouter } from "../auth.js";
 import uploadRouter from "./uploadHandler.js";
+import webhooksRouter from "../webhooks.js";
 import { appRouter } from "../routers.js";
 import { createContext } from "./context.js";
 import { serveStatic, setupVite } from "./vite.js";
@@ -38,6 +39,7 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 app.use("/api/auth", authRouter);
 app.use("/api", uploadRouter);
+app.use("/api", webhooksRouter);
 
 // tRPC API
 app.use(

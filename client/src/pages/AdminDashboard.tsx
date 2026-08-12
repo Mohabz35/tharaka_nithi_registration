@@ -19,6 +19,7 @@ import AdminAddContestantModal from "@/components/AdminAddContestantModal";
 import AdminEditContestantModal from "@/components/AdminEditContestantModal";
 import AdminPhotoEditor from "@/components/AdminPhotoEditor";
 import AdminBulkEmailPanel from "@/components/AdminBulkEmailPanel";
+import AdminPaymentsTab from "@/components/AdminPaymentsTab";
 
 const PAGE_SIZE = 50;
 
@@ -233,6 +234,9 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Site Settings
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Payments
               </TabsTrigger>
             </TabsList>
 
@@ -549,6 +553,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="settings">
               <AdminSiteSettings />
+            </TabsContent>
+
+            <TabsContent value="payments">
+              <AdminPaymentsTab />
             </TabsContent>
           </Tabs>
         </div>

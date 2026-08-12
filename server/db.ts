@@ -7,6 +7,12 @@ import {
   artist_registrations, InsertArtistRegistration,
   showcase_registrations, InsertShowcaseRegistration,
   site_settings, InsertSiteSetting,
+  merchandise_items, InsertMerchandiseItem,
+  merchandise_orders, InsertMerchandiseOrder,
+  order_items, InsertOrderItem,
+  payment_plans, InsertPaymentPlan,
+  installment_payments, InsertInstallmentPayment,
+  payment_transactions, InsertPaymentTransaction,
 } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
 
@@ -371,4 +377,212 @@ export async function upsertSiteSetting(key: string, value: string) {
   } else {
     await db.insert(site_settings).values({ key, value });
   }
+}
+
+// ============ Merchandise Items ============
+
+export async function getAllMerchandiseItems() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(merchandise_items).where(eq(merchandise_items.isActive, true));
+}
+
+export async function getMerchandiseItemById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(merchandise_items).where(eq(merchandise_items.id, id));
+  return result[0] || null;
+}
+
+export async function createMerchandiseItem(data: InsertMerchandiseItem) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(merchandise_items).values(data).returning({ id: merchandise_items.id });
+  return result[0].id;
+}
+
+export async function updateMerchandiseItem(id: number, data: Partial<InsertMerchandiseItem>) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(merchandise_items).set({ ...data, updatedAt: new Date() }).where(eq(merchandise_items.id, id));
+  return true;
+}
+
+// ============ Merchandise Orders ============
+
+export async function createMerchandiseOrder(data: InsertMerchandiseOrder) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(merchandise_orders).values(data).returning({ id: merchandise_orders.id });
+  return result[0].id;
+}
+
+export async function getMerchandiseOrderById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(merchandise_orders).where(eq(merchandise_orders.id, id));
+  return result[0] || null;
+}
+
+export async function getOrdersByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(merchandise_orders).where(eq(merchandise_orders.userId, userId)).orderBy(desc(merchandise_orders.createdAt));
+}
+
+export async function getOrdersByEmail(email: string) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(merchandise_orders).where(eq(merchandise_orders.email, email)).orderBy(desc(merchandise_orders.createdAt));
+}
+
+export async function updateOrderStatus(id: number, status: "pending" | "paid" | "cancelled", paymentMethod?: string) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const updateData: any = { status, updatedAt: new Date() };
+  if (paymentMethod) updateData.paymentMethod = paymentMethod;
+  await db.update(merchandise_orders).set(updateData).where(eq(merchandise_orders.id, id));
+  return true;
+}
+
+export async function getAllOrders() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(merchandise_orders).orderBy(desc(merchandise_orders.createdAt));
+}
+
+// ============ Order Items ============
+
+export async function createOrderItems(items: InsertOrderItem[]) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.insert(order_items).values(items);
+}
+
+export async function getOrderItemsByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(order_items).where(eq(order_items.orderId, orderId));
+}
+
+// ============ Payment Plans ============
+
+export async function createPaymentPlan(data: InsertPaymentPlan) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(payment_plans).values(data).returning({ id: payment_plans.id });
+  return result[0].id;
+}
+
+export async function getPaymentPlanById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(payment_plans).where(eq(payment_plans.id, id));
+  return result[0] || null;
+}
+
+export async function getPaymentPlanByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(payment_plans).where(eq(payment_plans.orderId, orderId));
+  return result[0] || null;
+}
+
+export async function getPaymentPlansByUserId(userId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(payment_plans).where(eq(payment_plans.userId, userId)).orderBy(desc(payment_plans.createdAt));
+}
+
+export async function updatePaymentPlanStatus(id: number, status: "active" | "completed" | "cancelled") {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(payment_plans).set({ status, updatedAt: new Date() }).where(eq(payment_plans.id, id));
+  return true;
+}
+
+export async function getAllPaymentPlans() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(payment_plans).orderBy(desc(payment_plans.createdAt));
+}
+
+// ============ Installment Payments ============
+
+export async function createInstallmentPayments(installments: InsertInstallmentPayment[]) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.insert(installment_payments).values(installments);
+}
+
+export async function getInstallmentsByPaymentPlanId(paymentPlanId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(installment_payments).where(eq(installment_payments.paymentPlanId, paymentPlanId));
+}
+
+export async function getInstallmentById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(installment_payments).where(eq(installment_payments.id, id));
+  return result[0] || null;
+}
+
+export async function updateInstallmentPayment(id: number, data: Partial<InsertInstallmentPayment>) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(installment_payments).set({ ...data, updatedAt: new Date() }).where(eq(installment_payments.id, id));
+  return true;
+}
+
+export async function getUpcomingInstallments(userId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const plans = await db.select().from(payment_plans).where(eq(payment_plans.userId, userId));
+  const planIds = plans.map(p => p.id);
+  if (planIds.length === 0) return [];
+  
+  return await db.select().from(installment_payments)
+    .where(and(
+      eq(installment_payments.status, "pending"),
+      // Use inArray equivalent
+    ));
+}
+
+export async function getAllOverdueInstallments() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const now = new Date();
+  return await db.select().from(installment_payments).where(and(
+    eq(installment_payments.status, "pending"),
+    lte(installment_payments.dueDate, now)
+  ));
+}
+
+// ============ Payment Transactions ============
+
+export async function createPaymentTransaction(data: InsertPaymentTransaction) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(payment_transactions).values(data).returning({ id: payment_transactions.id });
+  return result[0].id;
+}
+
+export async function getTransactionByTransactionId(transactionId: string) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(payment_transactions).where(eq(payment_transactions.transactionId, transactionId));
+  return result[0] || null;
+}
+
+export async function getTransactionsByOrderId(orderId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(payment_transactions).where(eq(payment_transactions.orderId, orderId));
+}
+
+export async function getAllTransactions() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(payment_transactions).orderBy(desc(payment_transactions.createdAt));
 }
