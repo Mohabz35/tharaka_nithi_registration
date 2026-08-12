@@ -39,6 +39,7 @@ function Router() {
         <Route path={"/event-sections"} component={EventSections} />
         <Route path={"/poster-generator"} component={ContestantPoster} />
         <Route path={"/merchandise"} component={MerchandiseStore} />
+        <Route path={"/payment"} component={PaymentPage} />
         <Route path={"/payment/:orderId"} component={PaymentPage} />
         <Route path={"/my-orders"} component={PaymentDashboard} />
         <Route path={"/profile"} component={ModelProfile} />

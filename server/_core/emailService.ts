@@ -149,30 +149,155 @@ export function buildDocumentConfirmationEmail(
 }
 
 export function buildPaymentConfirmationEmail(
-  amount: number,
+  customerName: string,
+  orderId: number,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  totalAmount: number,
+  amountPaid: number,
   transactionId: string,
-  paymentMethod: string
+  registrationId: string
 ): { subject: string; html: string } {
+  const itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 10px; border-bottom: 1px solid #3a1c28; color: #ffffff;">${item.quantity}x ${item.name}</td>
+      <td style="padding: 10px; border-bottom: 1px solid #3a1c28; color: #d4af37; text-align: right;">KES ${(item.price * item.quantity).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
   return {
-    subject: `✅ Payment Confirmed - Mr & Miss Face of Tharaka-Nithi County 2026`,
+    subject: `✅ Payment Receipt - Order #${orderId} - Mr & Miss Face of Tharaka-Nithi`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
         <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
           <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Payment Confirmed!</h1>
+          <p style="color: #e5c158; margin: 8px 0 0;">Order #${orderId}</p>
         </div>
         <div style="padding: 32px; color: #ffffff;">
-          <p style="font-size: 16px;">Thank you for your payment!</p>
-          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0;">
-            <p style="color: #d4af37; margin: 0; font-weight: bold; font-size: 18px;">KES ${amount.toLocaleString()}</p>
-            <p style="color: #999; margin: 8px 0 0; font-size: 14px;">Transaction ID: ${transactionId}</p>
-            <p style="color: #999; margin: 4px 0 0; font-size: 14px;">Payment Method: ${paymentMethod}</p>
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">${customerName}</strong>,</p>
+          <p style="line-height: 1.6; margin: 16px 0;">Your payment has been received. Here is your receipt:</p>
+
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #999; margin: 0; font-size: 12px;">Registration ID</p>
+            <p style="color: #d4af37; margin: 4px 0 0; font-size: 18px; font-weight: bold;">${registrationId}</p>
           </div>
-          <p style="line-height: 1.6;">Your payment has been successfully processed. You will receive your merchandise at the event or as arranged.</p>
-          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0;">
+          
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; overflow: hidden; margin: 24px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #3a1c28;">
+                  <th style="padding: 10px; text-align: left; color: #d4af37; font-size: 12px; text-transform: uppercase;">Item</th>
+                  <th style="padding: 10px; text-align: right; color: #d4af37; font-size: 12px; text-transform: uppercase;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+              <tfoot>
+                <tr style="background: #3a1c28;">
+                  <td style="padding: 10px; color: #ffffff; font-weight: bold;">TOTAL</td>
+                  <td style="padding: 10px; color: #d4af37; font-weight: bold; text-align: right;">KES ${totalAmount.toLocaleString()}</td>
+                </tr>
+                <tr style="background: #2a5a2a;">
+                  <td style="padding: 10px; color: #ffffff; font-weight: bold;">PAID</td>
+                  <td style="padding: 10px; color: #4CAF50; font-weight: bold; text-align: right;">KES ${amountPaid.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div style="background: #2a0a1a; border: 1px solid #4CAF50; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+            <p style="color: #4CAF50; margin: 0; font-weight: bold; font-size: 16px;">✅ FULLY PAID</p>
+            <p style="color: #999; margin: 4px 0 0; font-size: 12px;">Transaction: ${transactionId}</p>
+          </div>
+
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+            <p style="color: #d4af37; margin: 0; font-weight: bold;">📅 Event Date: September 12, 2026</p>
+            <p style="color: #d4af37; margin: 8px 0 0; font-weight: bold;">📍 Venue: Chuka Grounds</p>
+            <p style="color: #999; margin: 8px 0 0; font-size: 12px;">Collect your merchandise at the event</p>
+          </div>
+
+          <p style="color: #999; font-size: 12px; margin-top: 24px; text-align: center;">
+            — Royals Icon Events<br/>
+            Questions? Contact support@royaliconevents.co.ke
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildInstallmentReceiptEmail(
+  customerName: string,
+  orderId: number,
+  installmentNumber: number,
+  totalInstallments: number,
+  amountPaid: number,
+  remainingAmount: number,
+  installmentsPaid: number,
+  nextDueDate: Date,
+  registrationId: string
+): { subject: string; html: string } {
+  const formattedDate = nextDueDate.toLocaleDateString('en-KE', { 
+    year: 'numeric', month: 'long', day: 'numeric' 
+  });
+
+  return {
+    subject: `✅ Installment #${installmentNumber} Paid - Order #${orderId}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Installment Paid!</h1>
+          <p style="color: #e5c158; margin: 8px 0 0;">Order #${orderId}</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">${customerName}</strong>,</p>
+          <p style="line-height: 1.6; margin: 16px 0;">Your installment payment has been received.</p>
+
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 20px 0;">
+            <p style="color: #999; margin: 0; font-size: 12px;">Registration ID</p>
+            <p style="color: #d4af37; margin: 4px 0 0; font-size: 18px; font-weight: bold;">${registrationId}</p>
+          </div>
+
+          <!-- Payment Just Made -->
+          <div style="background: #2a0a1a; border: 1px solid #4CAF50; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <p style="color: #4CAF50; margin: 0; font-weight: bold; font-size: 14px;">✅ PAYMENT RECEIVED</p>
+            <p style="color: #ffffff; margin: 12px 0 0; font-size: 24px; font-weight: bold;">KES ${amountPaid.toLocaleString()}</p>
+            <p style="color: #999; margin: 4px 0 0; font-size: 13px;">Installment #${installmentNumber} of ${totalInstallments}</p>
+          </div>
+
+          <!-- Progress -->
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 20px; margin: 24px 0;">
+            <p style="color: #d4af37; margin: 0; font-weight: bold;">Payment Progress</p>
+            <div style="background: #3a1c28; border-radius: 4px; height: 8px; margin: 12px 0; overflow: hidden;">
+              <div style="background: #4CAF50; height: 100%; width: ${(installmentsPaid / totalInstallments * 100).toFixed(0)}%;"></div>
+            </div>
+            <p style="color: #ffffff; margin: 8px 0 0; font-size: 14px;">${installmentsPaid} of ${totalInstallments} installments paid</p>
+            <p style="color: #999; margin: 4px 0 0; font-size: 13px;">Remaining: KES ${remainingAmount.toLocaleString()}</p>
+          </div>
+
+          ${remainingAmount > 0 ? `
+          <!-- Next Payment -->
+          <div style="background: #2a0a1a; border: 1px solid #e5c158; border-radius: 8px; padding: 16px; margin: 24px 0;">
+            <p style="color: #e5c158; margin: 0; font-weight: bold;">📅 Next Payment Due</p>
+            <p style="color: #ffffff; margin: 8px 0 0;">${formattedDate}</p>
+            <p style="color: #999; margin: 4px 0 0; font-size: 12px;">Use your Registration ID (${registrationId}) to track and pay</p>
+          </div>
+          ` : `
+          <div style="background: #2a0a1a; border: 1px solid #4CAF50; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+            <p style="color: #4CAF50; margin: 0; font-weight: bold; font-size: 16px;">🎉 ALL INSTALLMENTS PAID!</p>
+            <p style="color: #999; margin: 4px 0 0; font-size: 12px;">Your order is now fully paid</p>
+          </div>
+          `}
+
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
             <p style="color: #d4af37; margin: 0; font-weight: bold;">📅 Event Date: September 12, 2026</p>
             <p style="color: #d4af37; margin: 8px 0 0; font-weight: bold;">📍 Venue: Chuka Grounds</p>
           </div>
-          <p style="color: #999; font-size: 12px; margin-top: 24px;">— Royals Icon Events</p>
+
+          <p style="color: #999; font-size: 12px; margin-top: 24px; text-align: center;">
+            — Royals Icon Events<br/>
+            Questions? Contact support@royaliconevents.co.ke
+          </p>
         </div>
       </div>
     `,
@@ -187,7 +312,8 @@ export function buildOrderReceiptEmail(
   numberOfInstallments: number,
   installmentAmount: number,
   installmentInterval: string,
-  paymentLink: string
+  paymentLink: string,
+  registrationId?: string
 ): { subject: string; html: string } {
   const itemsHtml = items.map(item => `
     <tr>
@@ -214,6 +340,7 @@ export function buildOrderReceiptEmail(
         <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
           <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Order Confirmed!</h1>
           <p style="color: #e5c158; margin: 8px 0 0;">Order #${orderId}</p>
+          ${registrationId ? `<p style="color: #ffffff; margin: 8px 0 0; font-size: 14px;">Registration ID: <strong style="color: #d4af37;">${registrationId}</strong></p>` : ''}
         </div>
         
         <div style="padding: 32px; color: #ffffff;">
@@ -250,6 +377,13 @@ export function buildOrderReceiptEmail(
               Pay Now with M-Pesa / Card
             </a>
           </div>
+
+          ${registrationId ? `
+          <div style="background: #2a0a1a; border: 1px solid #e5c158; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+            <p style="color: #e5c158; margin: 0; font-weight: bold;">📋 Your Registration ID: ${registrationId}</p>
+            <p style="color: #999; margin: 8px 0 0; font-size: 12px;">Save this ID to track your orders and payments at faceoftharakanithi.app/payment</p>
+          </div>
+          ` : ''}
 
           <!-- Event Info -->
           <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">

@@ -97,7 +97,11 @@ export default function MerchandiseStore() {
         installmentInterval: numberOfInstallments > 1 ? installmentInterval : undefined,
       });
 
-      toast.success("Order created successfully!");
+      const regIdDisplay = formData.registrationId 
+        ? ` (REG-${formData.registrationId.replace(/\D/g, "").padStart(3, '0')})` 
+        : '';
+      
+      toast.success(`Order created! Check your email for receipt${regIdDisplay}`);
       setCart([]);
       setShowCheckout(false);
       setFormData({ fullName: "", email: "", phoneNumber: "", registrationId: "" });

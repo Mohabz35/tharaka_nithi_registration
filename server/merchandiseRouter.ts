@@ -21,6 +21,7 @@ import {
   getInstallmentsByPaymentPlanId,
   getUpcomingInstallments,
   getOrdersByEmail,
+  getOrdersByRegistrationId,
   getAllOrders,
   getAllPaymentPlans,
   getAllOverdueInstallments,
@@ -193,6 +194,10 @@ export const merchandiseRouter = router({
             price: orderItems.find(oi => oi.merchandiseId === item.merchandiseId)?.unitPrice || 0,
           }));
 
+          const regIdDisplay = input.registrationId 
+            ? `REG-${input.registrationId.toString().padStart(3, '0')}` 
+            : undefined;
+
           const emailContent = buildOrderReceiptEmail(
             input.fullName,
             orderId,
@@ -201,7 +206,8 @@ export const merchandiseRouter = router({
             numberOfInstallments,
             installmentAmount,
             input.installmentInterval || "days",
-            intasendResult.paymentLink || ""
+            intasendResult.paymentLink || "",
+            regIdDisplay
           );
 
           await sendEmail({
@@ -310,6 +316,46 @@ export const merchandiseRouter = router({
       }
     }),
 
+  // Get orders by registration ID (for tracking payments)
+  getMyOrdersByRegistrationId: publicProcedure
+    .input(z.object({ registrationId: z.string() }))
+    .query(async ({ input }) => {
+      try {
+        // Parse REG-XXX format to number
+        const match = input.registrationId.match(/\d+/);
+        if (!match) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Invalid registration ID format. Use REG-XXX" });
+        }
+        const regNum = parseInt(match[0]);
+        const orders = await getOrdersByRegistrationId(regNum);
+        
+        // Enrich with installment details
+        const enrichedOrders = [];
+        for (const order of orders) {
+          const items = await getOrderItemsByOrderId(order.id);
+          const paymentPlan = await getPaymentPlanByOrderId(order.id);
+          let installments: any[] = [];
+          
+          if (paymentPlan) {
+            installments = await getInstallmentsByPaymentPlanId(paymentPlan.id);
+          }
+
+          enrichedOrders.push({
+            ...order,
+            registrationIdDisplay: `REG-${regNum.toString().padStart(3, '0')}`,
+            items,
+            paymentPlan,
+            installments,
+          });
+        }
+
+        return enrichedOrders;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch orders" });
+      }
+    }),
+
   // Process payment (called after IntaSend webhook confirmation)
   processPayment: publicProcedure
     .input(
@@ -368,33 +414,7 @@ export const merchandiseRouter = router({
           }
 
           // Send confirmation email
-          try {
-            let customerEmail = "";
-            let customerName = "";
-
-            if (input.orderId) {
-              const order = await getMerchandiseOrderById(input.orderId);
-              if (order) {
-                customerEmail = order.email;
-                customerName = order.fullName;
-              }
-            }
-
-            if (customerEmail) {
-              const emailContent = buildPaymentConfirmationEmail(
-                input.amount,
-                input.transactionId,
-                input.paymentMethod
-              );
-              await sendEmail({
-                to: customerEmail,
-                subject: emailContent.subject,
-                html: emailContent.html,
-              });
-            }
-          } catch (emailError) {
-            console.error("Failed to send payment confirmation email:", emailError);
-          }
+          // Note: Webhook handles email sending with proper receipt details
         }
 
         return { success: true, transactionId };

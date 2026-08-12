@@ -535,6 +535,12 @@ export async function getOrdersByEmail(email: string) {
   return await db.select().from(merchandise_orders).where(eq(merchandise_orders.email, email)).orderBy(desc(merchandise_orders.createdAt));
 }
 
+export async function getOrdersByRegistrationId(registrationId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(merchandise_orders).where(eq(merchandise_orders.registrationId, registrationId)).orderBy(desc(merchandise_orders.createdAt));
+}
+
 export async function updateOrderStatus(id: number, status: "pending" | "paid" | "cancelled", paymentMethod?: string) {
   const db = await getDb();
   if (!db) { throw new Error("Database not available"); }
