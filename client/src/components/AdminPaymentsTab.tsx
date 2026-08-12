@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Package, CreditCard, Clock, CheckCircle2, AlertCircle, 
-  TrendingUp, DollarSign, Users, Calendar, Loader2 
+  TrendingUp, DollarSign, Users, Calendar, Loader2, ShoppingBag 
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import AdminMerchandiseManager from "@/components/AdminMerchandiseManager";
 
 export default function AdminPaymentsTab() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -162,7 +163,10 @@ export default function AdminPaymentsTab() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-[#1a0a1a] border border-[#d4af37]/30">
+        <TabsList className="bg-[#1a0a1a] border border-[#d4af37]/30 flex flex-wrap">
+          <TabsTrigger value="merchandise" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
+            <ShoppingBag className="w-4 h-4 mr-1" /> Items
+          </TabsTrigger>
           <TabsTrigger value="overview" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
             Overview
           </TabsTrigger>
@@ -170,12 +174,17 @@ export default function AdminPaymentsTab() {
             Orders ({orders?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="plans" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
-            Payment Plans ({plans?.length || 0})
+            Plans ({plans?.length || 0})
           </TabsTrigger>
           <TabsTrigger value="overdue" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
             Overdue ({overdue?.length || 0})
           </TabsTrigger>
         </TabsList>
+
+        {/* Merchandise Management Tab */}
+        <TabsContent value="merchandise" className="mt-6">
+          <AdminMerchandiseManager />
+        </TabsContent>
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="mt-6">

@@ -439,6 +439,58 @@ export const merchandiseRouter = router({
 
       return { success: true, message: "Merchandise items seeded successfully", count: items.length };
     }),
+
+    // Create merchandise item
+    createMerchandiseItem: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1, "Name is required"),
+        description: z.string().optional(),
+        price: z.number().min(1, "Price must be at least 1"),
+        category: z.string().min(1, "Category is required"),
+        imageUrl: z.string().optional(),
+        imageKey: z.string().optional(),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { createMerchandiseItem } = await import("./db.js");
+        const id = await createMerchandiseItem(input);
+        return { success: true, id };
+      }),
+
+    // Update merchandise item
+    updateMerchandiseItem: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().optional(),
+        description: z.string().optional(),
+        price: z.number().optional(),
+        category: z.string().optional(),
+        imageUrl: z.string().optional(),
+        imageKey: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { updateMerchandiseItem } = await import("./db.js");
+        const { id, ...data } = input;
+        await updateMerchandiseItem(id, data);
+        return { success: true };
+      }),
+
+    // Delete merchandise item
+    deleteMerchandiseItem: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { getDb } = await import("./db.js");
+        const { merchandise_items } = await import("../drizzle/schema.js");
+        const { eq } = await import("drizzle-orm");
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+        await db.delete(merchandise_items).where(eq(merchandise_items.id, input));
+        return { success: true };
+      }),
   }),
 });
 
