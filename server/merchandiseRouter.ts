@@ -77,6 +77,7 @@ export const merchandiseRouter = router({
         // Validate items and calculate total
         let totalAmount = 0;
         const orderItems: any[] = [];
+        const merchandiseNames: Record<number, string> = {};
 
         for (const item of input.items) {
           const merchandise = await getMerchandiseItemById(item.merchandiseId);
@@ -89,6 +90,7 @@ export const merchandiseRouter = router({
           
           const itemTotal = merchandise.price * item.quantity;
           totalAmount += itemTotal;
+          merchandiseNames[item.merchandiseId] = merchandise.name;
           
           orderItems.push({
             merchandiseId: item.merchandiseId,
@@ -182,6 +184,34 @@ export const merchandiseRouter = router({
             ? `Installment 1 of ${numberOfInstallments} - Order #${orderId}`
             : `Order #${orderId}`,
         });
+
+        // Send receipt email
+        try {
+          const emailItems = input.items.map(item => ({
+            name: merchandiseNames[item.merchandiseId] || `Item #${item.merchandiseId}`,
+            quantity: item.quantity,
+            price: orderItems.find(oi => oi.merchandiseId === item.merchandiseId)?.unitPrice || 0,
+          }));
+
+          const emailContent = buildOrderReceiptEmail(
+            input.fullName,
+            orderId,
+            emailItems,
+            totalAmount,
+            numberOfInstallments,
+            installmentAmount,
+            input.installmentInterval || "days",
+            intasendResult.paymentLink || ""
+          );
+
+          await sendEmail({
+            to: input.email,
+            subject: emailContent.subject,
+            html: emailContent.html,
+          });
+        } catch (emailError) {
+          console.error("Failed to send order receipt email:", emailError);
+        }
 
         return {
           success: true,
@@ -336,12 +366,29 @@ export const merchandiseRouter = router({
 
           // Send confirmation email
           try {
-            const emailContent = buildPaymentConfirmationEmail(
-              input.amount,
-              input.transactionId,
-              input.paymentMethod
-            );
-            // Would need to get user email from order
+            let customerEmail = "";
+            let customerName = "";
+
+            if (input.orderId) {
+              const order = await getMerchandiseOrderById(input.orderId);
+              if (order) {
+                customerEmail = order.email;
+                customerName = order.fullName;
+              }
+            }
+
+            if (customerEmail) {
+              const emailContent = buildPaymentConfirmationEmail(
+                input.amount,
+                input.transactionId,
+                input.paymentMethod
+              );
+              await sendEmail({
+                to: customerEmail,
+                subject: emailContent.subject,
+                html: emailContent.html,
+              });
+            }
           } catch (emailError) {
             console.error("Failed to send payment confirmation email:", emailError);
           }

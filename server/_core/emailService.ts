@@ -179,6 +179,95 @@ export function buildPaymentConfirmationEmail(
   };
 }
 
+export function buildOrderReceiptEmail(
+  customerName: string,
+  orderId: number,
+  items: Array<{ name: string; quantity: number; price: number }>,
+  totalAmount: number,
+  numberOfInstallments: number,
+  installmentAmount: number,
+  installmentInterval: string,
+  paymentLink: string
+): { subject: string; html: string } {
+  const itemsHtml = items.map(item => `
+    <tr>
+      <td style="padding: 12px; border-bottom: 1px solid #3a1c28; color: #ffffff;">${item.quantity}x ${item.name}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #3a1c28; color: #999999; text-align: center;">${item.quantity}</td>
+      <td style="padding: 12px; border-bottom: 1px solid #3a1c28; color: #d4af37; text-align: right;">KES ${(item.price * item.quantity).toLocaleString()}</td>
+    </tr>
+  `).join('');
+
+  const installmentInfo = numberOfInstallments > 1 
+    ? `
+      <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 20px 0;">
+        <p style="color: #d4af37; margin: 0; font-weight: bold;">📦 Payment Plan</p>
+        <p style="color: #ffffff; margin: 8px 0 0;">${numberOfInstallments} installments of KES ${installmentAmount.toLocaleString()} (${installmentInterval})</p>
+        <p style="color: #e5c158; margin: 4px 0 0; font-size: 12px;">⚠ All payments must be completed by 1st September 2026</p>
+      </div>
+    `
+    : '';
+
+  return {
+    subject: `🧾 Order #${orderId} Confirmed - Mr & Miss Face of Tharaka-Nithi`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Order Confirmed!</h1>
+          <p style="color: #e5c158; margin: 8px 0 0;">Order #${orderId}</p>
+        </div>
+        
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">${customerName}</strong>,</p>
+          <p style="line-height: 1.6; margin: 16px 0;">Thank you for your order! Here is your receipt:</p>
+          
+          <!-- Receipt Table -->
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; overflow: hidden; margin: 24px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #3a1c28;">
+                  <th style="padding: 12px; text-align: left; color: #d4af37; font-size: 12px; text-transform: uppercase;">Item</th>
+                  <th style="padding: 12px; text-align: center; color: #d4af37; font-size: 12px; text-transform: uppercase;">Qty</th>
+                  <th style="padding: 12px; text-align: right; color: #d4af37; font-size: 12px; text-transform: uppercase;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+              <tfoot>
+                <tr style="background: #3a1c28;">
+                  <td colspan="2" style="padding: 12px; color: #ffffff; font-weight: bold;">TOTAL</td>
+                  <td style="padding: 12px; color: #d4af37; font-weight: bold; font-size: 18px; text-align: right;">KES ${totalAmount.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          ${installmentInfo}
+
+          <!-- Payment Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${paymentLink}" style="display: inline-block; background: #d4af37; color: #000000; padding: 16px 40px; text-decoration: none; font-weight: bold; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px;">
+              Pay Now with M-Pesa / Card
+            </a>
+          </div>
+
+          <!-- Event Info -->
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+            <p style="color: #d4af37; margin: 0; font-weight: bold;">📅 Event Date: September 12, 2026</p>
+            <p style="color: #d4af37; margin: 8px 0 0; font-weight: bold;">📍 Venue: Chuka Grounds</p>
+            <p style="color: #999999; margin: 8px 0 0; font-size: 12px;">Collect your merchandise at the event</p>
+          </div>
+
+          <p style="color: #999999; font-size: 12px; margin-top: 24px; text-align: center;">
+            — Royals Icon Events<br/>
+            Questions? Contact support@royaliconevents.co.ke
+          </p>
+        </div>
+      </div>
+    `,
+  };
+}
+
 export function buildInstallmentReminderEmail(
   installmentNumber: number,
   totalInstallments: number,
