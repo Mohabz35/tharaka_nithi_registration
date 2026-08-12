@@ -32,8 +32,107 @@ export async function ensureSchema(): Promise<void> {
     try {
       await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentUrl" text`;
       await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentKey" text`;
+
+      // Create enum types if not exist
+      await _client!`DO $$ BEGIN
+        CREATE TYPE "planStatus" AS ENUM('active', 'completed', 'cancelled');
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$`;
+      await _client!`DO $$ BEGIN
+        CREATE TYPE "installmentStatus" AS ENUM('pending', 'paid', 'overdue', 'cancelled');
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$`;
+      await _client!`DO $$ BEGIN
+        CREATE TYPE "orderStatus" AS ENUM('pending', 'paid', 'cancelled');
+      EXCEPTION WHEN duplicate_object THEN null;
+      END $$`;
+
+      // Create merchandise_items table
+      await _client!`CREATE TABLE IF NOT EXISTS "merchandise_items" (
+        "id" serial PRIMARY KEY,
+        "name" varchar(255) NOT NULL,
+        "description" text,
+        "price" integer NOT NULL,
+        "category" varchar(100) NOT NULL,
+        "imageUrl" text,
+        "imageKey" text,
+        "isActive" boolean DEFAULT true NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create merchandise_orders table
+      await _client!`CREATE TABLE IF NOT EXISTS "merchandise_orders" (
+        "id" serial PRIMARY KEY,
+        "userId" integer,
+        "registrationId" integer,
+        "fullName" varchar(255) NOT NULL,
+        "email" varchar(320) NOT NULL,
+        "phoneNumber" varchar(20) NOT NULL,
+        "totalAmount" integer NOT NULL,
+        "status" "orderStatus" DEFAULT 'pending' NOT NULL,
+        "paymentMethod" varchar(50),
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create order_items table
+      await _client!`CREATE TABLE IF NOT EXISTS "order_items" (
+        "id" serial PRIMARY KEY,
+        "orderId" integer NOT NULL,
+        "merchandiseId" integer NOT NULL,
+        "quantity" integer DEFAULT 1 NOT NULL,
+        "unitPrice" integer NOT NULL,
+        "totalPrice" integer NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create payment_plans table
+      await _client!`CREATE TABLE IF NOT EXISTS "payment_plans" (
+        "id" serial PRIMARY KEY,
+        "orderId" integer NOT NULL,
+        "userId" integer,
+        "totalAmount" integer NOT NULL,
+        "numberOfInstallments" integer NOT NULL,
+        "installmentAmount" integer NOT NULL,
+        "status" "planStatus" DEFAULT 'active' NOT NULL,
+        "startDate" timestamp DEFAULT now() NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create installment_payments table
+      await _client!`CREATE TABLE IF NOT EXISTS "installment_payments" (
+        "id" serial PRIMARY KEY,
+        "paymentPlanId" integer NOT NULL,
+        "installmentNumber" integer NOT NULL,
+        "amountDue" integer NOT NULL,
+        "amountPaid" integer DEFAULT 0 NOT NULL,
+        "dueDate" timestamp NOT NULL,
+        "paymentDate" timestamp,
+        "paymentMethod" varchar(50),
+        "transactionId" varchar(255),
+        "status" "installmentStatus" DEFAULT 'pending' NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create payment_transactions table
+      await _client!`CREATE TABLE IF NOT EXISTS "payment_transactions" (
+        "id" serial PRIMARY KEY,
+        "orderId" integer,
+        "installmentId" integer,
+        "transactionId" varchar(255) NOT NULL,
+        "amount" integer NOT NULL,
+        "paymentMethod" varchar(50) NOT NULL,
+        "status" varchar(50) NOT NULL,
+        "metadata" text,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
       _schemaEnsured = true;
-      console.log("[Database] Schema ensured (registration document columns present).");
+      console.log("[Database] Schema ensured (all tables present).");
     } catch (error) {
       console.error("[Database] ensureSchema failed:", error);
     } finally {
