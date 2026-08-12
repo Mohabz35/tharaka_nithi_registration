@@ -253,6 +253,12 @@ export default function SuccessModal({
               🛒 Shop Merchandise
             </Button>
             <Button
+              onClick={() => window.location.href = "/profile"}
+              className="w-full border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold py-2"
+            >
+              👤 View My Profile & Registration ID
+            </Button>
+            <Button
               onClick={onClose}
               className="flex-1 bg-[#4a1a2a] text-[#d4af37] hover:bg-[#5a2a3a] border border-[#d4af37] font-bold py-2"
             >

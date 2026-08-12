@@ -625,6 +625,12 @@ export default function Home() {
 
         <div className="mt-8 pt-8 border-t border-[#3a1c28] flex flex-wrap justify-center gap-6">
           <a
+            href="/profile"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            My Profile
+          </a>
+          <a
             href="/merchandise"
             className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
           >

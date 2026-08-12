@@ -17,6 +17,7 @@ const ContestantPoster = lazy(() => import("@/pages/ContestantPoster"));
 const MerchandiseStore = lazy(() => import("@/pages/MerchandiseStore"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const PaymentDashboard = lazy(() => import("@/pages/PaymentDashboard"));
+const ModelProfile = lazy(() => import("@/pages/ModelProfile"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
 const PageLoader = () => (
@@ -40,6 +41,7 @@ function Router() {
         <Route path={"/merchandise"} component={MerchandiseStore} />
         <Route path={"/payment/:orderId"} component={PaymentPage} />
         <Route path={"/my-orders"} component={PaymentDashboard} />
+        <Route path={"/profile"} component={ModelProfile} />
         <Route path={"/404"} component={NotFound} />
         {/* Final fallback route */}
         <Route component={NotFound} />

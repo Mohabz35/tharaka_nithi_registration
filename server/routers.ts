@@ -267,6 +267,73 @@ export const appRouter = router({
       }),
   }),
 
+  // ============ Model Profile ============
+  modelProfile: router({
+    // Look up registration by email
+    getByEmail: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .query(async ({ input }) => {
+        try {
+          const { getDb } = await import("./db.js");
+          const { registrations } = await import("../drizzle/schema.js");
+          const { ilike } = await import("drizzle-orm");
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+          const results = await db.select().from(registrations).where(ilike(registrations.email, input.email));
+          if (results.length === 0) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "No registration found with this email" });
+          }
+
+          return results.map((r: any) => ({
+            ...r,
+            registrationId: `REG-${r.id.toString().padStart(3, '0')}`,
+          }));
+        } catch (error) {
+          if (error instanceof TRPCError) throw error;
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to look up registration" });
+        }
+      }),
+
+    // Update category
+    updateCategory: publicProcedure
+      .input(z.object({
+        email: z.string().email(),
+        registrationId: z.number(),
+        category: z.enum(["adults", "teens", "little_stars"]),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const { updateRegistration } = await import("./db.js");
+          await updateRegistration(input.registrationId, { category: input.category });
+          return { success: true };
+        } catch (error) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update category" });
+        }
+      }),
+
+    // Update profile fields
+    updateProfile: publicProcedure
+      .input(z.object({
+        registrationId: z.number(),
+        fullName: z.string().optional(),
+        phoneNumber: z.string().optional(),
+        email: z.string().email().optional(),
+        countySubLocation: z.string().optional(),
+        talents: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        try {
+          const { updateRegistration } = await import("./db.js");
+          const { registrationId, ...data } = input;
+          await updateRegistration(registrationId, data);
+          return { success: true };
+        } catch (error) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update profile" });
+        }
+      }),
+  }),
+
   // ============ Sponsor/Partner Registration ============
   sponsor: router({
     register: publicProcedure
