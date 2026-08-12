@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
-import { Download, LogOut, Loader2, Trash2 } from "lucide-react";
+import { Download, LogOut, Loader2, Trash2, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import PartnerLogosManager from "@/components/PartnerLogosManager";
@@ -159,6 +159,14 @@ export default function AdminDashboard() {
           <div className="flex items-center gap-4">
             <span className="text-white">Welcome, {user?.name}</span>
             <Button
+              onClick={() => window.open("/merchandise", "_blank")}
+              variant="outline"
+              className="border-green-500 text-green-400 hover:bg-green-500 hover:text-white"
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Visit Shop
+            </Button>
+            <Button
               onClick={handleLogout}
               variant="outline"
               className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black"
@@ -235,8 +243,8 @@ export default function AdminDashboard() {
               <TabsTrigger value="settings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Site Settings
               </TabsTrigger>
-              <TabsTrigger value="payments" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Payments
+              <TabsTrigger value="payments" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-white flex-1 py-3 bg-green-900/50 border border-green-500/50">
+                💰 Payments
               </TabsTrigger>
             </TabsList>
 
