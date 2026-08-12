@@ -21,6 +21,8 @@ export default function AdminPaymentsTab() {
 
   const updateOrderStatus = trpc.merchandise.admin.updateOrderStatus.useMutation();
   const updateInstallmentStatus = trpc.merchandise.admin.updateInstallmentStatus.useMutation();
+  const seedMerchandise = trpc.merchandise.admin.seedMerchandise.useMutation();
+  const utils = trpc.useContext();
 
   const handleUpdateOrderStatus = async (orderId: number, status: "pending" | "paid" | "cancelled") => {
     try {
@@ -127,6 +129,36 @@ export default function AdminPaymentsTab() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Seed Button */}
+      <Card className="bg-[#1a0a1a] border-[#d4af37]/30">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white font-semibold">Merchandise Items</p>
+              <p className="text-gray-400 text-sm">Initialize the shop with bootcamp and merchandise items</p>
+            </div>
+            <Button
+              onClick={async () => {
+                try {
+                  const result = await seedMerchandise.mutateAsync();
+                  toast.success(result.message);
+                  utils.merchandise.getItems.invalidate();
+                } catch (error: any) {
+                  toast.error(error.message || "Failed to seed merchandise");
+                }
+              }}
+              disabled={seedMerchandise.isPending}
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+            >
+              {seedMerchandise.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : null}
+              {seedMerchandise.isPending ? "Seeding..." : "Seed Merchandise Items"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>

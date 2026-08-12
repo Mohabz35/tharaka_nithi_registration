@@ -412,6 +412,33 @@ export const merchandiseRouter = router({
         overdueInstallments: overdue.length,
       };
     }),
+
+    // Seed merchandise items
+    seedMerchandise: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      
+      const { createMerchandiseItem, getAllMerchandiseItems } = await import("./db.js");
+      
+      // Check if items already exist
+      const existing = await getAllMerchandiseItems();
+      if (existing.length > 0) {
+        return { success: true, message: "Merchandise items already exist", count: existing.length };
+      }
+
+      const items = [
+        { name: "Bootcamp Registration", description: "Access to the full bootcamp training program", price: 3000, category: "bootcamp", isActive: true },
+        { name: "Event T-Shirt", description: "Official Mr & Miss Face of Tharaka-Nithi 2026 T-Shirt", price: 1000, category: "apparel", isActive: true },
+        { name: "Hoodie", description: "Premium event hoodie with official branding", price: 2000, category: "apparel", isActive: true },
+        { name: "Kofia (Cap)", description: "Official event cap", price: 500, category: "accessories", isActive: true },
+        { name: "Reflector Vest", description: "Event reflector vest for visibility", price: 300, category: "accessories", isActive: true },
+      ];
+
+      for (const item of items) {
+        await createMerchandiseItem(item);
+      }
+
+      return { success: true, message: "Merchandise items seeded successfully", count: items.length };
+    }),
   }),
 });
 
