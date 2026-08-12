@@ -174,6 +174,7 @@ export default function SuccessModal({
               <p>✓ Your registration has been confirmed</p>
               <p>✓ Check your email for confirmation details</p>
               <p>✓ Download your registration certificate below</p>
+              <p>✓ Shop for official merchandise (bootcamp, t-shirts, hoodies)</p>
               <p>✓ Share your registration with friends and family</p>
               <p>✓ Prepare your portfolio for the event</p>
             </CardContent>
@@ -208,6 +209,12 @@ export default function SuccessModal({
             >
               <Share2 className="w-4 h-4 mr-2" />
               Share Registration
+            </Button>
+            <Button
+              onClick={() => window.location.href = "/merchandise"}
+              className="w-full bg-[#4a1a2a] text-[#d4af37] hover:bg-[#5a2a3a] border border-[#d4af37] font-bold py-2"
+            >
+              🛒 Shop Merchandise
             </Button>
             <Button
               onClick={onClose}

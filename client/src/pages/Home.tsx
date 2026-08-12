@@ -6,7 +6,7 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart } from "lucide-react";
+import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart, ShoppingCart } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
@@ -105,6 +105,14 @@ export default function Home() {
               <Vote className="w-4 h-4 mr-3" />
               Vote Now
             </Button>
+            <Button
+              variant="outline" 
+              className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+              onClick={() => setLocation("/merchandise")}
+            >
+              <ShoppingCart className="w-4 h-4 mr-3" />
+              Shop Merchandise
+            </Button>
           </div>
 
           <div className="max-w-2xl mx-auto border-t border-[#d4af37]/20 pt-8">
@@ -180,6 +188,31 @@ export default function Home() {
               >
                 Buy Tickets
               </Button>
+            </div>
+          </div>
+
+          {/* Merchandise Section */}
+          <div className="mt-12">
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-10 flex flex-col justify-center items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <ShoppingCart className="w-16 h-16 text-[#d4af37] mb-6" />
+              <h3 className="font-serif text-3xl text-white mb-4">Official Merchandise</h3>
+              <p className="text-gray-400 mb-8 font-light">
+                Get exclusive bootcamp access, event t-shirts, hoodies, and more. Support the event and look stylish while doing it!
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
+                <Button
+                  onClick={() => setLocation("/merchandise")}
+                  className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest px-8 py-6 rounded-none flex-1"
+                >
+                  Shop Now
+                </Button>
+                <Button
+                  onClick={() => setLocation("/my-orders")}
+                  className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest px-8 py-6 rounded-none flex-1"
+                >
+                  My Orders
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -438,6 +471,13 @@ export default function Home() {
               Buy Tickets
             </Button>
             <Button 
+              className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+              onClick={() => setLocation("/merchandise")}
+            >
+              <ShoppingCart className="w-4 h-4 mr-2" />
+              Shop Merchandise
+            </Button>
+            <Button 
               className="bg-transparent border border-white text-white hover:bg-white hover:text-black font-semibold uppercase tracking-wider text-xs px-8 py-5 rounded-full transition-all duration-300 w-full sm:w-auto"
               onClick={() => setLocation("/poster-generator")}
             >
@@ -466,7 +506,19 @@ export default function Home() {
 
         <SocialMediaFooter />
 
-        <div className="mt-8 pt-8 border-t border-[#3a1c28]">
+        <div className="mt-8 pt-8 border-t border-[#3a1c28] flex flex-wrap justify-center gap-6">
+          <a
+            href="/merchandise"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Shop Merchandise
+          </a>
+          <a
+            href="/my-orders"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            My Orders
+          </a>
           <a
             href="/admin"
             className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
