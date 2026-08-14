@@ -262,12 +262,15 @@ export default function MerchandiseStore() {
                         <SelectTrigger className="bg-[#2a0a1a] border-[#d4af37] text-white">
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent className="bg-[#2a0a1a] border-[#d4af37]">
-                          <SelectItem value="1">Pay in Full - KES {totalAmount.toLocaleString()}</SelectItem>
-                          <SelectItem value="2">2 Installments - KES {Math.ceil(totalAmount / 2).toLocaleString()} each</SelectItem>
-                          <SelectItem value="3">3 Installments - KES {Math.ceil(totalAmount / 3).toLocaleString()} each</SelectItem>
-                          <SelectItem value="4">4 Installments - KES {Math.ceil(totalAmount / 4).toLocaleString()} each</SelectItem>
-                          <SelectItem value="5">5 Installments - KES {Math.ceil(totalAmount / 5).toLocaleString()} each</SelectItem>
+                        <SelectContent 
+                          className="bg-[#1a0a1a] border-[#d4af37] text-white z-50 min-w-[200px]"
+                          position="item-aligned"
+                        >
+                          <SelectItem value="1" className="text-white focus:bg-[#d4af37] focus:text-black">Pay in Full - KES {totalAmount.toLocaleString()}</SelectItem>
+                          <SelectItem value="2" className="text-white focus:bg-[#d4af37] focus:text-black">2 Installments - KES {Math.ceil(totalAmount / 2).toLocaleString()} each</SelectItem>
+                          <SelectItem value="3" className="text-white focus:bg-[#d4af37] focus:text-black">3 Installments - KES {Math.ceil(totalAmount / 3).toLocaleString()} each</SelectItem>
+                          <SelectItem value="4" className="text-white focus:bg-[#d4af37] focus:text-black">4 Installments - KES {Math.ceil(totalAmount / 4).toLocaleString()} each</SelectItem>
+                          <SelectItem value="5" className="text-white focus:bg-[#d4af37] focus:text-black">5 Installments - KES {Math.ceil(totalAmount / 5).toLocaleString()} each</SelectItem>
                         </SelectContent>
                       </Select>
                       
