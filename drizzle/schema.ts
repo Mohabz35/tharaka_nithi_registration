@@ -223,3 +223,95 @@ export const payment_transactions = pgTable("payment_transactions", {
 
 export type PaymentTransaction = typeof payment_transactions.$inferSelect;
 export type InsertPaymentTransaction = typeof payment_transactions.$inferInsert;
+
+// ============ Winners Tables ============
+
+export const winners = pgTable("winners", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(), // e.g. "Miss Face of Tharaka-Nithi 2026"
+  category: varchar("category", { length: 50 }).notNull(), // adults | teens | little_stars | overall
+  placement: varchar("placement", { length: 100 }), // e.g. "Winner", "1st Runner Up"
+  prize: text("prize"),
+  description: text("description"),
+  photoUrl: text("photoUrl"),
+  photoKey: text("photoKey"),
+  registrationId: integer("registrationId").references(() => registrations.id),
+  isPublished: boolean("isPublished").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type Winner = typeof winners.$inferSelect;
+export type InsertWinner = typeof winners.$inferInsert;
+
+// ============ Events Gallery Tables ============
+
+export const events = pgTable("events", {
+  id: serial("id").primaryKey(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  eventDate: timestamp("eventDate"),
+  location: varchar("location", { length: 255 }),
+  coverImageUrl: text("coverImageUrl"),
+  coverImageKey: text("coverImageKey"),
+  isPublished: boolean("isPublished").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type EventRecord = typeof events.$inferSelect;
+export type InsertEventRecord = typeof events.$inferInsert;
+
+export const event_photos = pgTable("event_photos", {
+  id: serial("id").primaryKey(),
+  eventId: integer("eventId").references(() => events.id).notNull(),
+  photoUrl: text("photoUrl").notNull(),
+  photoKey: text("photoKey"),
+  caption: varchar("caption", { length: 255 }),
+  sortOrder: integer("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type EventPhoto = typeof event_photos.$inferSelect;
+export type InsertEventPhoto = typeof event_photos.$inferInsert;
+
+// ============ Training / Bootcamp Tables ============
+
+export const training_programs = pgTable("training_programs", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  startDate: timestamp("startDate"),
+  endDate: timestamp("endDate"),
+  location: varchar("location", { length: 255 }),
+  feeKes: integer("feeKes").default(0).notNull(),
+  capacity: integer("capacity"),
+  imageUrl: text("imageUrl"),
+  imageKey: text("imageKey"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type TrainingProgram = typeof training_programs.$inferSelect;
+export type InsertTrainingProgram = typeof training_programs.$inferInsert;
+
+export const training_registrations = pgTable("training_registrations", {
+  id: serial("id").primaryKey(),
+  programId: integer("programId").references(() => training_programs.id).notNull(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  category: varchar("category", { length: 50 }), // adults | teens | little_stars
+  experienceLevel: varchar("experienceLevel", { length: 100 }), // beginner | intermediate | advanced
+  emergencyContactName: varchar("emergencyContactName", { length: 255 }),
+  emergencyContactPhone: varchar("emergencyContactPhone", { length: 20 }),
+  notes: text("notes"),
+  paymentStatus: paymentStatusEnum("paymentStatus").default("pending").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type TrainingRegistration = typeof training_registrations.$inferSelect;
+export type InsertTrainingRegistration = typeof training_registrations.$inferInsert;

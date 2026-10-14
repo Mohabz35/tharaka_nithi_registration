@@ -26,7 +26,7 @@ import {
   getAllPaymentPlans,
   getAllOverdueInstallments,
 } from "./db.js";
-import { sendEmail, buildPaymentConfirmationEmail, buildInstallmentReminderEmail } from "./_core/emailService.js";
+import { sendEmail, buildPaymentConfirmationEmail, buildInstallmentReminderEmail, buildOrderReceiptEmail } from "./_core/emailService.js";
 import { createIntaSendPayment } from "./_core/intasend.js";
 import { ENV } from "./_core/env.js";
 

@@ -6,7 +6,7 @@ import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart, ShoppingCart } from "lucide-react";
+import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart, ShoppingCart, Trophy, Images, GraduationCap } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
@@ -559,6 +559,62 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Champions, Events & Training */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0a0508] border-t border-[#3a1c28]">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-14">
+            <h2 className="font-serif text-4xl sm:text-5xl font-bold text-white mb-4 uppercase tracking-wider">
+              The Journey Continues
+            </h2>
+            <div className="w-24 h-1 bg-[#d4af37] mx-auto"></div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-8 flex flex-col items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <Trophy className="w-14 h-14 text-[#d4af37] mb-5" />
+              <h3 className="font-serif text-2xl text-white mb-3">Our Champions</h3>
+              <p className="text-gray-400 font-light mb-8 flex-1">
+                The competition has crowned its winners. Meet the Faces of Tharaka-Nithi and celebrate their journey.
+              </p>
+              <Button
+                onClick={() => setLocation("/winners")}
+                className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest px-8 py-5 rounded-none w-full"
+              >
+                See Winners
+              </Button>
+            </div>
+
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-8 flex flex-col items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <Images className="w-14 h-14 text-[#d4af37] mb-5" />
+              <h3 className="font-serif text-2xl text-white mb-3">Events Gallery</h3>
+              <p className="text-gray-400 font-light mb-8 flex-1">
+                Relive the unforgettable moments from our events, auditions, and the grand finale night.
+              </p>
+              <Button
+                onClick={() => setLocation("/events")}
+                className="bg-transparent border border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-semibold uppercase tracking-widest px-8 py-5 rounded-none w-full"
+              >
+                View Gallery
+              </Button>
+            </div>
+
+            <div className="bg-[#140a10] border border-[#d4af37]/30 p-8 flex flex-col items-center text-center transition-transform hover:-translate-y-2 duration-300">
+              <GraduationCap className="w-14 h-14 text-[#d4af37] mb-5" />
+              <h3 className="font-serif text-2xl text-white mb-3">Training & Bootcamp</h3>
+              <p className="text-gray-400 font-light mb-8 flex-1">
+                Take your modeling career further. Register for upcoming training programs and bootcamps.
+              </p>
+              <Button
+                onClick={() => setLocation("/training")}
+                className="bg-[#d4af37] text-black hover:bg-white font-semibold uppercase tracking-widest px-8 py-5 rounded-none w-full"
+              >
+                Join Training
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Know More & Support (Pill Layout) */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#140a10] border-t border-[#3a1c28]">
         <div className="max-w-4xl mx-auto text-center">
@@ -629,6 +685,30 @@ export default function Home() {
             className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
           >
             My Profile
+          </a>
+          <a
+            href="/gallery"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Gallery
+          </a>
+          <a
+            href="/winners"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Winners
+          </a>
+          <a
+            href="/events"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Events
+          </a>
+          <a
+            href="/training"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Training
           </a>
           <a
             href="/merchandise"

@@ -486,3 +486,26 @@ export function buildOrderConfirmationEmail(
     `,
   };
 }
+
+export function buildTrainingRegistrationEmail(programTitle: string): { subject: string; html: string } {
+  return {
+    subject: `Training Registration Received - ${programTitle}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Royals Icon Events</h1>
+          <p style="color: #e5c158; margin: 8px 0 0; font-size: 14px;">Training &amp; Bootcamp</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">Model</strong>,</p>
+          <p style="line-height: 1.6;">Thank you for registering for <strong style="color: #d4af37;">${programTitle}</strong>. We have received your application and our team will review it.</p>
+          <p style="line-height: 1.6;">You will be contacted via email or phone with next steps, including payment details if the program has a fee.</p>
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 24px 0;">
+            <p style="color: #d4af37; margin: 0; font-weight: bold;">Program: ${programTitle}</p>
+          </div>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">- Royals Icon Events</p>
+        </div>
+      </div>
+    `,
+  };
+}

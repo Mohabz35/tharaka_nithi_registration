@@ -126,6 +126,42 @@
 - M-PESA payment verification webhook not yet integrated
 - SMS notifications not yet implemented
 
+## Post-Competition Phase (Winners, Events Gallery, Training)
+
+### Competition Winners + Social Share Meta Tags
+- [x] Add `winners` table (name, title, category, placement, prize, description, photo, publish toggle)
+- [x] Add winner tRPC router (public getPublished/getById, admin create/update/delete/togglePublish)
+- [x] Server-rendered OG/Twitter meta tag route `GET /api/share/winner/:id` (JSON-LD Person, HTML escaping, redirect to SPA)
+- [x] Add vercel.json rewrites for `/share/winner/:id` before the SPA fallback
+- [x] Create public Winners page (`/winners`) with category filters and share buttons
+- [x] Create Winner detail page (`/winners/:id`) with WhatsApp/Facebook/copy-link sharing
+- [x] Add Winners section to Home page + footer links
+- [x] Admin "Winners" tab: add/edit/delete/publish winners with photo upload
+
+### Events Gallery (admin-uploaded photos)
+- [x] Add `events` and `event_photos` tables (slug, cover image, date, location, captions, ordering)
+- [x] Add events tRPC router (public getPublished/getBySlug, admin CRUD + multi-photo upload/delete, getWithPhotos)
+- [x] Server-rendered OG meta tag route `GET /api/share/event/:slug` (JSON-LD Event)
+- [x] Add vercel.json rewrite for `/share/event/:slug`
+- [x] Create public Events page (`/events`) with searchable album cards
+- [x] Create Event detail page (`/events/:slug`) with photo grid + lightbox (keyboard-free prev/next)
+- [x] Add Events section to Home page + footer link
+- [x] Admin "Events" tab: create events, upload multiple photos, publish/unpublish, delete
+
+### Training / Bootcamp Registration
+- [x] Add `training_programs` and `training_registrations` tables
+- [x] Add training tRPC router (public getActivePrograms with capacity counts, register with capacity check)
+- [x] Send confirmation email on training registration (buildTrainingRegistrationEmail)
+- [x] Create public Training page (`/training`) with program cards and registration dialog
+- [x] Add Training section to Home page + footer link
+- [x] Admin "Training" tab: program CRUD (dates, fee, capacity, cover image) + registrants table with payment toggle
+
+### Fixes & Verification
+- [x] Fix pre-existing import error in merchandiseRouter.ts (buildOrderReceiptEmail not imported)
+- [x] Add `newFeatures.test.ts` — share meta rendering/escaping + access control for new routers (11 tests)
+- [x] `npm run check` passes, `npm run build` passes
+- [ ] Full test suite green (9 pre-existing failures require DATABASE_URL)
+
 
 ## Phase 3 Enhancements
 

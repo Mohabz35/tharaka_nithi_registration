@@ -10,6 +10,13 @@ import {
   createShowcaseRegistration, getAllShowcaseRegistrations, deleteShowcaseRegistration,
   getSiteSettings, getSiteSetting, upsertSiteSetting,
   getPartnerLogos, createPartnerLogo, togglePartnerLogoStatus, deletePartnerLogo,
+  createWinner, getAllWinners, getPublishedWinners, getWinnerById, updateWinner, deleteWinner, toggleWinnerPublish,
+  createEvent, getAllEvents, getPublishedEvents, getEventBySlug, getEventById, updateEvent, deleteEvent, toggleEventPublish,
+  getEventPhotos, createEventPhotos, deleteEventPhoto,
+  createTrainingProgram, getAllTrainingPrograms, getActiveTrainingPrograms, getTrainingProgramById,
+  updateTrainingProgram, deleteTrainingProgram, toggleTrainingProgramActive,
+  createTrainingRegistration, getTrainingRegistrationCount, getAllTrainingRegistrations,
+  updateTrainingRegistrationPayment, deleteTrainingRegistration,
 } from "./db.js";
 import { REGISTRATION_DEADLINE_ISO } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies.js";
@@ -19,7 +26,7 @@ import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
 import { generateCertificate } from "./_core/certificateGenerator.js";
 import { storageGetSignedUrl } from "./storage.js";
-import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail } from "./_core/emailService.js";
+import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail, buildTrainingRegistrationEmail } from "./_core/emailService.js";
 import { contestantRouter } from "./contestant.js";
 import { merchandiseRouter } from "./merchandiseRouter.js";
 
@@ -673,6 +680,363 @@ export const appRouter = router({
         if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         await upsertSiteSetting(input.key, input.value);
         return { success: true };
+      }),
+  }),
+
+  // ============ Winners ============
+  winner: router({
+    getPublished: publicProcedure.query(async () => {
+      try {
+        return await getPublishedWinners();
+      } catch (error) {
+        console.error("Winners fetch error:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch winners" });
+      }
+    }),
+
+    getById: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        const winner = await getWinnerById(input.id);
+        if (!winner || !winner.isPublished) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Winner not found" });
+        }
+        return winner;
+      }),
+
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllWinners();
+    }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(1, "Full name is required"),
+          title: z.string().min(1, "Title is required"),
+          category: z.enum(["adults", "teens", "little_stars", "overall"]),
+          placement: z.string().optional(),
+          prize: z.string().optional(),
+          description: z.string().optional(),
+          photoUrl: z.string().optional(),
+          photoKey: z.string().optional(),
+          registrationId: z.number().optional(),
+          isPublished: z.boolean().default(true),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const id = await createWinner(input);
+        return { success: true, id };
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          fullName: z.string().optional(),
+          title: z.string().optional(),
+          category: z.enum(["adults", "teens", "little_stars", "overall"]).optional(),
+          placement: z.string().optional(),
+          prize: z.string().optional(),
+          description: z.string().optional(),
+          photoUrl: z.string().optional(),
+          photoKey: z.string().optional(),
+          isPublished: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { id, ...data } = input;
+        return await updateWinner(id, data);
+      }),
+
+    delete: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteWinner(input);
+      }),
+
+    togglePublish: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const isPublished = await toggleWinnerPublish(input);
+        return { success: true, isPublished };
+      }),
+  }),
+
+  // ============ Events Gallery ============
+  events: router({
+    getPublished: publicProcedure.query(async () => {
+      try {
+        return await getPublishedEvents();
+      } catch (error) {
+        console.error("Events fetch error:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch events" });
+      }
+    }),
+
+    getBySlug: publicProcedure
+      .input(z.object({ slug: z.string() }))
+      .query(async ({ input }) => {
+        const event = await getEventBySlug(input.slug);
+        if (!event || !event.isPublished) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+        }
+        const photos = await getEventPhotos(event.id);
+        return { ...event, photos };
+      }),
+
+    getAll: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllEvents();
+    }),
+
+    getWithPhotos: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const event = await getEventById(input.id);
+        if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+        const photos = await getEventPhotos(event.id);
+        return { ...event, photos };
+      }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1, "Title is required"),
+          slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must be lowercase letters, numbers and dashes"),
+          description: z.string().optional(),
+          eventDate: z.string().datetime().optional().or(z.string().optional()),
+          location: z.string().optional(),
+          coverImageUrl: z.string().optional(),
+          coverImageKey: z.string().optional(),
+          isPublished: z.boolean().default(true),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const existing = await getEventBySlug(input.slug);
+        if (existing) throw new TRPCError({ code: "CONFLICT", message: "An event with this slug already exists" });
+        const id = await createEvent({
+          ...input,
+          eventDate: input.eventDate ? new Date(input.eventDate) : null,
+        });
+        return { success: true, id };
+      }),
+
+    update: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+          eventDate: z.string().optional(),
+          location: z.string().optional(),
+          coverImageUrl: z.string().optional(),
+          coverImageKey: z.string().optional(),
+          isPublished: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { id, eventDate, ...data } = input;
+        return await updateEvent(id, {
+          ...data,
+          ...(eventDate ? { eventDate: new Date(eventDate) } : {}),
+        });
+      }),
+
+    delete: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteEvent(input);
+      }),
+
+    togglePublish: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const isPublished = await toggleEventPublish(input);
+        return { success: true, isPublished };
+      }),
+
+    addPhotos: protectedProcedure
+      .input(
+        z.object({
+          eventId: z.number(),
+          photos: z.array(
+            z.object({
+              photoUrl: z.string().min(1),
+              photoKey: z.string().optional(),
+              caption: z.string().optional(),
+            })
+          ).min(1, "At least one photo is required"),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const event = await getEventById(input.eventId);
+        if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+        const existing = await getEventPhotos(input.eventId);
+        const startOrder = existing.length;
+        await createEventPhotos(
+          input.photos.map((p, i) => ({ ...p, eventId: input.eventId, sortOrder: startOrder + i }))
+        );
+        return { success: true, added: input.photos.length };
+      }),
+
+    deletePhoto: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteEventPhoto(input);
+      }),
+  }),
+
+  // ============ Training / Bootcamp ============
+  training: router({
+    getActivePrograms: publicProcedure.query(async () => {
+      try {
+        return await getActiveTrainingPrograms();
+      } catch (error) {
+        console.error("Training programs fetch error:", error);
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch training programs" });
+      }
+    }),
+
+    register: publicProcedure
+      .input(
+        z.object({
+          programId: z.number(),
+          fullName: z.string().min(1, "Full name is required"),
+          email: z.string().email("Invalid email"),
+          phoneNumber: z.string().min(9, "Phone number is required"),
+          category: z.enum(["adults", "teens", "little_stars"]).optional(),
+          experienceLevel: z.enum(["beginner", "intermediate", "advanced"]).optional(),
+          emergencyContactName: z.string().optional(),
+          emergencyContactPhone: z.string().optional(),
+          notes: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const program = await getTrainingProgramById(input.programId);
+        if (!program || !program.isActive) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Training program not found or no longer active" });
+        }
+        if (program.capacity && program.capacity > 0) {
+          const registered = await getTrainingRegistrationCount(input.programId);
+          if (registered >= program.capacity) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "This program is fully booked" });
+          }
+        }
+        const id = await createTrainingRegistration(input);
+
+        // Send confirmation email asynchronously
+        setImmediate(async () => {
+          try {
+            const confirmation = buildTrainingRegistrationEmail(program.title);
+            await sendEmail({ to: input.email, ...confirmation });
+          } catch (emailErr) {
+            console.error("[Training] Confirmation email failed:", emailErr);
+          }
+        });
+
+        return { success: true, id };
+      }),
+
+    getPrograms: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllTrainingPrograms();
+    }),
+
+    createProgram: protectedProcedure
+      .input(
+        z.object({
+          title: z.string().min(1, "Title is required"),
+          description: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          location: z.string().optional(),
+          feeKes: z.number().int().min(0).default(0),
+          capacity: z.number().int().min(0).optional(),
+          imageUrl: z.string().optional(),
+          imageKey: z.string().optional(),
+          isActive: z.boolean().default(true),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const id = await createTrainingProgram({
+          ...input,
+          startDate: input.startDate ? new Date(input.startDate) : null,
+          endDate: input.endDate ? new Date(input.endDate) : null,
+        });
+        return { success: true, id };
+      }),
+
+    updateProgram: protectedProcedure
+      .input(
+        z.object({
+          id: z.number(),
+          title: z.string().optional(),
+          description: z.string().optional(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          location: z.string().optional(),
+          feeKes: z.number().int().min(0).optional(),
+          capacity: z.number().int().min(0).optional(),
+          imageUrl: z.string().optional(),
+          imageKey: z.string().optional(),
+          isActive: z.boolean().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const { id, startDate, endDate, ...data } = input;
+        return await updateTrainingProgram(id, {
+          ...data,
+          ...(startDate ? { startDate: new Date(startDate) } : {}),
+          ...(endDate ? { endDate: new Date(endDate) } : {}),
+        });
+      }),
+
+    deleteProgram: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteTrainingProgram(input);
+      }),
+
+    toggleProgramActive: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const isActive = await toggleTrainingProgramActive(input);
+        return { success: true, isActive };
+      }),
+
+    getRegistrations: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getAllTrainingRegistrations();
+    }),
+
+    updatePaymentStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["pending", "completed"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await updateTrainingRegistrationPayment(input.id, input.status);
+      }),
+
+    deleteRegistration: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        return await deleteTrainingRegistration(input);
       }),
   }),
 });

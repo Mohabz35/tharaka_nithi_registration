@@ -19,6 +19,11 @@ const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const PaymentDashboard = lazy(() => import("@/pages/PaymentDashboard"));
 const ModelProfile = lazy(() => import("@/pages/ModelProfile"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
+const Winners = lazy(() => import("@/pages/Winners"));
+const WinnerDetail = lazy(() => import("@/pages/WinnerDetail"));
+const Events = lazy(() => import("@/pages/Events"));
+const EventDetail = lazy(() => import("@/pages/EventDetail"));
+const Training = lazy(() => import("@/pages/Training"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-black flex items-center justify-center">
@@ -35,6 +40,11 @@ function Router() {
         <Route path={"/login"} component={Auth} />
         <Route path={"/register"} component={RegisterModel} />
         <Route path={"/gallery"} component={Gallery} />
+        <Route path={"/winners"} component={Winners} />
+        <Route path={"/winners/:id"} component={WinnerDetail} />
+        <Route path={"/events"} component={Events} />
+        <Route path={"/events/:slug"} component={EventDetail} />
+        <Route path={"/training"} component={Training} />
         <Route path={"/admin"} component={AdminDashboard} />
         <Route path={"/event-sections"} component={EventSections} />
         <Route path={"/poster-generator"} component={ContestantPoster} />

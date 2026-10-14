@@ -20,6 +20,9 @@ import AdminEditContestantModal from "@/components/AdminEditContestantModal";
 import AdminPhotoEditor from "@/components/AdminPhotoEditor";
 import AdminBulkEmailPanel from "@/components/AdminBulkEmailPanel";
 import AdminPaymentsTab from "@/components/AdminPaymentsTab";
+import AdminWinnersManager from "@/components/AdminWinnersManager";
+import AdminEventsManager from "@/components/AdminEventsManager";
+import AdminTrainingManager from "@/components/AdminTrainingManager";
 
 const PAGE_SIZE = 50;
 
@@ -236,6 +239,15 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="showcases" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Showcases
+              </TabsTrigger>
+              <TabsTrigger value="winners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Winners
+              </TabsTrigger>
+              <TabsTrigger value="events" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Events
+              </TabsTrigger>
+              <TabsTrigger value="training" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Training
               </TabsTrigger>
               <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Certificate Partners
@@ -553,6 +565,18 @@ export default function AdminDashboard() {
 
             <TabsContent value="showcases">
               <AdminShowcasesTable />
+            </TabsContent>
+
+            <TabsContent value="winners">
+              <AdminWinnersManager />
+            </TabsContent>
+
+            <TabsContent value="events">
+              <AdminEventsManager />
+            </TabsContent>
+
+            <TabsContent value="training">
+              <AdminTrainingManager />
             </TabsContent>
 
             <TabsContent value="partners">

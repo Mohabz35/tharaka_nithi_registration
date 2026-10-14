@@ -5,6 +5,14 @@
   "framework": null,
   "rewrites": [
     {
+      "source": "/share/winner/:id",
+      "destination": "/api/share/winner/:id"
+    },
+    {
+      "source": "/share/event/:slug",
+      "destination": "/api/share/event/:slug"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index"
     },

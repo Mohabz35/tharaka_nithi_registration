@@ -7,6 +7,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { authRouter } from "../auth.js";
 import uploadRouter from "./uploadHandler.js";
 import webhooksRouter from "../webhooks.js";
+import shareRouter from "./shareRoutes.js";
 import { appRouter } from "../routers.js";
 import { createContext } from "./context.js";
 import { serveStatic, setupVite } from "./vite.js";
@@ -40,6 +41,9 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use("/api/auth", authRouter);
 app.use("/api", uploadRouter);
 app.use("/api", webhooksRouter);
+// Share meta routes: /api/share/* (Vercel rewrite target) and /share/* (direct, local dev)
+app.use("/api", shareRouter);
+app.use("/", shareRouter);
 
 // tRPC API
 app.use(

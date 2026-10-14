@@ -1,4 +1,4 @@
-import { eq, or, desc, ilike, and, gte, lte, isNotNull, count } from "drizzle-orm";
+import { eq, or, desc, asc, ilike, and, gte, lte, isNotNull, count } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -13,6 +13,11 @@ import {
   payment_plans, InsertPaymentPlan,
   installment_payments, InsertInstallmentPayment,
   payment_transactions, InsertPaymentTransaction,
+  winners, InsertWinner,
+  events, InsertEventRecord,
+  event_photos, InsertEventPhoto,
+  training_programs, InsertTrainingProgram,
+  training_registrations, InsertTrainingRegistration,
 } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
 
@@ -129,6 +134,82 @@ export async function ensureSchema(): Promise<void> {
         "metadata" text,
         "createdAt" timestamp DEFAULT now() NOT NULL,
         "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create winners table
+      await _client!`CREATE TABLE IF NOT EXISTS "winners" (
+        "id" serial PRIMARY KEY,
+        "fullName" varchar(255) NOT NULL,
+        "title" varchar(255) NOT NULL,
+        "category" varchar(50) NOT NULL,
+        "placement" varchar(100),
+        "prize" text,
+        "description" text,
+        "photoUrl" text,
+        "photoKey" text,
+        "registrationId" integer,
+        "isPublished" boolean DEFAULT true NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create events table
+      await _client!`CREATE TABLE IF NOT EXISTS "events" (
+        "id" serial PRIMARY KEY,
+        "slug" varchar(255) NOT NULL UNIQUE,
+        "title" varchar(255) NOT NULL,
+        "description" text,
+        "eventDate" timestamp,
+        "location" varchar(255),
+        "coverImageUrl" text,
+        "coverImageKey" text,
+        "isPublished" boolean DEFAULT true NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create event_photos table
+      await _client!`CREATE TABLE IF NOT EXISTS "event_photos" (
+        "id" serial PRIMARY KEY,
+        "eventId" integer NOT NULL,
+        "photoUrl" text NOT NULL,
+        "photoKey" text,
+        "caption" varchar(255),
+        "sortOrder" integer DEFAULT 0 NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create training_programs table
+      await _client!`CREATE TABLE IF NOT EXISTS "training_programs" (
+        "id" serial PRIMARY KEY,
+        "title" varchar(255) NOT NULL,
+        "description" text,
+        "startDate" timestamp,
+        "endDate" timestamp,
+        "location" varchar(255),
+        "feeKes" integer DEFAULT 0 NOT NULL,
+        "capacity" integer,
+        "imageUrl" text,
+        "imageKey" text,
+        "isActive" boolean DEFAULT true NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create training_registrations table
+      await _client!`CREATE TABLE IF NOT EXISTS "training_registrations" (
+        "id" serial PRIMARY KEY,
+        "programId" integer NOT NULL,
+        "fullName" varchar(255) NOT NULL,
+        "email" varchar(320) NOT NULL,
+        "phoneNumber" varchar(20) NOT NULL,
+        "category" varchar(50),
+        "experienceLevel" varchar(100),
+        "emergencyContactName" varchar(255),
+        "emergencyContactPhone" varchar(20),
+        "notes" text,
+        "paymentStatus" "paymentStatus" DEFAULT 'pending' NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
       )`;
 
       _schemaEnsured = true;
@@ -690,4 +771,255 @@ export async function getAllTransactions() {
   const db = await getDb();
   if (!db) { throw new Error("Database not available"); }
   return await db.select().from(payment_transactions).orderBy(desc(payment_transactions.createdAt));
+}
+
+// ============ Winners ============
+
+export async function createWinner(data: InsertWinner) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(winners).values(data).returning({ id: winners.id });
+  return result[0].id;
+}
+
+export async function getAllWinners() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(winners).orderBy(desc(winners.createdAt));
+}
+
+export async function getPublishedWinners() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(winners)
+    .where(eq(winners.isPublished, true))
+    .orderBy(desc(winners.createdAt));
+}
+
+export async function getWinnerById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(winners).where(eq(winners.id, id));
+  return result[0] || null;
+}
+
+export async function updateWinner(id: number, data: Partial<InsertWinner>) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(winners).set({ ...data, updatedAt: new Date() }).where(eq(winners.id, id));
+  return true;
+}
+
+export async function deleteWinner(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(winners).where(eq(winners.id, id));
+  return true;
+}
+
+export async function toggleWinnerPublish(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const current = await getWinnerById(id);
+  if (!current) throw new Error("Winner not found");
+  const next = !current.isPublished;
+  await db.update(winners).set({ isPublished: next, updatedAt: new Date() }).where(eq(winners.id, id));
+  return next;
+}
+
+// ============ Events & Event Photos ============
+
+export async function createEvent(data: InsertEventRecord) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(events).values(data).returning({ id: events.id });
+  return result[0].id;
+}
+
+export async function getAllEvents() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const allEvents = await db.select().from(events).orderBy(desc(events.eventDate));
+  const photoCounts = await db.select({
+    eventId: event_photos.eventId,
+    count: count(),
+  }).from(event_photos).groupBy(event_photos.eventId);
+  const countMap = new Map(photoCounts.map(p => [p.eventId, p.count]));
+  return allEvents.map(e => ({ ...e, photoCount: countMap.get(e.id) || 0 }));
+}
+
+export async function getPublishedEvents() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const published = await db.select().from(events)
+    .where(eq(events.isPublished, true))
+    .orderBy(desc(events.eventDate));
+  const photoCounts = await db.select({
+    eventId: event_photos.eventId,
+    count: count(),
+  }).from(event_photos).groupBy(event_photos.eventId);
+  const countMap = new Map(photoCounts.map(p => [p.eventId, p.count]));
+  return published.map(e => ({ ...e, photoCount: countMap.get(e.id) || 0 }));
+}
+
+export async function getEventBySlug(slug: string) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(events).where(eq(events.slug, slug));
+  return result[0] || null;
+}
+
+export async function getEventById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(events).where(eq(events.id, id));
+  return result[0] || null;
+}
+
+export async function updateEvent(id: number, data: Partial<InsertEventRecord>) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(events).set({ ...data, updatedAt: new Date() }).where(eq(events.id, id));
+  return true;
+}
+
+export async function deleteEvent(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(event_photos).where(eq(event_photos.eventId, id));
+  await db.delete(events).where(eq(events.id, id));
+  return true;
+}
+
+export async function toggleEventPublish(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const current = await getEventById(id);
+  if (!current) throw new Error("Event not found");
+  const next = !current.isPublished;
+  await db.update(events).set({ isPublished: next, updatedAt: new Date() }).where(eq(events.id, id));
+  return next;
+}
+
+export async function getEventPhotos(eventId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(event_photos)
+    .where(eq(event_photos.eventId, eventId))
+    .orderBy(asc(event_photos.sortOrder), asc(event_photos.id));
+}
+
+export async function createEventPhotos(photos: InsertEventPhoto[]) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  if (photos.length === 0) return;
+  await db.insert(event_photos).values(photos);
+}
+
+export async function deleteEventPhoto(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(event_photos).where(eq(event_photos.id, id));
+  return true;
+}
+
+// ============ Training Programs & Registrations ============
+
+export async function createTrainingProgram(data: InsertTrainingProgram) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(training_programs).values(data).returning({ id: training_programs.id });
+  return result[0].id;
+}
+
+export async function getAllTrainingPrograms() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(training_programs).orderBy(desc(training_programs.createdAt));
+}
+
+export async function getActiveTrainingPrograms() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const rows = await db.select({
+    program: training_programs,
+    registeredCount: count(),
+  }).from(training_programs)
+    .leftJoin(training_registrations, eq(training_registrations.programId, training_programs.id))
+    .where(eq(training_programs.isActive, true))
+    .groupBy(training_programs.id)
+    .orderBy(desc(training_programs.startDate));
+  return rows.map(r => ({ ...r.program, registeredCount: r.registeredCount }));
+}
+
+export async function getTrainingProgramById(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select().from(training_programs).where(eq(training_programs.id, id));
+  return result[0] || null;
+}
+
+export async function updateTrainingProgram(id: number, data: Partial<InsertTrainingProgram>) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(training_programs).set({ ...data, updatedAt: new Date() }).where(eq(training_programs.id, id));
+  return true;
+}
+
+export async function deleteTrainingProgram(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(training_registrations).where(eq(training_registrations.programId, id));
+  await db.delete(training_programs).where(eq(training_programs.id, id));
+  return true;
+}
+
+export async function toggleTrainingProgramActive(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const current = await getTrainingProgramById(id);
+  if (!current) throw new Error("Training program not found");
+  const next = !current.isActive;
+  await db.update(training_programs).set({ isActive: next, updatedAt: new Date() }).where(eq(training_programs.id, id));
+  return next;
+}
+
+export async function createTrainingRegistration(data: InsertTrainingRegistration) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.insert(training_registrations).values(data).returning({ id: training_registrations.id });
+  return result[0].id;
+}
+
+export async function getTrainingRegistrationCount(programId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db.select({ count: count() }).from(training_registrations)
+    .where(eq(training_registrations.programId, programId));
+  return result[0].count;
+}
+
+export async function getAllTrainingRegistrations() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select({
+    registration: training_registrations,
+    programTitle: training_programs.title,
+  }).from(training_registrations)
+    .innerJoin(training_programs, eq(training_registrations.programId, training_programs.id))
+    .orderBy(desc(training_registrations.createdAt));
+}
+
+export async function updateTrainingRegistrationPayment(id: number, status: "pending" | "completed") {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(training_registrations).set({ paymentStatus: status }).where(eq(training_registrations.id, id));
+  return true;
+}
+
+export async function deleteTrainingRegistration(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(training_registrations).where(eq(training_registrations.id, id));
+  return true;
 }
