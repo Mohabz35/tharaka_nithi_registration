@@ -1,10 +1,11 @@
 import { Router, Request, Response } from "express";
-import { getWinnerById, getEventBySlug, getEventPhotos } from "../db.js";
+import { getWinnerById, getEventBySlug, getEventPhotos, getPublicModelForPortfolio, getPublishedModelPortfolioSummaries, getPublishedEvents, getPublishedWinners } from "../db.js";
+import { modelSlug, parseModelSlug, EVENT_NAME } from "../../shared/const.js";
 
 const shareRouter = Router();
 
 const SITE_URL = process.env.PUBLIC_SITE_URL || "https://www.faceoftharakanithi.app";
-const DEFAULT_IMAGE = `${SITE_URL}/ri_logo_transparent.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/optimized/og-image.jpg`;
 
 function escapeHtml(value: string): string {
   return value
@@ -182,6 +183,129 @@ shareRouter.get("/share/event/:slug", async (req: Request, res: Response) => {
   } catch (error) {
     console.error("[Share] Event share route error:", error);
     res.status(500).type("html").send(notFoundHtml());
+  }
+});
+
+shareRouter.get("/share/model/:slug", async (req: Request, res: Response) => {
+  try {
+    const parsed = parseModelSlug(req.params.slug);
+    if (!parsed) {
+      res.status(404).type("html").send(notFoundHtml());
+      return;
+    }
+
+    const model = await getPublicModelForPortfolio(parsed.id);
+    if (!model) {
+      res.status(404).type("html").send(notFoundHtml());
+      return;
+    }
+
+    const canonicalSlug = modelSlug(model.id, model.fullName);
+    const categoryLabel =
+      model.category === "adults" ? "Adult Category" :
+      model.category === "teens" ? "Teens Category" :
+      model.category === "little_stars" ? "Little Stars Category" :
+      model.category;
+    const talents = (model.talents || "").split(",").map((t: string) => t.trim()).filter(Boolean).slice(0, 3);
+    const title = `${model.fullName} - ${categoryLabel} | ${EVENT_NAME}`;
+    const description =
+      model.bio ||
+      `${model.fullName} from ${model.countySubLocation || "Tharaka-Nithi County"} is a ${categoryLabel.toLowerCase()} model${talents.length ? ` known for ${talents.join(", ")}` : ""}. View portfolio, showreel and booking details.`;
+    const imageUrl = model.photoUrl || model.posterUrl || DEFAULT_IMAGE;
+    const canonicalUrl = `${SITE_URL}/share/model/${canonicalSlug}`;
+
+    res.type("html").send(
+      renderShareHtml({
+        title,
+        description,
+        imageUrl,
+        canonicalUrl,
+        redirectUrl: `/models/${canonicalSlug}`,
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "Person",
+          name: model.fullName,
+          description,
+          image: imageUrl,
+          url: canonicalUrl,
+          jobTitle: "Model",
+        },
+      })
+    );
+  } catch (error) {
+    console.error("[Share] Model share route error:", error);
+    res.status(500).type("html").send(notFoundHtml());
+  }
+});
+
+const STATIC_SITEMAP_PATHS = [
+  { path: "/", priority: "1.0", changefreq: "weekly" },
+  { path: "/gallery", priority: "0.9", changefreq: "weekly" },
+  { path: "/winners", priority: "0.9", changefreq: "monthly" },
+  { path: "/events", priority: "0.8", changefreq: "monthly" },
+  { path: "/training", priority: "0.7", changefreq: "monthly" },
+  { path: "/register", priority: "0.8", changefreq: "monthly" },
+  { path: "/privacy", priority: "0.3", changefreq: "yearly" },
+  { path: "/terms", priority: "0.3", changefreq: "yearly" },
+];
+
+function xmlEscape(value: string): string {
+  return (value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+shareRouter.get("/sitemap.xml", async (_req: Request, res: Response) => {
+  try {
+    const now = new Date().toISOString().slice(0, 10);
+    const urls: string[] = [];
+
+    for (const entry of STATIC_SITEMAP_PATHS) {
+      urls.push(
+        `  <url><loc>${xmlEscape(SITE_URL + entry.path)}</loc><lastmod>${now}</lastmod><changefreq>${entry.changefreq}</changefreq><priority>${entry.priority}</priority></url>`
+      );
+    }
+
+    try {
+      const models = await getPublishedModelPortfolioSummaries();
+      for (const m of models) {
+        urls.push(
+          `  <url><loc>${xmlEscape(`${SITE_URL}/models/${modelSlug(m.id, m.fullName)}`)}</loc><lastmod>${now}</lastmod><changefreq>monthly</changefreq><priority>0.6</priority></url>`
+        );
+      }
+    } catch (error) {
+      console.error("[Sitemap] models error:", error);
+    }
+
+    try {
+      const events = await getPublishedEvents();
+      for (const e of events) {
+        urls.push(
+          `  <url><loc>${xmlEscape(`${SITE_URL}/events/${e.slug}`)}</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>`
+        );
+      }
+    } catch (error) {
+      console.error("[Sitemap] events error:", error);
+    }
+
+    try {
+      const winners = await getPublishedWinners();
+      for (const w of winners) {
+        urls.push(
+          `  <url><loc>${xmlEscape(`${SITE_URL}/winners/${w.id}`)}</loc><changefreq>yearly</changefreq><priority>0.6</priority></url>`
+        );
+      }
+    } catch (error) {
+      console.error("[Sitemap] winners error:", error);
+    }
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join("\n")}\n</urlset>`;
+    res.type("application/xml").set("Cache-Control", "public, max-age=3600").send(xml);
+  } catch (error) {
+    console.error("[Sitemap] route error:", error);
+    res.status(500).type("text").send("Sitemap unavailable");
   }
 });
 

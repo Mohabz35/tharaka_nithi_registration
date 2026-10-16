@@ -5,8 +5,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RegistrationForm from "@/components/RegistrationForm";
 import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
+import SiteHeader from "@/components/SiteHeader";
 import SocialMediaFooter from "@/components/SocialMediaFooter";
-import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart, ShoppingCart, Trophy, Images, GraduationCap } from "lucide-react";
+import { EVENT_DATE, EVENT_VENUE } from "@shared/const";
+import { Image, Sparkles, Vote, Ticket, Star, Users, MapPin, Heart, ShoppingCart, Trophy, Images, GraduationCap, CalendarDays } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
@@ -45,6 +47,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-black font-sans text-white selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       {/* Dynamic Top Banner */}
       {announcementText && (
         <div className="bg-[#d4af37] text-black text-center py-6 px-4 font-bold text-lg sm:text-2xl md:text-3xl animate-pulse shadow-lg shadow-[#d4af37]/20 tracking-wide">
@@ -52,76 +55,121 @@ export default function Home() {
         </div>
       )}
 
-      {/* Hero Section */}
-      <section 
-        className="relative pt-12 pb-24 px-4 sm:px-6 lg:px-8 text-center border-b border-[#3a1c28]"
-        style={{ 
-          backgroundImage: "url('/ri_logo_transparent.png')", 
-          backgroundSize: 'cover', 
-          backgroundAttachment: 'fixed', 
-          backgroundPosition: 'center', 
-          backgroundBlendMode: 'overlay', 
-          backgroundColor: 'rgba(20, 5, 10, 0.95)' 
-        }}
-      >
-        <div className="max-w-5xl mx-auto">
-          {/* Logo & Banner */}
-          <div className="flex flex-col items-center justify-center mb-10 space-y-8">
-            <img 
-              src="/ri_logo_white.png" 
-              alt="Royals Icon Events" 
-              className="w-48 md:w-64 drop-shadow-2xl mb-4" 
-              fetchPriority="high" 
-            />
-            <img
-              src="/mr_miss_tharaka_nithi_banner.png"
-              alt="Mr and Miss Face of Tharaka-Nithi County 2026"
-              className="w-full max-w-4xl mx-auto rounded-none shadow-2xl border border-[#d4af37]/30"
-              fetchPriority="high"
-            />
+      {/* Hero Section — editorial split with aura portrait */}
+      <section className="relative overflow-hidden border-b border-[#3a1c28] bg-[#0a0508]">
+        {/* Aura glow blobs */}
+        <div className="absolute top-[-120px] left-[-80px] w-[520px] h-[520px] bg-[radial-gradient(circle,rgba(212,175,55,0.14)_0%,transparent_60%)] pointer-events-none" />
+        <div className="absolute bottom-[-160px] right-[-60px] w-[460px] h-[460px] bg-[radial-gradient(circle,rgba(122,21,48,0.35)_0%,transparent_60%)] pointer-events-none" />
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 min-h-[calc(100vh-64px)] grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Copy column */}
+          <div className="text-center lg:text-left">
+            <div className="flex items-center gap-4 justify-center lg:justify-start mb-6">
+              <div className="h-px w-10 bg-[#d4af37]" />
+              <span className="text-[#d4af37] text-[10px] uppercase tracking-[0.35em] font-bold">
+                Royals Icon Events Presents
+              </span>
+            </div>
+
+            <h1 className="font-serif text-4xl sm:text-5xl xl:text-6xl font-medium text-white mb-6 leading-[1.1] tracking-wide">
+              Where <em className="text-[#d4af37] italic font-semibold">elegance</em> meets{" "}
+              <em className="text-[#d4af37] italic font-semibold">heritage</em>. Become the{" "}
+              <em className="text-[#d4af37] italic font-semibold">Face</em> of Tharaka-Nithi.
+            </h1>
+
+            <p className="text-gray-400 text-base sm:text-lg font-light max-w-xl mx-auto lg:mx-0 mb-8 leading-relaxed">
+              Mr &amp; Miss Face of Tharaka-Nithi County 2026 — the ultimate platform for models who
+              embody leadership, talent, and community service. Featuring top talents from Chuka
+              University, Tharaka Nithi University, and Chuka TC.
+            </p>
+
+            <div className="flex flex-col sm:flex-row flex-wrap gap-4 justify-center lg:justify-start mb-10">
+              <Button
+                onClick={scrollToRegistration}
+                className="bg-[#d4af37] text-black hover:bg-white hover:text-black font-semibold uppercase tracking-widest text-sm px-10 py-6 rounded-none transition-all duration-300"
+              >
+                Apply As Contestant
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+                onClick={() => window.open(VOTING_URL, "_blank", "noopener,noreferrer")}
+              >
+                <Vote className="w-4 h-4 mr-3" />
+                Vote Now
+              </Button>
+              <Button
+                variant="outline"
+                className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
+                onClick={() => setLocation("/merchandise")}
+              >
+                <ShoppingCart className="w-4 h-4 mr-3" />
+                Shop Merchandise
+              </Button>
+            </div>
+
+            {/* Info bar — event essentials */}
+            <div className="inline-flex flex-wrap justify-center lg:justify-start gap-6 sm:gap-8 border border-[#d4af37]/25 bg-black/40 backdrop-blur-sm px-6 sm:px-8 py-4">
+              <div className="text-left">
+                <div className="text-[9px] uppercase tracking-[0.25em] text-[#d4af37] font-bold mb-1">
+                  Finale
+                </div>
+                <div className="text-sm text-white font-light flex items-center gap-2">
+                  <CalendarDays className="w-3.5 h-3.5 text-[#d4af37]" />
+                  {EVENT_DATE}
+                </div>
+              </div>
+              <div className="w-px bg-[#d4af37]/20 self-stretch hidden sm:block" />
+              <div className="text-left">
+                <div className="text-[9px] uppercase tracking-[0.25em] text-[#d4af37] font-bold mb-1">
+                  Venue
+                </div>
+                <div className="text-sm text-white font-light flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-[#d4af37]" />
+                  {EVENT_VENUE}
+                </div>
+              </div>
+            </div>
+
+            <div className="max-w-xl mx-auto lg:mx-0 mt-10">
+              <p className="text-[#d4af37] text-[10px] uppercase tracking-[0.25em] mb-3 font-semibold">
+                Registration Closes In
+              </p>
+              <CountdownTimer />
+            </div>
           </div>
 
-          <h1 className="font-serif text-5xl sm:text-6xl md:text-7xl font-bold text-[#d4af37] mb-6 drop-shadow-xl leading-tight uppercase tracking-wider">
-            Mr & Miss Face of Tharaka-Nithi
-          </h1>
+          {/* Portrait column — the face with aura */}
+          <div className="relative mx-auto w-full max-w-sm sm:max-w-md lg:max-w-none lg:justify-self-end">
+            {/* Outer glow */}
+            <div className="absolute -inset-6 bg-[radial-gradient(ellipse_at_center,rgba(212,175,55,0.18)_0%,transparent_65%)] blur-md pointer-events-none" />
+            {/* Floating crown accent */}
+            <div className="absolute -top-5 left-1/2 -translate-x-1/2 z-20 text-[#d4af37] text-xs uppercase tracking-[0.4em] font-bold bg-[#0a0508] px-4 py-1.5 border border-[#d4af37]/40">
+              ✦ Season 1 ✦
+            </div>
 
-          <p className="font-serif text-xl sm:text-3xl text-gray-200 mb-4 italic tracking-wide">
-            "Redefining Modern Masculinity & Femininity"
-          </p>
+            <div className="relative overflow-hidden border border-[#d4af37]/30 shadow-[0_0_60px_rgba(212,175,55,0.15)] animate-in fade-in zoom-in-95 duration-1000">
+              <img
+                src="/optimized/hero-portrait.webp"
+                alt="Face of Tharaka-Nithi queen in regal red and gold"
+                width={820}
+                height={1690}
+                fetchPriority="high"
+                className="w-full h-auto object-cover object-top max-h-[70vh] lg:max-h-[78vh]"
+              />
+              {/* Gradient fade into page background */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0a0508] via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0a0508]/50 via-transparent to-transparent lg:from-[#0a0508]/30" />
+              <div className="absolute bottom-0 left-0 right-0 p-5 text-center">
+                <p className="font-serif text-lg sm:text-xl text-[#d4af37] italic">
+                  "Redefining Modern Masculinity &amp; Femininity"
+                </p>
+              </div>
+            </div>
 
-          <p className="text-md sm:text-lg text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-            The ultimate platform for models who embody leadership, talent, and community service. <br/>
-            Featuring top talents from Chuka University, Tharaka Nithi University, and Chuka TC.
-          </p>
-
-          <div className="flex flex-col sm:flex-row flex-wrap gap-6 justify-center items-center w-full max-w-md mx-auto sm:max-w-none mb-12">
-            <Button
-              onClick={scrollToRegistration}
-              className="bg-[#d4af37] text-black hover:bg-white hover:text-black font-semibold uppercase tracking-widest text-sm px-10 py-7 rounded-none transition-all duration-300 w-full sm:w-auto"
-            >
-              Apply As Contestant
-            </Button>
-            <Button
-              variant="outline" 
-              className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
-              onClick={() => window.open(VOTING_URL, "_blank", "noopener,noreferrer")}
-            >
-              <Vote className="w-4 h-4 mr-3" />
-              Vote Now
-            </Button>
-            <Button
-              variant="outline" 
-              className="border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black transition-colors rounded-none px-8 py-6 tracking-wider uppercase text-sm"
-              onClick={() => setLocation("/merchandise")}
-            >
-              <ShoppingCart className="w-4 h-4 mr-3" />
-              Shop Merchandise
-            </Button>
-          </div>
-
-          <div className="max-w-2xl mx-auto border-t border-[#d4af37]/20 pt-8">
-            <p className="text-[#d4af37] text-sm uppercase tracking-[0.2em] mb-4">Time Remaining</p>
-            <CountdownTimer />
+            {/* Subtle floating animation on the frame edge */}
+            <div className="absolute -bottom-3 -right-3 w-24 h-24 border-r-2 border-b-2 border-[#d4af37]/50 pointer-events-none" />
+            <div className="absolute -top-3 -left-3 w-24 h-24 border-t-2 border-l-2 border-[#d4af37]/50 pointer-events-none" />
           </div>
         </div>
       </section>
@@ -225,7 +273,7 @@ export default function Home() {
       {/* About Us (New Section) */}
       <section className="py-24 px-4 sm:px-6 lg:px-8 bg-[#1a0c14] relative overflow-hidden">
         <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
-          <img src="/royal_icon_events_logo_new.png" alt="bg watermark" className="w-96 h-96 object-cover" />
+          <img src="/optimized/logo-512.webp" alt="bg watermark" width={512} height={512} loading="lazy" className="w-96 h-96 object-cover" />
         </div>
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="font-serif text-4xl sm:text-5xl font-bold text-[#d4af37] mb-8 uppercase tracking-widest">
@@ -673,7 +721,7 @@ export default function Home() {
         <p className="text-sm text-gray-500 uppercase tracking-widest mb-3">Organized by</p>
         <p className="font-serif text-3xl text-[#d4af37] mb-6">Royals Icon Events</p>
         <p className="text-sm font-light text-gray-400 mb-8">
-          <a href="mailto:support@royaliconevents.co.ke" className="hover:text-white transition-colors">support@royaliconevents.co.ke</a> | 
+          <a href="mailto:face.of.tharakanithi.county@royaliconevents.co.ke" className="hover:text-white transition-colors">face.of.tharakanithi.county@royaliconevents.co.ke</a> | 
           <a href="https://www.royaliconevents.co.ke" className="hover:text-white transition-colors ml-2">www.royaliconevents.co.ke</a>
         </p>
 
@@ -721,6 +769,18 @@ export default function Home() {
             className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
           >
             My Orders
+          </a>
+          <a
+            href="/privacy"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Privacy
+          </a>
+          <a
+            href="/terms"
+            className="text-gray-600 hover:text-[#d4af37] text-xs uppercase tracking-widest transition-colors"
+          >
+            Terms
           </a>
           <a
             href="/admin"

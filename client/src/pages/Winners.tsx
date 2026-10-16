@@ -4,6 +4,8 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, ChevronLeft, Crown, Share2, MessageCircle, Link2, Trophy } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import SiteHeader from "@/components/SiteHeader";
 
 const SITE_URL = "https://www.faceoftharakanithi.app";
 
@@ -61,6 +63,11 @@ function WinnerShareButtons({ winnerId, name }: { winnerId: number; name: string
 }
 
 export default function Winners() {
+  usePageMeta({
+    title: "Winners | Mr & Miss Face of Tharaka-Nithi County 2026",
+    description: "Meet the champions of Mr & Miss Face of Tharaka-Nithi County 2026 — overall winners and category champions.",
+    path: "/winners",
+  });
   const [, setLocation] = useLocation();
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
 
@@ -86,6 +93,7 @@ export default function Winners() {
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
       <header className="bg-[#050204] border-b border-[#d4af37]/20 pt-10 pb-8 px-4 sm:px-8 lg:px-12">

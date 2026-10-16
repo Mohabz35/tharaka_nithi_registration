@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { AdminSearchFilter, type FilterOptions } from "@/components/AdminSearchFilter";
 import { trpc } from "@/lib/trpc";
+import { downloadCsv } from "@/lib/csv";
 import { Download, LogOut, Loader2, Trash2, ExternalLink } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -20,9 +21,11 @@ import AdminEditContestantModal from "@/components/AdminEditContestantModal";
 import AdminPhotoEditor from "@/components/AdminPhotoEditor";
 import AdminBulkEmailPanel from "@/components/AdminBulkEmailPanel";
 import AdminPaymentsTab from "@/components/AdminPaymentsTab";
+import AdminReportsTab from "@/components/AdminReportsTab";
 import AdminWinnersManager from "@/components/AdminWinnersManager";
 import AdminEventsManager from "@/components/AdminEventsManager";
 import AdminTrainingManager from "@/components/AdminTrainingManager";
+import AdminBookingsManager from "@/components/AdminBookingsManager";
 
 const PAGE_SIZE = 50;
 
@@ -36,17 +39,19 @@ export default function AdminDashboard() {
 
   // Check if user is admin - but don't return early yet
   const isAdmin = user?.role === "admin";
+  // Committee (sub-admin) can view registrations, stats, bookings and export CSV — nothing else.
+  const isStaff = isAdmin || user?.role === "committee";
 
   // Determine if we're in search mode
   const isSearchMode = searchQuery !== "" || Object.values(activeFilters).some(v => v !== undefined);
 
   // Fetch registrations - always call all hooks, use enabled flag for auth
-  const { data: stats, isLoading: isLoadingStats } = trpc.admin.getStats.useQuery(undefined, { enabled: isAdmin });
-  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isAdmin && !isSearchMode });
+  const { data: stats, isLoading: isLoadingStats } = trpc.admin.getStats.useQuery(undefined, { enabled: isStaff });
+  const { data: categoryRegistrations, isLoading: isLoadingCategory } = trpc.admin.getRegistrationsByCategory.useQuery(selectedCategory, { enabled: isStaff && !isSearchMode });
   const utils = trpc.useContext();
   const { data: searchResults, isLoading: isSearching } = trpc.admin.searchAndFilter.useQuery(
     { query: searchQuery, filters: activeFilters, page: currentPage, limit: PAGE_SIZE },
-    { enabled: isAdmin && isSearchMode }
+    { enabled: isStaff && isSearchMode }
   );
 
   const deleteMutation = trpc.admin.deleteRegistration.useMutation({
@@ -98,7 +103,17 @@ export default function AdminDashboard() {
   const exportToCSV = () => {
     if (!displayRegistrations || displayRegistrations.length === 0) return;
 
-    const headers = ["Full Name", "Date of Birth", "Age", "Category", "Phone", "Email", "Location", "Registration Date"];
+    const headers = [
+      "Full Name",
+      "Date of Birth",
+      "Age",
+      "Category",
+      "Phone",
+      "Email",
+      "Location",
+      "Payment Status",
+      "Registration Date",
+    ];
     const rows = displayRegistrations.map((reg) => [
       reg.fullName,
       reg.dateOfBirth,
@@ -107,17 +122,11 @@ export default function AdminDashboard() {
       reg.phoneNumber,
       reg.email,
       reg.countySubLocation,
+      reg.paymentStatus,
       new Date(reg.registrationDate).toLocaleDateString(),
     ]);
 
-    const csv = [headers, ...rows].map((row) => row.map((cell) => `"${cell}"`).join(",")).join("\n");
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `registrations-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
+    downloadCsv("registrations", headers, rows);
   };
 
   // Show loading state while auth is resolving
@@ -134,8 +143,8 @@ export default function AdminDashboard() {
     );
   }
 
-  // Show permission denied if not admin
-  if (!isAdmin) {
+  // Show permission denied if not staff (admin or committee)
+  if (!isStaff) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-[#4a1a2a] via-[#5a2a3a] to-[#3a1a2a] flex items-center justify-center">
         <Card className="bg-[#2a0a1a] border-[#d4af37] border-2 max-w-md">
@@ -231,33 +240,43 @@ export default function AdminDashboard() {
               <TabsTrigger value="registrations" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Registrations
               </TabsTrigger>
-              <TabsTrigger value="sponsors" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Sponsors & Partners
+              <TabsTrigger value="bookings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Bookings
               </TabsTrigger>
-              <TabsTrigger value="artists" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Artists
-              </TabsTrigger>
-              <TabsTrigger value="showcases" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Showcases
-              </TabsTrigger>
-              <TabsTrigger value="winners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Winners
-              </TabsTrigger>
-              <TabsTrigger value="events" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Events
-              </TabsTrigger>
-              <TabsTrigger value="training" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Training
-              </TabsTrigger>
-              <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Certificate Partners
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
-                Site Settings
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-white flex-1 py-3 bg-green-900/50 border border-green-500/50">
-                💰 Payments
-              </TabsTrigger>
+              {isAdmin && (
+                <>
+                  <TabsTrigger value="sponsors" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Sponsors &amp; Partners
+                  </TabsTrigger>
+                  <TabsTrigger value="artists" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Artists
+                  </TabsTrigger>
+                  <TabsTrigger value="showcases" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Showcases
+                  </TabsTrigger>
+                  <TabsTrigger value="winners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Winners
+                  </TabsTrigger>
+                  <TabsTrigger value="events" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Events
+                  </TabsTrigger>
+                  <TabsTrigger value="training" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Training
+                  </TabsTrigger>
+                  <TabsTrigger value="partners" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Certificate Partners
+                  </TabsTrigger>
+                  <TabsTrigger value="reports" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Reports &amp; Team
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                    Site Settings
+                  </TabsTrigger>
+                  <TabsTrigger value="payments" className="data-[state=active]:bg-green-600 data-[state=active]:text-white text-white flex-1 py-3 bg-green-900/50 border border-green-500/50">
+                    💰 Payments
+                  </TabsTrigger>
+                </>
+              )}
             </TabsList>
 
             <TabsContent value="registrations">
@@ -279,7 +298,7 @@ export default function AdminDashboard() {
                 </CardTitle>
               </div>
               <div className="flex flex-wrap gap-2 justify-end">
-                <AdminBulkEmailPanel registrations={displayRegistrations || []} />
+                {isAdmin && <AdminBulkEmailPanel registrations={displayRegistrations || []} />}
                 <Button
                   onClick={exportToCSV}
                   disabled={!displayRegistrations || displayRegistrations.length === 0}
@@ -288,11 +307,13 @@ export default function AdminDashboard() {
                   <Download className="w-4 h-4 mr-2" />
                   Export CSV
                 </Button>
-                <AdminAddContestantModal onSuccess={() => {
-                  utils.admin.getRegistrationsByCategory.invalidate();
-                  utils.admin.searchAndFilter.invalidate();
-                  utils.admin.getStats.invalidate();
-                }} />
+                {isAdmin && (
+                  <AdminAddContestantModal onSuccess={() => {
+                    utils.admin.getRegistrationsByCategory.invalidate();
+                    utils.admin.searchAndFilter.invalidate();
+                    utils.admin.getStats.invalidate();
+                  }} />
+                )}
               </div>
             </CardHeader>
 
@@ -354,6 +375,7 @@ export default function AdminDashboard() {
                                 {new Date(registration.registrationDate).toLocaleDateString()}
                               </TableCell>
                               <TableCell className="text-right">
+                                {isAdmin && (
                                 <div className="flex justify-end items-center gap-1">
                                   <AdminPhotoEditor 
                                     id={registration.id} 
@@ -390,6 +412,7 @@ export default function AdminDashboard() {
                                   </AlertDialogContent>
                                 </AlertDialog>
                                 </div>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))}
@@ -503,6 +526,7 @@ export default function AdminDashboard() {
                                     {new Date(registration.registrationDate).toLocaleDateString()}
                                   </TableCell>
                                   <TableCell className="text-right">
+                                    {isAdmin && (
                                     <div className="flex justify-end items-center gap-1">
                                       <AdminPhotoEditor 
                                         id={registration.id} 
@@ -539,6 +563,7 @@ export default function AdminDashboard() {
                                       </AlertDialogContent>
                                     </AlertDialog>
                                     </div>
+                                    )}
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -579,8 +604,16 @@ export default function AdminDashboard() {
               <AdminTrainingManager />
             </TabsContent>
 
+            <TabsContent value="bookings">
+              <AdminBookingsManager />
+            </TabsContent>
+
             <TabsContent value="partners">
               <PartnerLogosManager />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              {isAdmin && <AdminReportsTab />}
             </TabsContent>
 
             <TabsContent value="settings">

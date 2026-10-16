@@ -233,3 +233,88 @@
 - [ ] Push all changes to GitHub
 - [ ] Deploy to production
 - [ ] Verify all features working
+
+## Models Portfolio Platform (Phases A–C)
+
+### Phase A — Public Portfolios
+- [x] Add slug helpers (`slugifyText`, `modelSlug`, `parseModelSlug`) to shared/const.ts
+- [x] Add `modelProfile.getPortfolio` (resolves any-name-123 slug via trailing id, returns socials/measurements JSON)
+- [x] Add `/share/model/:slug` OG share route + vercel.json rewrite
+- [x] Create public ModelPortfolio page (`/models/:slug`) with bio, showreel embed, measurements, talents, socials, share buttons
+- [x] Wire Gallery cards (keeps confetti for top contestants) and FeaturedModelsCarousel "View Portfolio" CTAs to portfolio pages
+- [x] Replace static sitemap.xml with dynamic `/sitemap.xml` route (static pages + model/event/winner URLs, 1h cache); added vercel rewrite
+- [x] Verified Vercel rewrite chaining works in production (share routes reach Express)
+
+### Phase B — Rich Profiles & Bookings
+- [x] Add registrations columns: bio, showreelUrl, measurements (JSON), availableForBookings + ensureSchema ALTERs
+- [x] Add booking_enquiries table + ensureSchema
+- [x] Extend modelProfile.updateProfile (bio/showreel/measurements/socials/bookings, email-ownership check; email no longer editable in UI)
+- [x] Add "My Portfolio" tab on /profile: copy/preview public link, edit bio/showreel/measurements/socials/availability
+- [x] Add bookModel mutation (validates availability, stores enquiry, emails SUPPORT_EMAIL via buildBookingEnquiryEmail)
+- [x] Admin "Bookings" tab: list/filter by status (new/contacted/closed), status transitions, delete
+- [x] `portfolio.test.ts` — 12 tests (slugs, portfolio NOT_FOUND, updateProfile validation, bookings access control)
+
+### Phase C — Performance, SEO, Legal
+- [x] Image optimization: scripts/optimize-images.mjs (sharp) → banner 4.6MB→310KB webp, logo 797KB→50KB webp, 173KB og-image.jpg
+- [x] Fix broken hero images (ri_logo_transparent.png / ri_logo_white.png did not exist) → optimized assets; added width/height (CLS)
+- [x] Update all OG/twitter/JSON-LD share images to /optimized/og-image.jpg (index.html, usePageMeta, shareRoutes DEFAULT_IMAGE)
+- [x] Add usePageMeta hook (title/OG/Twitter/canonical) to Gallery, Winners, WinnerDetail, Events, EventDetail, Training, ModelPortfolio, Privacy, Terms
+- [x] Create /privacy and /terms pages (Kenya DPA 2019 / event rules); link from footer + registration consent checkboxes
+- [x] `npm run check` / `npm run build` pass; tests: 41 pass, 9 pre-existing DB-dependent failures unchanged
+
+## Security & Reliability Hardening (rating-gap fixes)
+
+### Security
+- [x] IntaSend webhook challenge verification (timing-safe compare, top-level + nested payload shape); warns loudly when INTASEND_WEBHOOK_CHALLENGE unset
+- [x] Rate limiting (server/_core/security.ts, in-memory sliding window): /api/auth 15/min, /api/upload 30/min, /api/trpc 300/min, webhooks 120/min; 429 + Retry-After
+- [x] trust proxy=1 so req.ip is real client behind Vercel; x-powered-by disabled
+- [x] Security headers: nosniff, X-Frame-Options SAMEORIGIN, Referrer-Policy, Permissions-Policy; X-Powered-By stripped
+- [x] Body limits: global JSON 50mb->10mb (largest case is poster base64 ~6.7MB), urlencoded 50mb->1mb; /api/upload keeps its own 50mb raw parser
+- [x] `security.test.ts` - 10 tests (timing-safe compare, challenge verification, 429 behavior, headers)
+
+### SEO
+- [x] WebSite + Organization JSON-LD added to client/index.html (robots.txt already had Sitemap directive)
+
+### Test reliability
+- [x] DB-dependent tests skip cleanly when DATABASE_URL missing (gallery 6, registration 3) instead of failing
+- [x] Registration deadline now overridable via REGISTRATION_DEADLINE_ISO env (admin site setting still wins); deadline tests no longer break after the real deadline
+- [x] Suite: 52 pass / 9 skipped (DB) / 0 fail; npm run check + build pass; smoke-tested headers, webhook 401, rate-limit 429 on prod build
+
+### Follow-ups (need env/config, not code)
+- [ ] Set INTASEND_WEBHOOK_CHALLENGE in Vercel env (must match the challenge configured in IntaSend dashboard) - until then webhooks are accepted unverified
+- [ ] Consider captcha on public submit forms and a persistent rate-limit store (Redis/Upstash) if abuse appears
+
+## Receipts, Certificates, Digest, Reports & Committee Role
+
+### Registration receipts
+- [x] `server/_core/receiptGenerator.ts` - PDF receipt (cloudinary `receipts/`) with fee, status, registration no.
+- [x] `registration.downloadReceipt` public mutation (signed URL); "Download Payment Receipt" button in SuccessModal
+- [x] Receipt email auto-sent when registration fee > 0 (paid) or pending status (payment due); `registration_fee` site setting governs the amount (0 = free, no fee receipt)
+- [x] `admin.updateRegistration` pending -> completed transition also emails a paid receipt
+
+### Achievement certificates
+- [x] `generateAchievementCertificate` in certificateGenerator.ts (winner / participation kinds)
+- [x] `admin.emailWinnerCertificate` - generates PDF, emails it to the registration linked to the winner (BAD_REQUEST when no email linked); Award button in AdminWinnersManager
+- [x] Bulk email panel: new "Certificate of Participation" option (`sendBulkEmail` type enum)
+
+### Weekly admin digest
+- [x] `server/_core/weeklyDigest.ts` - isDigestDue (pure), sendWeeklyDigest (force), maybeSendWeeklyDigest (fire-and-forget); stamp in site_settings `last_weekly_digest_sent_at`
+- [x] Auto-sends when an admin opens the dashboard and the digest is >7 days stale; "Send now" button + due status in Reports tab
+- [x] Digest emailed to SUPPORT_EMAIL with new registrations, category breakdown, bookings, payments
+
+### Financial reports + team access (Reports & Team tab)
+- [x] `getFinancialSummary` in db.ts: collected (all/7d/30d), tx counts by status, order stats, installment due/paid/outstanding/overdue, latest 50 transactions
+- [x] AdminReportsTab.tsx: summary cards, transactions table + CSV export, digest card, team access table
+- [x] Team management: `listUsers` / `setUserRole` (self-demote guard + at-least-one-admin guard)
+
+### Committee sub-admin role
+- [x] role enum += "committee" (drizzle schema + ensureSchema ALTER TYPE ... ADD VALUE IF NOT EXISTS)
+- [x] `staffProcedure` middleware (admin|committee; UNAUTHORIZED when logged out) in server/_core/trpc.ts
+- [x] Staff-gated: getRegistrationsByCategory, getStats, search/filter, searchAndFilter, bookings getAll/updateStatus
+- [x] Admin-only (unchanged): settings, payments, financial report, team management, delete/add/edit contestant, bulk email, digest, winner certificate email
+- [x] AdminDashboard: committee sees only Registrations (read + CSV, no edit/delete/add/bulk) + Bookings tabs; Reports & Team, Settings, Payments etc. admin-only
+- [x] `AdminSiteSettings`: Registration Fee input card
+- [x] `reports.test.ts` - 16 tests: isDigestDue, receipt/achievement/digest email builders, role gates (incl. self-demote guard); suite now 68 pass / 9 skipped (DB) / 0 fail
+
+### Verification
+- [x] npm run check (tsc) + npm run test + npm run build all pass

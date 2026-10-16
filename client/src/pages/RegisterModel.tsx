@@ -7,6 +7,7 @@ import SuccessModal from "@/components/SuccessModal";
 import CountdownTimer from "@/components/CountdownTimer";
 import { ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
+import SiteHeader from "@/components/SiteHeader";
 
 export default function RegisterModel() {
   const [, setLocation] = useLocation();
@@ -21,6 +22,7 @@ export default function RegisterModel() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#2a0a1a] to-[#1a0a1a] py-12 px-4 sm:px-6 lg:px-8">
+      <SiteHeader />
       <div className="max-w-4xl mx-auto">
         <Button
           onClick={() => setLocation("/")}

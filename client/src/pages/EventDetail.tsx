@@ -4,6 +4,8 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, ChevronLeft, CalendarDays, MapPin, Images, X, ChevronLeft as PrevIcon, ChevronRight as NextIcon, Link2, MessageCircle } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import SiteHeader from "@/components/SiteHeader";
 
 const SITE_URL = "https://www.faceoftharakanithi.app";
 
@@ -29,6 +31,14 @@ export default function EventDetail({ params }: { params: { slug: string } }) {
     { enabled: !!params.slug }
   );
 
+  usePageMeta({
+    title: event ? `${event.title} | Tharaka Nithi Models` : "Event | Tharaka Nithi Models",
+    description: event?.description || undefined,
+    image: event?.coverImageUrl || event?.photos?.[0]?.photoUrl || undefined,
+    path: event ? `/events/${event.slug}` : undefined,
+    type: "article",
+  });
+
   const shareUrl = `${SITE_URL}/share/event/${params.slug}`;
 
   const closeLightbox = () => setLightboxIndex(null);
@@ -43,6 +53,7 @@ export default function EventDetail({ params }: { params: { slug: string } }) {
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
       <header className="bg-[#050204] border-b border-[#d4af37]/20 py-5 px-4 sm:px-8">

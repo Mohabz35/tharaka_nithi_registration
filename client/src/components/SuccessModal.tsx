@@ -23,8 +23,10 @@ export default function SuccessModal({
 }: SuccessModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   const downloadCertificate = trpc.registration.downloadCertificate.useMutation();
   const downloadPdf = trpc.registration.downloadRegistrationPdf.useMutation();
+  const downloadReceipt = trpc.registration.downloadReceipt.useMutation();
 
   const categoryNames: Record<string, string> = {
     adults: "Adults (18-35)",
@@ -81,6 +83,28 @@ export default function SuccessModal({
       toast.error("Failed to download application form");
     } finally {
       setIsDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadReceipt = async () => {
+    setIsDownloadingReceipt(true);
+    try {
+      const result = await downloadReceipt.mutateAsync({ registrationId });
+
+      if (result.success && result.receiptUrl) {
+        const link = document.createElement("a");
+        link.href = result.receiptUrl;
+        link.download = `receipt_${registrationId}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Receipt downloaded successfully!");
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast.error("Failed to download receipt");
+    } finally {
+      setIsDownloadingReceipt(false);
     }
   };
 
@@ -240,6 +264,15 @@ export default function SuccessModal({
             </Button>
             
             <Button
+              onClick={handleDownloadReceipt}
+              disabled={isDownloadingReceipt}
+              className="w-full bg-[#4a1a2a] text-[#d4af37] hover:bg-[#5a2a3a] border-2 border-[#d4af37] font-bold text-lg py-6 flex items-center justify-center gap-2"
+            >
+              <Download className="w-5 h-5" />
+              {isDownloadingReceipt ? "Generating Receipt..." : "Download Payment Receipt"}
+            </Button>
+
+            <Button
               onClick={handleShare}
               className="w-full border-2 border-[#d4af37] text-[#d4af37] hover:bg-[#d4af37] hover:text-black font-bold py-2"
             >
@@ -269,7 +302,7 @@ export default function SuccessModal({
           {/* Support Message */}
           <div className="bg-[#4a1a2a] border border-[#d4af37] rounded-lg p-4 text-center">
             <p className="text-white text-sm">
-              Have questions? Contact us at <span className="text-[#d4af37] font-semibold">support@royaliconevents.co.ke</span>
+              Have questions? Contact us at <span className="text-[#d4af37] font-semibold">face.of.tharakanithi.county@royaliconevents.co.ke</span>
             </p>
           </div>
         </div>

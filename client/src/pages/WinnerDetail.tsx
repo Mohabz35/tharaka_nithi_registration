@@ -3,6 +3,9 @@ import { trpc } from "@/lib/trpc";
 import { Loader2, ChevronLeft, Crown, MessageCircle, Link2, Facebook, Instagram } from "lucide-react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { SOCIAL_LINKS } from "@shared/const";
+import SiteHeader from "@/components/SiteHeader";
 
 const SITE_URL = "https://www.faceoftharakanithi.app";
 
@@ -22,6 +25,14 @@ export default function WinnerDetail({ params }: { params: { id: string } }) {
     { enabled: !Number.isNaN(winnerId) }
   );
 
+  usePageMeta({
+    title: winner ? `${winner.fullName} — ${winner.title} | Tharaka Nithi Models` : "Winner | Tharaka Nithi Models",
+    description: winner?.description || undefined,
+    image: winner?.photoUrl || undefined,
+    path: winner ? `/winners/${winner.id}` : undefined,
+    type: "profile",
+  });
+
   if (Number.isNaN(winnerId)) {
     return (
       <div className="min-h-screen bg-[#0a0508] flex flex-col items-center justify-center text-white gap-4">
@@ -40,6 +51,7 @@ export default function WinnerDetail({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
       <header className="bg-[#050204] border-b border-[#d4af37]/20 py-5 px-4 sm:px-8">
@@ -136,7 +148,7 @@ export default function WinnerDetail({ params }: { params: { id: string } }) {
                     Facebook
                   </a>
                   <a
-                    href={`https://instagram.com`}
+                    href={SOCIAL_LINKS.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 bg-[#E4405F]/10 border border-[#E4405F]/50 text-[#E4405F] hover:bg-[#E4405F] hover:text-white px-5 py-2.5 text-xs uppercase tracking-widest transition-colors"

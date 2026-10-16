@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { SOCIAL_LINKS } from "@shared/const";
 import { trpc } from "@/lib/trpc";
+import { modelSlug } from "@shared/const";
 
 export default function FeaturedModelsCarousel() {
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -29,7 +31,7 @@ export default function FeaturedModelsCarousel() {
   const visibleModels = Array.from({ length: visibleCount }, (_, i) => models[(currentIndex + i) % models.length]);
 
   const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
-  const SOCIAL_URL = "https://www.youtube.com/@royaliconevents"; // Replace with actual social link
+  const SOCIAL_URL = SOCIAL_LINKS.youtube;
 
   const categoryLabel = (cat: string) =>
     cat === "adults" ? "ADULTS" : cat === "teens" ? "TEENS" : "LITTLE STARS";
@@ -105,15 +107,21 @@ export default function FeaturedModelsCarousel() {
                       {/* Gradient overlay */}
                       <div className="absolute inset-0 bg-gradient-to-t from-[#140a10] via-[#140a10]/20 to-transparent" />
 
-                      {/* Hover overlay with vote CTA */}
+                      {/* Hover overlay with vote + portfolio CTAs */}
                       <div className="absolute inset-0 bg-[#d4af37]/90 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <p className="text-black font-serif text-2xl font-bold mb-2 text-center px-4">{model.fullName}</p>
                         <p className="text-black/70 text-xs uppercase tracking-widest mb-6">{categoryLabel(model.category)}</p>
                         <a
+                          href={`/models/${modelSlug(model.id, model.fullName)}`}
+                          className="bg-black text-[#d4af37] px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors mb-3"
+                        >
+                          View Portfolio →
+                        </a>
+                        <a
                           href={VOTING_URL}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-black text-[#d4af37] px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-[#1a0c14] transition-colors"
+                          className="border border-black text-black px-8 py-3 text-xs uppercase tracking-widest font-bold hover:bg-black hover:text-[#d4af37] transition-colors"
                         >
                           Vote Now →
                         </a>
@@ -131,10 +139,16 @@ export default function FeaturedModelsCarousel() {
                         </p>
                       )}
                       <a
+                        href={`/models/${modelSlug(model.id, model.fullName)}`}
+                        className="mt-4 block text-center bg-[#d4af37] text-black py-2 text-xs uppercase tracking-widest font-bold hover:bg-[#e5c158] transition-all duration-300"
+                      >
+                        View Portfolio
+                      </a>
+                      <a
                         href={VOTING_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-4 block text-center border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300"
+                        className="mt-2 block text-center border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black py-2 text-xs uppercase tracking-widest font-semibold transition-all duration-300"
                       >
                         Support & Vote
                       </a>

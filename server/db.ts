@@ -1,4 +1,4 @@
-import { eq, or, desc, asc, ilike, and, gte, lte, isNotNull, count } from "drizzle-orm";
+import { eq, or, desc, asc, ilike, and, gte, lte, isNotNull, count, sum, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import {
@@ -18,6 +18,7 @@ import {
   event_photos, InsertEventPhoto,
   training_programs, InsertTrainingProgram,
   training_registrations, InsertTrainingRegistration,
+  booking_enquiries, InsertBookingEnquiry,
 } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
 
@@ -37,6 +38,10 @@ export async function ensureSchema(): Promise<void> {
     try {
       await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentUrl" text`;
       await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "documentKey" text`;
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "bio" text`;
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "showreelUrl" text`;
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "measurements" text`;
+      await _client!`ALTER TABLE "registrations" ADD COLUMN IF NOT EXISTS "availableForBookings" boolean DEFAULT false NOT NULL`;
 
       // Create enum types if not exist
       await _client!`DO $$ BEGIN
@@ -51,6 +56,14 @@ export async function ensureSchema(): Promise<void> {
         CREATE TYPE "orderStatus" AS ENUM('pending', 'paid', 'cancelled');
       EXCEPTION WHEN duplicate_object THEN null;
       END $$`;
+
+      // Committee/staff role for organizing-team dashboard access.
+      // Plain statement (not inside DO/function) so it works on all PG versions.
+      try {
+        await _client!`ALTER TYPE "role" ADD VALUE IF NOT EXISTS 'committee'`;
+      } catch (e) {
+        console.warn("[Database] Could not ensure 'committee' role value:", e);
+      }
 
       // Create merchandise_items table
       await _client!`CREATE TABLE IF NOT EXISTS "merchandise_items" (
@@ -209,6 +222,22 @@ export async function ensureSchema(): Promise<void> {
         "emergencyContactPhone" varchar(20),
         "notes" text,
         "paymentStatus" "paymentStatus" DEFAULT 'pending' NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Create booking_enquiries table
+      await _client!`CREATE TABLE IF NOT EXISTS "booking_enquiries" (
+        "id" serial PRIMARY KEY,
+        "registrationId" integer NOT NULL,
+        "modelName" varchar(255) NOT NULL,
+        "clientName" varchar(255) NOT NULL,
+        "clientEmail" varchar(320) NOT NULL,
+        "clientPhone" varchar(20),
+        "eventType" varchar(255),
+        "eventDate" varchar(40),
+        "budget" varchar(100),
+        "message" text NOT NULL,
+        "status" varchar(20) DEFAULT 'new' NOT NULL,
         "createdAt" timestamp DEFAULT now() NOT NULL
       )`;
 
@@ -1022,4 +1051,248 @@ export async function deleteTrainingRegistration(id: number) {
   if (!db) { throw new Error("Database not available"); }
   await db.delete(training_registrations).where(eq(training_registrations.id, id));
   return true;
+}
+
+// ============ Model portfolio ============
+export async function getPublicModelForPortfolio(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const rows = await db
+    .select({
+      id: registrations.id,
+      fullName: registrations.fullName,
+      age: registrations.age,
+      category: registrations.category,
+      countySubLocation: registrations.countySubLocation,
+      photoUrl: registrations.photoUrl,
+      posterUrl: registrations.posterUrl,
+      portfolioUrl: registrations.portfolioUrl,
+      talents: registrations.talents,
+      socialMediaHandles: registrations.socialMediaHandles,
+      bio: registrations.bio,
+      showreelUrl: registrations.showreelUrl,
+      measurements: registrations.measurements,
+      availableForBookings: registrations.availableForBookings,
+      registrationDate: registrations.registrationDate,
+    })
+    .from(registrations)
+    .where(eq(registrations.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getPublishedModelPortfolioSummaries() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return db
+    .select({
+      id: registrations.id,
+      fullName: registrations.fullName,
+      photoUrl: registrations.photoUrl,
+      category: registrations.category,
+    })
+    .from(registrations)
+    .where(isNotNull(registrations.photoUrl))
+    .orderBy(desc(registrations.registrationDate));
+}
+
+// ============ Booking enquiries ============
+export async function createBookingEnquiry(data: InsertBookingEnquiry) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const inserted = await db.insert(booking_enquiries).values(data).returning({ id: booking_enquiries.id });
+  return inserted[0]?.id;
+}
+
+export async function getAllBookingEnquiries() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return db.select().from(booking_enquiries).orderBy(desc(booking_enquiries.createdAt));
+}
+
+export async function updateBookingEnquiryStatus(id: number, status: string) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(booking_enquiries).set({ status }).where(eq(booking_enquiries.id, id));
+  return true;
+}
+
+export async function deleteBookingEnquiry(id: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.delete(booking_enquiries).where(eq(booking_enquiries.id, id));
+  return true;
+}
+
+// ============ Team access (committee role) ============
+
+export async function listUsers() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db
+    .select({
+      id: users.id,
+      email: users.email,
+      name: users.name,
+      role: users.role,
+      createdAt: users.createdAt,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .orderBy(asc(users.id));
+}
+
+export async function setUserRole(id: number, role: "user" | "admin" | "committee") {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, id));
+  return true;
+}
+
+export async function countAdminsExcept(userId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const rows = await db
+    .select({ value: count() })
+    .from(users)
+    .where(and(eq(users.role, "admin"), ne(users.id, userId)));
+  return rows[0]?.value ?? 0;
+}
+
+// ============ Financial reports ============
+
+export type FinancialSummary = Awaited<ReturnType<typeof getFinancialSummary>>;
+
+export async function getFinancialSummary() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+
+  const now = new Date();
+  const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const since30d = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+  const [collected] = await db
+    .select({ total: sum(payment_transactions.amount) })
+    .from(payment_transactions)
+    .where(eq(payment_transactions.status, "success"));
+
+  const [week] = await db
+    .select({ total: sum(payment_transactions.amount) })
+    .from(payment_transactions)
+    .where(and(eq(payment_transactions.status, "success"), gte(payment_transactions.createdAt, since7d)));
+
+  const [month] = await db
+    .select({ total: sum(payment_transactions.amount) })
+    .from(payment_transactions)
+    .where(and(eq(payment_transactions.status, "success"), gte(payment_transactions.createdAt, since30d)));
+
+  const txCounts = await db
+    .select({ status: payment_transactions.status, value: count() })
+    .from(payment_transactions)
+    .groupBy(payment_transactions.status);
+
+  const orderStats = await db
+    .select({
+      status: merchandise_orders.status,
+      value: count(),
+      total: sum(merchandise_orders.totalAmount),
+    })
+    .from(merchandise_orders)
+    .groupBy(merchandise_orders.status);
+
+  const [installments] = await db
+    .select({
+      totalDue: sum(installment_payments.amountDue),
+      totalPaid: sum(installment_payments.amountPaid),
+      overdue: count(),
+    })
+    .from(installment_payments)
+    .where(eq(installment_payments.status, "overdue"));
+
+  const [openInstallments] = await db
+    .select({ totalDue: sum(installment_payments.amountDue), totalPaid: sum(installment_payments.amountPaid) })
+    .from(installment_payments)
+    .where(ne(installment_payments.status, "cancelled"));
+
+  const recentTransactions = await db
+    .select({
+      id: payment_transactions.id,
+      transactionId: payment_transactions.transactionId,
+      amount: payment_transactions.amount,
+      paymentMethod: payment_transactions.paymentMethod,
+      status: payment_transactions.status,
+      createdAt: payment_transactions.createdAt,
+      orderName: merchandise_orders.fullName,
+      orderEmail: merchandise_orders.email,
+    })
+    .from(payment_transactions)
+    .leftJoin(merchandise_orders, eq(payment_transactions.orderId, merchandise_orders.id))
+    .orderBy(desc(payment_transactions.createdAt))
+    .limit(50);
+
+  const toNum = (v: string | null) => (v === null ? 0 : Number(v));
+  const statusMap = Object.fromEntries(txCounts.map(r => [r.status, r.value]));
+
+  return {
+    totalCollected: toNum(collected?.total ?? null),
+    collectedLast7Days: toNum(week?.total ?? null),
+    collectedLast30Days: toNum(month?.total ?? null),
+    successfulTxCount: statusMap.success ?? 0,
+    failedTxCount: statusMap.failed ?? 0,
+    pendingTxCount: statusMap.pending ?? 0,
+    orders: orderStats.map(r => ({ status: r.status, count: r.value, total: toNum(r.total) })),
+    installments: {
+      totalDue: toNum(openInstallments?.totalDue ?? null),
+      totalPaid: toNum(openInstallments?.totalPaid ?? null),
+      outstanding: toNum(openInstallments?.totalDue ?? null) - toNum(openInstallments?.totalPaid ?? null),
+      overdueCount: installments?.overdue ?? 0,
+    },
+    recentTransactions,
+  };
+}
+
+// ============ Weekly digest stats ============
+
+export async function getWeeklyDigestStats(since: Date) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+
+  const [newRegs] = await db
+    .select({ value: count() })
+    .from(registrations)
+    .where(gte(registrations.createdAt, since));
+
+  const byCategory = await db
+    .select({ category: registrations.category, value: count() })
+    .from(registrations)
+    .where(gte(registrations.createdAt, since))
+    .groupBy(registrations.category);
+
+  const [newBookings] = await db
+    .select({ value: count() })
+    .from(booking_enquiries)
+    .where(gte(booking_enquiries.createdAt, since));
+
+  const [newPayments] = await db
+    .select({ total: sum(payment_transactions.amount), value: count() })
+    .from(payment_transactions)
+    .where(and(eq(payment_transactions.status, "success"), gte(payment_transactions.createdAt, since)));
+
+  const [overall] = await db.select({ value: count() }).from(registrations);
+
+  return {
+    newRegistrations: newRegs?.value ?? 0,
+    registrationsByCategory: byCategory.map(r => ({ category: r.category, count: r.value })),
+    totalRegistrations: overall?.value ?? 0,
+    newBookingEnquiries: newBookings?.value ?? 0,
+    newPaymentsAmount: newPayments?.total === null || newPayments?.total === undefined ? 0 : Number(newPayments.total),
+    newPaymentsCount: newPayments?.value ?? 0,
+  };
+}
+
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) { return undefined; }
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
 }

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Plus, Edit, Trash2, Save, X, Loader2, Crown, Upload, Eye, EyeOff, Link2,
+  Plus, Edit, Trash2, Save, X, Loader2, Crown, Upload, Eye, EyeOff, Link2, Award,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -85,6 +85,13 @@ export default function AdminWinnersManager() {
       invalidate();
     },
     onError: () => toast.error("Failed to update publish status"),
+  });
+
+  const emailCertificate = trpc.admin.emailWinnerCertificate.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Achievement certificate emailed to ${res.email}`);
+    },
+    onError: (e) => toast.error(e.message || "Failed to email certificate"),
   });
 
   const resetForm = () => {
@@ -339,6 +346,21 @@ export default function AdminWinnersManager() {
                   title="Edit"
                 >
                   <Edit className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (emailCertificate.isPending) return;
+                    emailCertificate.mutate({ winnerId: winner.id });
+                  }}
+                  className="p-2 text-[#d4af37] hover:bg-[#d4af37]/10 border border-[#d4af37]/30 disabled:opacity-50"
+                  title="Email achievement certificate to the contestant's registered email"
+                  disabled={emailCertificate.isPending && emailCertificate.variables?.winnerId === winner.id}
+                >
+                  {emailCertificate.isPending && emailCertificate.variables?.winnerId === winner.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Award className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => deleteWinner.mutate(winner.id)}

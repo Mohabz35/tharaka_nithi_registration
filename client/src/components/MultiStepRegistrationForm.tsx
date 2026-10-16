@@ -601,7 +601,11 @@ export default function MultiStepRegistrationForm({
                     className={`mt-1 ${fieldErrors.consentDataProcessing ? 'border-red-500' : ''}`}
                   />
                   <label className="text-white text-sm">
-                    I consent to the processing of my personal data in accordance with the Data Protection Act 2019 for event registration, communication, and event management purposes.
+                    I consent to the processing of my personal data in accordance with our{" "}
+                    <a href="/privacy" target="_blank" rel="noopener noreferrer" className="text-[#d4af37] hover:underline">
+                      Privacy Policy
+                    </a>{" "}
+                    and the Data Protection Act 2019 for event registration, communication, and event management purposes.
                   </label>
                 </div>
                 {fieldErrors.consentDataProcessing && <p className="text-red-400 text-sm ml-7">{fieldErrors.consentDataProcessing}</p>}
@@ -615,7 +619,11 @@ export default function MultiStepRegistrationForm({
                     className={`mt-1 ${fieldErrors.consentTerms ? 'border-red-500' : ''}`}
                   />
                   <label className="text-white text-sm">
-                    I accept the terms and conditions and understand that providing false information will result in disqualification.
+                    I accept the{" "}
+                    <a href="/terms" target="_blank" rel="noopener noreferrer" className="text-[#d4af37] hover:underline">
+                      terms and conditions
+                    </a>{" "}
+                    and understand that providing false information will result in disqualification.
                   </label>
                 </div>
                 {fieldErrors.consentTerms && <p className="text-red-400 text-sm ml-7">{fieldErrors.consentTerms}</p>}

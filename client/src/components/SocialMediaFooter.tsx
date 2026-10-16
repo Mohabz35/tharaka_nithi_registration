@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { SOCIAL_LINKS, type SocialPlatform } from "@shared/const";
 import type { ReactElement } from "react";
 
 const SOCIAL_ICONS: Record<string, { label: string; icon: ReactElement }> = {
@@ -55,13 +56,15 @@ const SOCIAL_ICONS: Record<string, { label: string; icon: ReactElement }> = {
 export default function SocialMediaFooter() {
   const { data: settings } = trpc.siteSettings.getAll.useQuery();
 
+  // Admin-configured URL wins; otherwise fall back to the canonical
+  // @faceoftharakanithi link so the footer never comes up empty.
   const socialLinks = Object.entries(SOCIAL_ICONS)
-    .filter(([key]) => settings?.[key])
     .map(([key, config]) => ({
       key,
-      url: settings![key],
+      url: settings?.[key] || SOCIAL_LINKS[key as SocialPlatform],
       ...config,
-    }));
+    }))
+    .filter(link => Boolean(link.url));
 
   if (socialLinks.length === 0) return null;
 

@@ -1,6 +1,6 @@
 import { boolean, serial, pgEnum, pgTable, text, timestamp, varchar, integer, decimal } from "drizzle-orm/pg-core";
 
-export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const roleEnum = pgEnum("role", ["user", "admin", "committee"]);
 export const categoryEnum = pgEnum("category", ["adults", "teens", "little_stars"]);
 export const paymentStatusEnum = pgEnum("paymentStatus", ["pending", "completed"]);
 export const sponsorTypeEnum = pgEnum("sponsorType", ["sponsor", "partner"]);
@@ -40,6 +40,10 @@ export const registrations = pgTable("registrations", {
   portfolioKey: text("portfolioKey"),
   talents: text("talents"),
   socialMediaHandles: text("socialMediaHandles"), // JSON: {instagram, tiktok, twitter, facebook}
+  bio: text("bio"),
+  showreelUrl: text("showreelUrl"),
+  measurements: text("measurements"), // JSON: {height, chest, waist, hips, shoe, eyes, hair}
+  availableForBookings: boolean("availableForBookings").default(false).notNull(),
   posterUrl: text("posterUrl"),
   posterKey: text("posterKey"),
   consentPhotoVideo: boolean("consentPhotoVideo").default(false).notNull(),
@@ -57,6 +61,24 @@ export const registrations = pgTable("registrations", {
 
 export type Registration = typeof registrations.$inferSelect;
 export type InsertRegistration = typeof registrations.$inferInsert;
+
+export const booking_enquiries = pgTable("booking_enquiries", {
+  id: serial("id").primaryKey(),
+  registrationId: integer("registrationId").notNull(),
+  modelName: varchar("modelName", { length: 255 }).notNull(),
+  clientName: varchar("clientName", { length: 255 }).notNull(),
+  clientEmail: varchar("clientEmail", { length: 320 }).notNull(),
+  clientPhone: varchar("clientPhone", { length: 20 }),
+  eventType: varchar("eventType", { length: 255 }),
+  eventDate: varchar("eventDate", { length: 40 }),
+  budget: varchar("budget", { length: 100 }),
+  message: text("message").notNull(),
+  status: varchar("status", { length: 20 }).default("new").notNull(), // new | contacted | closed
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type BookingEnquiry = typeof booking_enquiries.$inferSelect;
+export type InsertBookingEnquiry = typeof booking_enquiries.$inferInsert;
 
 export const partner_logos = pgTable("partner_logos", {
   id: serial("id").primaryKey(),

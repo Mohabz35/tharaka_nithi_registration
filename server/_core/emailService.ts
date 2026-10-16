@@ -1,5 +1,6 @@
 import nodemailer from "nodemailer";
 import { ENV } from "./env.js";
+import { SUPPORT_EMAIL } from "../../shared/const.js";
 
 let _transporter: nodemailer.Transporter | null = null;
 
@@ -218,7 +219,7 @@ export function buildPaymentConfirmationEmail(
 
           <p style="color: #999; font-size: 12px; margin-top: 24px; text-align: center;">
             â€” Royals Icon Events<br/>
-            Questions? Contact support@royaliconevents.co.ke
+            Questions? Contact ${SUPPORT_EMAIL}
           </p>
         </div>
       </div>
@@ -296,7 +297,7 @@ export function buildInstallmentReceiptEmail(
 
           <p style="color: #999; font-size: 12px; margin-top: 24px; text-align: center;">
             â€” Royals Icon Events<br/>
-            Questions? Contact support@royaliconevents.co.ke
+            Questions? Contact ${SUPPORT_EMAIL}
           </p>
         </div>
       </div>
@@ -394,7 +395,7 @@ export function buildOrderReceiptEmail(
 
           <p style="color: #999999; font-size: 12px; margin-top: 24px; text-align: center;">
             â€” Royals Icon Events<br/>
-            Questions? Contact support@royaliconevents.co.ke
+            Questions? Contact ${SUPPORT_EMAIL}
           </p>
         </div>
       </div>
@@ -433,7 +434,7 @@ export function buildInstallmentReminderEmail(
           <p style="line-height: 1.6;">Order Reference: #${orderId}</p>
           <div style="background: #4a1a2a; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
             <p style="color: #d4af37; margin: 0; font-weight: bold;">Need help? Contact us</p>
-            <p style="color: #999; margin: 8px 0 0;">support@royaliconevents.co.ke</p>
+            <p style="color: #999; margin: 8px 0 0;">${SUPPORT_EMAIL}</p>
           </div>
           <p style="color: #999; font-size: 12px; margin-top: 24px;">â€” Royals Icon Events</p>
         </div>
@@ -504,6 +505,176 @@ export function buildTrainingRegistrationEmail(programTitle: string): { subject:
             <p style="color: #d4af37; margin: 0; font-weight: bold;">Program: ${programTitle}</p>
           </div>
           <p style="color: #999; font-size: 12px; margin-top: 24px;">- Royals Icon Events</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+export function buildBookingEnquiryEmail(details: {
+  modelName: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  eventType?: string;
+  eventDate?: string;
+  budget?: string;
+  message: string;
+}): { subject: string; html: string } {
+  const escape = (v?: string) =>
+    (v || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return {
+    subject: `Model Booking Enquiry - ${escape(details.modelName)} - ${escape(details.clientName)}`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Royals Icon Events</h1>
+          <p style="color: #e5c158; margin: 8px 0 0; font-size: 14px;">Model Booking Enquiry</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="line-height: 1.6;">A new booking enquiry was submitted through the models portfolio.</p>
+          <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
+            <tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Model</td><td style="padding: 8px;">${escape(details.modelName)}</td></tr>
+            <tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Client</td><td style="padding: 8px;">${escape(details.clientName)}</td></tr>
+            <tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Email</td><td style="padding: 8px;">${escape(details.clientEmail)}</td></tr>
+            ${details.clientPhone ? `<tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Phone</td><td style="padding: 8px;">${escape(details.clientPhone)}</td></tr>` : ""}
+            ${details.eventType ? `<tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Event type</td><td style="padding: 8px;">${escape(details.eventType)}</td></tr>` : ""}
+            ${details.eventDate ? `<tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Event date</td><td style="padding: 8px;">${escape(details.eventDate)}</td></tr>` : ""}
+            ${details.budget ? `<tr><td style="padding: 8px; color: #d4af37; font-weight: bold;">Budget</td><td style="padding: 8px;">${escape(details.budget)}</td></tr>` : ""}
+          </table>
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 16px; margin: 16px 0;">
+            <p style="color: #d4af37; margin: 0 0 8px; font-weight: bold;">Message</p>
+            <p style="margin: 0; line-height: 1.6;">${escape(details.message)}</p>
+          </div>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">- Models Portfolio (faceoftharakanithi.app)</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+// ============ Registration receipt (formal fee receipt) ============
+
+export function buildRegistrationReceiptEmail(
+  participantName: string,
+  registrationId: string,
+  feeKes: number,
+  paymentStatus: "pending" | "completed"
+): { subject: string; html: string } {
+  const statusLabel = paymentStatus === "completed" ? "PAID" : "PAYMENT DUE";
+  const statusColor = paymentStatus === "completed" ? "#2ecc71" : "#e67e22";
+  const statusNote =
+    paymentStatus === "completed"
+      ? "We have received your registration fee in full. Keep this receipt as proof of payment."
+      : "Please settle the registration fee at the registration desk or via the payment link sent to you. Quote your registration number when paying.";
+
+  return {
+    subject: `?? Registration Receipt ${registrationId} - Mr & Miss Face of Tharaka-Nithi County 2026`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Registration Receipt</h1>
+          <p style="color: #e5c158; margin: 8px 0 0; font-size: 14px;">Mr &amp; Miss Face of Tharaka-Nithi County 2026</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">${participantName}</strong>,</p>
+          <p style="line-height: 1.6;">Thank you for registering. Your official receipt is below — please keep it for your records.</p>
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 4px 16px; margin: 24px 0;">
+            <table style="width: 100%; color: #ffffff; font-size: 14px;">
+              <tr><td style="padding: 12px 0; color: #999;">Registration No.</td><td style="padding: 12px 0; text-align: right; color: #d4af37; font-weight: bold;">${registrationId}</td></tr>
+              <tr><td style="padding: 12px 0; border-top: 1px solid #3a1c28; color: #999;">Participant</td><td style="padding: 12px 0; border-top: 1px solid #3a1c28; text-align: right;">${participantName}</td></tr>
+              <tr><td style="padding: 12px 0; border-top: 1px solid #3a1c28; color: #999;">Date</td><td style="padding: 12px 0; border-top: 1px solid #3a1c28; text-align: right;">${new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</td></tr>
+              <tr><td style="padding: 12px 0; border-top: 1px solid #3a1c28; color: #999;">Registration Fee</td><td style="padding: 12px 0; border-top: 1px solid #3a1c28; text-align: right; color: #d4af37; font-weight: bold;">KES ${feeKes.toLocaleString()}</td></tr>
+              <tr><td style="padding: 12px 0; border-top: 1px solid #3a1c28; color: #999;">Status</td><td style="padding: 12px 0; border-top: 1px solid #3a1c28; text-align: right; color: ${statusColor}; font-weight: bold;">${statusLabel}</td></tr>
+            </table>
+          </div>
+          <p style="line-height: 1.6; color: #cccccc; font-size: 14px;">${statusNote}</p>
+          <p style="line-height: 1.6; font-size: 14px;">Event: <strong style="color: #d4af37;">September 12, 2026</strong> &middot; Chuka Grounds</p>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">Questions? Contact ${SUPPORT_EMAIL}</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+// ============ Achievement / participation certificates ============
+
+export function buildAchievementCertificateEmail(
+  recipientName: string,
+  award: string
+): { subject: string; html: string } {
+  return {
+    subject: `?? ${award} - ${recipientName} - Face of Tharaka-Nithi 2026`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Congratulations!</h1>
+          <p style="color: #e5c158; margin: 8px 0 0;">Mr &amp; Miss Face of Tharaka-Nithi County 2026</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <p style="font-size: 16px;">Dear <strong style="color: #d4af37;">${recipientName}</strong>,</p>
+          <p style="line-height: 1.6;">Your certificate for <strong style="color: #d4af37;">${award}</strong> is attached to this email.</p>
+          <p style="line-height: 1.6;">Presented by Royals Icon Events — Fashion | Talent | Celebration.</p>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">Questions? Contact ${SUPPORT_EMAIL}</p>
+        </div>
+      </div>
+    `,
+  };
+}
+
+// ============ Weekly admin digest ============
+
+export interface WeeklyDigestStats {
+  newRegistrations: number;
+  registrationsByCategory: Array<{ category: string; count: number }>;
+  totalRegistrations: number;
+  newBookingEnquiries: number;
+  newPaymentsAmount: number;
+  newPaymentsCount: number;
+}
+
+const digestCategoryLabel = (category: string): string => {
+  const labels: Record<string, string> = { adults: "Adults", teens: "Teens", little_stars: "Little Stars" };
+  return labels[category] || category;
+};
+
+export function buildWeeklyDigestEmail(
+  stats: WeeklyDigestStats,
+  fromLabel: string,
+  toLabel: string
+): { subject: string; html: string } {
+  const categoryRows = stats.registrationsByCategory
+    .map(
+      r =>
+        `<tr><td style="padding: 10px; border-bottom: 1px solid #3a1c28; color: #ffffff;">${digestCategoryLabel(r.category)}</td><td style="padding: 10px; border-bottom: 1px solid #3a1c28; text-align: right; color: #d4af37; font-weight: bold;">${r.count}</td></tr>`
+    )
+    .join("") || `<tr><td style="padding: 10px; color: #999;" colspan="2">No new registrations this period</td></tr>`;
+
+  const row = (label: string, value: string) =>
+    `<tr><td style="padding: 10px; border-bottom: 1px solid #3a1c28; color: #999;">${label}</td><td style="padding: 10px; border-bottom: 1px solid #3a1c28; text-align: right; color: #d4af37; font-weight: bold;">${value}</td></tr>`;
+
+  return {
+    subject: `?? Weekly Digest (${fromLabel} – ${toLabel}) - Face of Tharaka-Nithi`,
+    html: `
+      <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #1a0a1a; border: 2px solid #d4af37; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, #4a1a2a, #2a0a1a); padding: 32px; text-align: center;">
+          <h1 style="color: #d4af37; margin: 0; font-size: 24px;">Weekly Digest</h1>
+          <p style="color: #e5c158; margin: 8px 0 0; font-size: 14px;">${fromLabel} – ${toLabel}</p>
+        </div>
+        <div style="padding: 32px; color: #ffffff;">
+          <div style="background: #2a0a1a; border: 1px solid #d4af37; border-radius: 8px; padding: 4px 16px; margin-bottom: 20px;">
+            <table style="width: 100%; font-size: 14px;">
+              ${row("New registrations", String(stats.newRegistrations))}
+              ${row("Total registrations", String(stats.totalRegistrations))}
+              ${row("New booking enquiries", String(stats.newBookingEnquiries))}
+              ${row("Payments received", `${stats.newPaymentsCount} (${stats.newPaymentsCount > 0 ? `KES ${stats.newPaymentsAmount.toLocaleString()}` : "KES 0"})`)}
+            </table>
+          </div>
+          <div style="background: #2a0a1a; border: 1px solid #3a1c28; border-radius: 8px; padding: 4px 16px;">
+            <p style="color: #d4af37; font-size: 13px; text-transform: uppercase; letter-spacing: 0.15em; margin: 12px 0 4px;">New registrations by category</p>
+            <table style="width: 100%; font-size: 14px;">${categoryRows}</table>
+          </div>
+          <p style="color: #999; font-size: 12px; margin-top: 24px;">— Royals Icon Events &middot; ${SUPPORT_EMAIL}</p>
         </div>
       </div>
     `,

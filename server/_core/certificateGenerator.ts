@@ -1,5 +1,16 @@
-import { PDFDocument, PDFPage, rgb, degrees, StandardFonts } from "pdf-lib";
+import { PDFDocument, PDFPage, rgb, degrees } from "pdf-lib";
 import { storagePut } from "../storage.js";
+import { EVENT_DATE, EVENT_NAME, EVENT_VENUE, ORGANIZER_NAME } from "../../shared/const.js";
+import {
+  BRAND,
+  drawCrown,
+  drawSeal,
+  drawSignature,
+  fitFontSize,
+  formatLongDate,
+  loadFonts,
+  textWidth,
+} from "./pdfLayout.js";
 
 export interface CertificateData {
   participantName: string;
@@ -19,36 +30,26 @@ const getCategoryLabel = (category: string): string => {
   return labels[category] || category;
 };
 
-// Colors
-const bgColor = rgb(35/255, 8/255, 12/255); // Deep burgundy
-const gold = rgb(218/255, 165/255, 32/255);
-const goldBright = rgb(255/255, 223/255, 128/255);
-const goldDark = rgb(139/255, 101/255, 20/255);
-const whiteColor = rgb(1, 1, 1);
-const silver = rgb(240/255, 240/255, 245/255);
+// Dark-canvas palette for certificates
+const bg = rgb(35 / 255, 8 / 255, 12 / 255);
+const gold = BRAND.gold;
+const goldBright = BRAND.goldBright;
+const goldDark = BRAND.goldDark;
+const white = rgb(1, 1, 1);
+const silver = rgb(240 / 255, 240 / 255, 245 / 255);
 
-export async function generateCertificate(data: CertificateData): Promise<{ url: string; key: string }> {
-  // Create a new PDF document (A4 Portrait instead of Landscape to match 1600x2200 ratio)
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([595, 842]); // A4 Portrait
+interface CertificateFonts {
+  regular: any;
+  bold: any;
+  italic: any;
+  sans: any;
+  sansBold: any;
+}
 
+function drawCertificateFrame(page: PDFPage): void {
   const { width, height } = page.getSize();
+  page.drawRectangle({ x: 0, y: 0, width, height, color: bg });
 
-  // Background
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width,
-    height,
-    color: bgColor,
-  });
-
-  // Fonts
-  const fontBold = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-  const fontItalic = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
-
-  // Border frame
   const border = 20;
   page.drawRectangle({
     x: border,
@@ -75,142 +76,326 @@ export async function generateCertificate(data: CertificateData): Promise<{ url:
     borderWidth: 1,
   });
 
-  // Diamond drawing helper
-  const drawDiamond = (x: number, y: number, size: number) => {
-    // In pdf-lib, polygons aren't directly supported by a single simple function without paths
-    // But we can draw a rotated square
+  // Corner diamonds
+  const diamond = (x: number, y: number) => {
     page.drawRectangle({
       x,
       y,
-      width: size,
-      height: size,
+      width: 15,
+      height: 15,
       color: silver,
       borderColor: goldBright,
       borderWidth: 1,
-      rotate: degrees(45)
+      rotate: degrees(45),
     });
   };
+  diamond(40, height - 40);
+  diamond(width - 40, height - 40);
+  diamond(40, 40);
+  diamond(width - 40, 40);
+}
 
-  // Corner diamonds
-  drawDiamond(40, height - 40, 15);
-  drawDiamond(width - 40, height - 40, 15);
-  drawDiamond(40, 40, 15);
-  drawDiamond(width - 40, 40, 15);
-
-  // Layout text
-  let y = height - 150;
-
-  const drawCenteredText = (text: string, font: any, size: number, color: any, spaceAfter: number) => {
-    const textWidth = font.widthOfTextAtSize(text, size);
+function centeredFactory(page: PDFPage, fonts: CertificateFonts) {
+  const { width } = page.getSize();
+  let y = 0;
+  const draw = (
+    text: string,
+    font: any,
+    size: number,
+    color: ReturnType<typeof rgb>,
+    spaceAfter: number,
+    maxWidth = width - 120
+  ) => {
+    const fitted = fitFontSize(font, text, maxWidth, size);
     page.drawText(text, {
-      x: (width - textWidth) / 2,
+      x: (width - textWidth(font, text, fitted)) / 2,
       y,
-      size,
+      size: fitted,
       font,
       color,
     });
     y -= spaceAfter;
   };
+  const setY = (value: number) => {
+    y = value;
+  };
+  const getY = () => y;
+  void fonts;
+  return { draw, setY, getY };
+}
 
-  // Crown placeholder
-  drawCenteredText("* * *", fontBold, 24, gold, 50);
+// ============ Registration certificate ============
 
-  drawCenteredText("Certificate of Registration", fontBold, 28, goldBright, 40);
-  drawCenteredText("Mr & Miss", fontBold, 18, gold, 20);
-  drawCenteredText("FACE OF THARAKA-NITHI COUNTY", fontBold, 24, gold, 30);
-  drawCenteredText("2026", fontBold, 24, gold, 40);
+export async function generateCertificate(
+  data: CertificateData
+): Promise<{ url: string; key: string }> {
+  const pdfDoc = await PDFDocument.create();
+  const fonts = await loadFonts(pdfDoc);
+  const page = pdfDoc.addPage([595, 842]); // A4 Portrait
+  const { width, height } = page.getSize();
 
-  // Decorative line
+  drawCertificateFrame(page);
+
+  const c = centeredFactory(page, fonts);
+  c.setY(height - 120);
+
+  // Crown ornament
+  drawCrown(page, width / 2, c.getY() - 10, 70, gold);
+  c.setY(c.getY() - 66);
+
+  c.draw("Certificate of Registration", fonts.bold, 28, goldBright, 36);
+  c.draw("Mr & Miss", fonts.bold, 18, gold, 20);
+  c.draw("FACE OF THARAKA-NITHI COUNTY", fonts.bold, 24, gold, 26, width - 160);
+  c.draw("2026", fonts.bold, 24, gold, 38);
+
+  // Divider
   page.drawLine({
-    start: { x: width / 2 - 100, y: y + 20 },
-    end: { x: width / 2 + 100, y: y + 20 },
+    start: { x: width / 2 - 100, y: c.getY() + 22 },
+    end: { x: width / 2 + 100, y: c.getY() + 22 },
     thickness: 2,
     color: gold,
   });
   page.drawLine({
-    start: { x: width / 2 - 75, y: y + 16 },
-    end: { x: width / 2 + 75, y: y + 16 },
+    start: { x: width / 2 - 75, y: c.getY() + 17 },
+    end: { x: width / 2 + 75, y: c.getY() + 17 },
     thickness: 1,
     color: goldDark,
   });
 
-  y -= 20;
+  c.draw("This is to certify that", fonts.regular, 16, goldBright, 32);
 
-  drawCenteredText("This is to certify that", fontRegular, 16, goldBright, 30);
-
-  // Participant Name
-  drawCenteredText(data.participantName, fontBold, 26, whiteColor, 10);
+  // Participant name (fitted so long names never overflow the frame)
+  c.draw(data.participantName, fonts.bold, 26, white, 10, width - 180);
   page.drawLine({
-    start: { x: width / 2 - 120, y: y - 5 },
-    end: { x: width / 2 + 120, y: y - 5 },
+    start: { x: width / 2 - 120, y: c.getY() - 2 },
+    end: { x: width / 2 + 120, y: c.getY() - 2 },
     thickness: 2,
     color: gold,
   });
-  y -= 40;
+  c.setY(c.getY() - 38);
 
-  drawCenteredText("has successfully registered for the Models Call Out event", fontRegular, 14, goldBright, 30);
-  drawCenteredText(`Category: ${getCategoryLabel(data.category)}`, fontBold, 16, gold, 20);
-  drawCenteredText(`Registration ID: ${data.registrationId}`, fontBold, 16, gold, 40);
+  c.draw(
+    "has successfully registered for the Models Call Out event",
+    fonts.regular,
+    14,
+    goldBright,
+    26
+  );
+  c.draw(`Category: ${getCategoryLabel(data.category)}`, fonts.bold, 15, gold, 18);
+  c.draw(`Registration ID: ${data.registrationId}`, fonts.bold, 15, gold, 34);
 
-  // Divider
   page.drawLine({
-    start: { x: width / 2 - 60, y: y + 20 },
-    end: { x: width / 2 + 60, y: y + 20 },
+    start: { x: width / 2 - 60, y: c.getY() + 16 },
+    end: { x: width / 2 + 60, y: c.getY() + 16 },
     thickness: 1,
     color: gold,
   });
-  y -= 20;
 
-  // Two Column Layout
+  // Event details columns
+  const colY = c.getY() - 14;
   const leftCenter = width * 0.35;
   const rightCenter = width * 0.65;
-  const colY = y;
+  const dateVal = data.eventDate || EVENT_DATE;
+  const venueVal = data.venue || EVENT_VENUE;
 
-  const dateLabel = "Event Date:";
-  const dateVal = data.eventDate || "September 12, 2026";
-  const venueLabel = "Venue:";
-  const venueVal = data.venue || "Chuka Grounds";
+  const centeredValue = (cx: number, label: string, value: string) => {
+    page.drawText(label, {
+      x: cx - textWidth(fonts.regular, label, 12) / 2,
+      y: colY,
+      size: 12,
+      font: fonts.regular,
+      color: goldBright,
+    });
+    const size = fitFontSize(fonts.bold, value, width * 0.28, 14, 9);
+    page.drawText(value, {
+      x: cx - textWidth(fonts.bold, value, size) / 2,
+      y: colY - 20,
+      size,
+      font: fonts.bold,
+      color: white,
+    });
+  };
+  centeredValue(leftCenter, "Event Date:", dateVal);
+  centeredValue(rightCenter, "Venue:", venueVal);
+  c.setY(colY - 70);
 
-  page.drawText(dateLabel, { x: leftCenter - fontRegular.widthOfTextAtSize(dateLabel, 12)/2, y: colY, size: 12, font: fontRegular, color: goldBright });
-  page.drawText(dateVal, { x: leftCenter - fontBold.widthOfTextAtSize(dateVal, 14)/2, y: colY - 20, size: 14, font: fontBold, color: whiteColor });
+  // Authorised signature (dark background → light ink)
+  drawSignature(page, fonts, {
+    x: width / 2 - 110,
+    top: c.getY(),
+    lineWidth: 220,
+    name: ORGANIZER_NAME,
+    title: `Authorised for ${EVENT_NAME}`,
+    ink: goldBright,
+    ruleColor: gold,
+    nameColor: goldBright,
+    titleColor: silver,
+  });
+  c.setY(c.getY() - 78);
 
-  page.drawText(venueLabel, { x: rightCenter - fontRegular.widthOfTextAtSize(venueLabel, 12)/2, y: colY, size: 12, font: fontRegular, color: goldBright });
-  page.drawText(venueVal, { x: rightCenter - fontBold.widthOfTextAtSize(venueVal, 14)/2, y: colY - 20, size: 14, font: fontBold, color: whiteColor });
+  // Seal
+  drawSeal(page, fonts, {
+    cx: width / 2,
+    cy: c.getY() - 20,
+    r: 42,
+    orgLine: "ROYALS ICON",
+    textColor: gold,
+  });
+  c.setY(c.getY() - 78);
 
-  y -= 80;
+  const issueDate = formatLongDate(data.registrationDate || new Date());
+  c.draw(`Date Issued: ${issueDate}`, fonts.regular, 12, goldBright, 24);
 
-  // Authorized by
-  drawCenteredText("Authorized by:", fontRegular, 12, goldBright, 20);
-  drawCenteredText("Royals Icon Events", fontItalic, 20, gold, 30);
+  // Bottom banner
+  c.draw("Fashion | Talent | Celebration", fonts.italic, 14, goldBright, 18);
+  c.draw(`Organized by ${ORGANIZER_NAME}`, fonts.regular, 10, gold, 0);
 
-  // Date Issued
-  const issueDate = data.registrationDate ? new Date(data.registrationDate).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : new Date().toLocaleDateString();
-  drawCenteredText(`Date Issued: ${issueDate}`, fontRegular, 12, goldBright, 40);
-
-  // Official Seal
-  const sealY = y - 40;
-  const sealR = 40;
-  page.drawCircle({ x: width/2, y: sealY, size: sealR, borderColor: gold, borderWidth: 2 });
-  page.drawCircle({ x: width/2, y: sealY, size: sealR - 6, borderColor: goldDark, borderWidth: 1 });
-  
-  const sealText = "OFFICIAL SEAL";
-  page.drawText(sealText, { x: width/2 - fontBold.widthOfTextAtSize(sealText, 10)/2, y: sealY, size: 10, font: fontBold, color: gold });
-
-  // Bottom section
-  y = 80;
-  drawCenteredText("Fashion | Talent | Celebration", fontItalic, 14, goldBright, 20);
-  drawCenteredText("Organized by Royals Icon Events", fontRegular, 10, gold, 0);
-
-  // Save PDF to bytes
   const pdfBytes = await pdfDoc.save();
-
-  // Upload to S3
   const fileName = `certificate_${data.registrationId}_${Date.now()}.pdf`;
+  const { url, key } = await storagePut(`certificates/${fileName}`, Buffer.from(pdfBytes), "application/pdf");
+  return { url, key };
+}
+
+// ============ Achievement / participation certificates ============
+
+export interface AchievementCertificateData {
+  recipientName: string;
+  award: string;
+  kind: "winner" | "participation";
+  categoryLabel?: string;
+  eventDate?: string;
+  venue?: string;
+  issuedAt?: Date;
+  fileNameId: string;
+}
+
+export async function generateAchievementCertificate(
+  data: AchievementCertificateData
+): Promise<{ url: string; key: string }> {
+  const pdfDoc = await PDFDocument.create();
+  const fonts = await loadFonts(pdfDoc);
+  const page = pdfDoc.addPage([595, 842]); // A4 Portrait
+  const { width, height } = page.getSize();
+
+  drawCertificateFrame(page);
+
+  const c = centeredFactory(page, fonts);
+  c.setY(height - 120);
+
+  drawCrown(page, width / 2, c.getY() - 10, 70, gold);
+  c.setY(c.getY() - 66);
+
+  c.draw(
+    data.kind === "winner" ? "Certificate of Achievement" : "Certificate of Participation",
+    fonts.bold,
+    28,
+    goldBright,
+    36
+  );
+  c.draw("Mr & Miss", fonts.bold, 18, gold, 20);
+  c.draw("FACE OF THARAKA-NITHI COUNTY", fonts.bold, 24, gold, 26, width - 160);
+  c.draw("2026", fonts.bold, 24, gold, 38);
+
+  page.drawLine({
+    start: { x: width / 2 - 100, y: c.getY() + 22 },
+    end: { x: width / 2 + 100, y: c.getY() + 22 },
+    thickness: 2,
+    color: gold,
+  });
+
+  c.draw("This is proudly presented to", fonts.regular, 16, goldBright, 32);
+  c.draw(data.recipientName, fonts.bold, 26, white, 10, width - 180);
+  page.drawLine({
+    start: { x: width / 2 - 120, y: c.getY() - 2 },
+    end: { x: width / 2 + 120, y: c.getY() - 2 },
+    thickness: 2,
+    color: gold,
+  });
+  c.setY(c.getY() - 38);
+
+  c.draw(data.award, fonts.bold, 20, goldBright, 22, width - 170);
+  if (data.categoryLabel) {
+    c.draw(`Category: ${data.categoryLabel}`, fonts.regular, 14, gold, 16);
+  }
+  c.draw(
+    data.kind === "winner"
+      ? "in recognition of outstanding achievement at the Models Call Out event"
+      : "for valuable participation in the Models Call Out event",
+    fonts.italic,
+    14,
+    goldBright,
+    34,
+    width - 170
+  );
+
+  page.drawLine({
+    start: { x: width / 2 - 60, y: c.getY() + 16 },
+    end: { x: width / 2 + 60, y: c.getY() + 16 },
+    thickness: 1,
+    color: gold,
+  });
+
+  // Event details columns
+  const colY = c.getY() - 14;
+  const leftCenter = width * 0.35;
+  const rightCenter = width * 0.65;
+  const dateVal = data.eventDate || EVENT_DATE;
+  const venueVal = data.venue || EVENT_VENUE;
+  const centeredValue = (cx: number, label: string, value: string) => {
+    page.drawText(label, {
+      x: cx - textWidth(fonts.regular, label, 12) / 2,
+      y: colY,
+      size: 12,
+      font: fonts.regular,
+      color: goldBright,
+    });
+    const size = fitFontSize(fonts.bold, value, width * 0.28, 14, 9);
+    page.drawText(value, {
+      x: cx - textWidth(fonts.bold, value, size) / 2,
+      y: colY - 20,
+      size,
+      font: fonts.bold,
+      color: white,
+    });
+  };
+  centeredValue(leftCenter, "Event Date:", dateVal);
+  centeredValue(rightCenter, "Venue:", venueVal);
+  c.setY(colY - 70);
+
+  drawSignature(page, fonts, {
+    x: width / 2 - 110,
+    top: c.getY(),
+    lineWidth: 220,
+    name: ORGANIZER_NAME,
+    title: `Authorised for ${EVENT_NAME}`,
+    ink: goldBright,
+    ruleColor: gold,
+    nameColor: goldBright,
+    titleColor: silver,
+  });
+  c.setY(c.getY() - 78);
+
+  drawSeal(page, fonts, {
+    cx: width / 2,
+    cy: c.getY() - 20,
+    r: 42,
+    orgLine: "ROYALS ICON",
+    textColor: gold,
+  });
+  c.setY(c.getY() - 78);
+
+  const issueDate = formatLongDate(data.issuedAt || new Date());
+  c.draw(`Date Issued: ${issueDate}`, fonts.regular, 12, goldBright, 24);
+
+  c.draw("Fashion | Talent | Celebration", fonts.italic, 14, goldBright, 18);
+  c.draw(`Organized by ${ORGANIZER_NAME}`, fonts.regular, 10, gold, 0);
+
+  const pdfBytes = await pdfDoc.save();
+  const fileName = `achievement_${data.fileNameId}_${Date.now()}.pdf`;
   const { url, key } = await storagePut(
     `certificates/${fileName}`,
     Buffer.from(pdfBytes),
     "application/pdf"
   );
-
   return { url, key };
 }

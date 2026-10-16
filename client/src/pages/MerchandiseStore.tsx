@@ -9,6 +9,7 @@ import { ShoppingCart, Plus, Minus, Trash2, CreditCard, Smartphone, Building, Ch
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useLocation } from "wouter";
+import SiteHeader from "@/components/SiteHeader";
 
 interface CartItem {
   merchandiseId: number;
@@ -136,6 +137,7 @@ export default function MerchandiseStore() {
 
   return (
     <main className="min-h-screen bg-black font-sans text-white selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       {/* Header */}
       <div className="bg-gradient-to-r from-[#4a1a2a] to-[#2a0a1a] py-12 px-4">
         <div className="max-w-6xl mx-auto text-center">

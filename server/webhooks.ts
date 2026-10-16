@@ -13,8 +13,26 @@ import {
   getMerchandiseItemById,
 } from "./db.js";
 import { sendEmail, buildPaymentConfirmationEmail, buildInstallmentReceiptEmail } from "./_core/emailService.js";
+import { timingSafeStringEqual } from "./_core/security.js";
 
 const router = express.Router();
+
+// IntaSend authenticates webhooks by echoing a shared "challenge" secret in
+// the payload body (top level, or nested under payload for legacy shapes).
+// See https://developers.intasend.com/guides/webhooks/
+export function verifyWebhookChallenge(body: unknown): {
+  ok: boolean;
+  configured: boolean;
+} {
+  const expected = process.env.INTASEND_WEBHOOK_CHALLENGE;
+  if (!expected) return { ok: true, configured: false };
+  const source = (body ?? {}) as Record<string, unknown>;
+  const payload = (source.payload ?? {}) as Record<string, unknown>;
+  const received = String(source.challenge ?? payload.challenge ?? "");
+  return { ok: timingSafeStringEqual(received, expected), configured: true };
+}
+
+let challengeWarningLogged = false;
 
 // IntaSend webhook endpoint
 router.post("/webhooks/intasend", async (req, res) => {
@@ -25,14 +43,22 @@ router.post("/webhooks/intasend", async (req, res) => {
       payload 
     } = req.body;
 
-    console.log("[IntaSend Webhook] Received:", JSON.stringify(req.body, null, 2));
+    const challenge = verifyWebhookChallenge(req.body);
+    if (!challenge.configured) {
+      if (!challengeWarningLogged) {
+        challengeWarningLogged = true;
+        console.warn(
+          "[IntaSend Webhook] INTASEND_WEBHOOK_CHALLENGE is not set; " +
+            "accepting webhooks without verification. Set it in the environment " +
+            "to reject forged payment events.",
+        );
+      }
+    } else if (!challenge.ok) {
+      console.error("[IntaSend Webhook] Invalid challenge; rejecting event");
+      return res.status(401).json({ error: "Invalid challenge" });
+    }
 
-    // Verify the webhook signature (implement based on IntaSend docs)
-    // const signature = req.headers['x-intasend-signature'];
-    // if (!verifySignature(req.body, signature)) {
-    //   console.error("[IntaSend Webhook] Invalid signature");
-    //   return res.status(401).json({ error: "Invalid signature" });
-    // }
+    console.log("[IntaSend Webhook] Received:", JSON.stringify(req.body, null, 2));
 
     if (event === "approval.completed") {
       const {

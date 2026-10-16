@@ -154,6 +154,39 @@ export default function AdminSiteSettings() {
         </CardContent>
       </Card>
 
+      {/* Registration Fee */}
+      <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
+        <CardHeader>
+          <CardTitle className="text-[#d4af37]">Registration Fee</CardTitle>
+          <CardDescription className="text-gray-400">
+            The fee charged per contestant registration (KES). A payment receipt is emailed automatically when the payment succeeds. Set to 0 to make registration free.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex-1">
+              <label className="text-white text-sm block mb-1">Fee (KES)</label>
+              <Input
+                name="registration_fee"
+                type="number"
+                min={0}
+                value={formData.registration_fee ?? ""}
+                onChange={handleChange}
+                placeholder="e.g. 1000"
+                className="bg-[#4a1a2a] text-white border-[#d4af37]"
+              />
+            </div>
+            <Button
+              onClick={() => handleSave("registration_fee")}
+              disabled={updateMutation.isPending && updateMutation.variables?.key === "registration_fee"}
+              className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+            >
+              {updateMutation.isPending && updateMutation.variables?.key === "registration_fee" ? "Saving..." : "Save Fee"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Announcements Banner */}
       <Card className="bg-[#2a0a1a] border-[#d4af37] border-2">
         <CardHeader>

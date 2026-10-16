@@ -43,3 +43,26 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+// Organizing committee / staff: can view registrations, stats and bookings,
+// but not settings, payments, financial reports or user management.
+export const staffProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+    const role = ctx.user?.role;
+
+    if (!ctx.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
+    }
+    if (role !== "admin" && role !== "committee") {
+      throw new TRPCError({ code: "FORBIDDEN", message: "Staff access required" });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      },
+    });
+  }),
+);

@@ -6,6 +6,9 @@ import { Search, Loader2, MessageCircle, Share2, Facebook, Instagram, ChevronLef
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { modelSlug, SOCIAL_LINKS } from "@shared/const";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import SiteHeader from "@/components/SiteHeader";
 
 const TOP_CONTESTANTS = [
   "Florence", "Bredda Karani", "Deborah Moraa", 
@@ -15,6 +18,11 @@ const TOP_CONTESTANTS = [
 
 export default function Gallery() {
   const [, setLocation] = useLocation();
+  usePageMeta({
+    title: "Contestants Gallery | Tharaka Nithi Models",
+    description: "Browse registered contestants for Mr & Miss Face of Tharaka-Nithi County 2026. View portfolios, talents and book models.",
+    path: "/gallery",
+  });
   const [selectedCategory, setSelectedCategory] = useState<"adults" | "teens" | "little_stars" | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "talents">("newest");
@@ -37,10 +45,11 @@ export default function Gallery() {
   };
 
   const VOTING_URL = "https://www.royaliconevents.co.ke/competitions/mr-and-miss-tharaka-nithi-2026";
-  const SOCIAL_URL = "https://www.youtube.com/@royaliconevents"; // Replace with actual social link
+  const SOCIAL_URL = SOCIAL_LINKS.youtube;
   const SITE_URL = "https://www.faceoftharakanithi.app";
 
-  const handleCardClick = (name: string) => {
+  const handleCardClick = (model: { id: number; fullName: string }) => {
+    const name = model.fullName;
     if (TOP_CONTESTANTS.some(c => name.toLowerCase().includes(c.toLowerCase()))) {
       confetti({
         particleCount: 150,
@@ -52,10 +61,12 @@ export default function Gallery() {
         style: { background: '#d4af37', color: '#000', border: 'none' }
       });
     }
+    setLocation(`/models/${modelSlug(model.id, model.fullName)}`);
   };
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       {/* Decorative top bar */}
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
@@ -171,7 +182,7 @@ export default function Gallery() {
                 {sortedData.map((model, globalIdx) => (
                   <div
                     key={model.id}
-                    onClick={() => handleCardClick(model.fullName)}
+                    onClick={() => handleCardClick(model)}
                     className="group relative bg-[#140a10] border border-[#d4af37]/20 hover:border-[#d4af37]/60 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(212,175,55,0.15)] cursor-pointer"
                   >
                     {/* Contestant # badge */}

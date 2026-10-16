@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   User, Search, Edit, Save, Loader2, CheckCircle2, 
-  Award, MapPin, Phone, Mail, Calendar, Hash 
+  Award, MapPin, Phone, Mail, Calendar, Hash, Link2, Globe 
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { modelSlug } from "@shared/const";
 
 interface Registration {
   id: number;
@@ -27,6 +28,29 @@ interface Registration {
   talents: string | null;
   paymentStatus: string;
   registrationDate: Date;
+  bio: string | null;
+  showreelUrl: string | null;
+  measurements: string | null;
+  socialMediaHandles: string | null;
+  availableForBookings: boolean;
+}
+
+const MEASUREMENT_KEYS = ["height", "chest", "waist", "hips", "shoe", "eyes", "hair"] as const;
+const MEASUREMENT_LABELS: Record<string, string> = {
+  height: "Height", chest: "Chest / Bust", waist: "Waist", hips: "Hips",
+  shoe: "Shoe", eyes: "Eye Colour", hair: "Hair",
+};
+const SOCIAL_KEYS = ["instagram", "tiktok", "twitter", "facebook"] as const;
+const SOCIAL_LABELS: Record<string, string> = {
+  instagram: "Instagram", tiktok: "TikTok", twitter: "Twitter / X", facebook: "Facebook",
+};
+
+function parseJsonField(value: string | null): Record<string, string> {
+  try {
+    return value ? JSON.parse(value) || {} : {};
+  } catch {
+    return {};
+  }
 }
 
 export default function ModelProfile() {
@@ -41,7 +65,16 @@ export default function ModelProfile() {
     countySubLocation: "",
     talents: "",
     category: "",
+    bio: "",
+    showreelUrl: "",
+    availableForBookings: false,
   });
+  const [editMeasurements, setEditMeasurements] = useState<Record<string, string>>(
+    Object.fromEntries(MEASUREMENT_KEYS.map((k) => [k, ""]))
+  );
+  const [editSocials, setEditSocials] = useState<Record<string, string>>(
+    Object.fromEntries(SOCIAL_KEYS.map((k) => [k, ""]))
+  );
 
   const lookupRegistration = trpc.modelProfile.getByEmail.useQuery(
     { email: searchEmail },
@@ -69,7 +102,18 @@ export default function ModelProfile() {
           countySubLocation: result.data[0].countySubLocation,
           talents: result.data[0].talents || "",
           category: result.data[0].category,
+          bio: result.data[0].bio || "",
+          showreelUrl: result.data[0].showreelUrl || "",
+          availableForBookings: !!result.data[0].availableForBookings,
         });
+        const savedMeasurements = parseJsonField(result.data[0].measurements);
+        setEditMeasurements(
+          Object.fromEntries(MEASUREMENT_KEYS.map((k) => [k, savedMeasurements[k] || ""]))
+        );
+        const savedSocials = parseJsonField(result.data[0].socialMediaHandles);
+        setEditSocials(
+          Object.fromEntries(SOCIAL_KEYS.map((k) => [k, savedSocials[k] || ""]))
+        );
         toast.success("Registration found!");
       } else {
         toast.error("No registration found with this email");
@@ -100,15 +144,37 @@ export default function ModelProfile() {
     try {
       await updateProfile.mutateAsync({
         registrationId: selectedRegistration.id,
+        email: selectedRegistration.email,
         fullName: editData.fullName,
         phoneNumber: editData.phoneNumber,
-        email: editData.email,
         countySubLocation: editData.countySubLocation,
         talents: editData.talents,
+        bio: editData.bio,
+        showreelUrl: editData.showreelUrl,
+        availableForBookings: editData.availableForBookings,
+        measurements: Object.fromEntries(
+          MEASUREMENT_KEYS.filter((k) => editMeasurements[k]?.trim()).map((k) => [k, editMeasurements[k].trim()])
+        ),
+        socialMediaHandles: Object.fromEntries(
+          SOCIAL_KEYS.filter((k) => editSocials[k]?.trim()).map((k) => [k, editSocials[k].trim()])
+        ),
       });
       setSelectedRegistration({
         ...selectedRegistration,
         ...editData,
+        bio: editData.bio,
+        showreelUrl: editData.showreelUrl,
+        availableForBookings: editData.availableForBookings,
+        measurements: JSON.stringify(
+          Object.fromEntries(
+            MEASUREMENT_KEYS.filter((k) => editMeasurements[k]?.trim()).map((k) => [k, editMeasurements[k].trim()])
+          )
+        ),
+        socialMediaHandles: JSON.stringify(
+          Object.fromEntries(
+            SOCIAL_KEYS.filter((k) => editSocials[k]?.trim()).map((k) => [k, editSocials[k].trim()])
+          )
+        ),
       });
       setIsEditing(false);
       toast.success("Profile updated successfully!");
@@ -227,6 +293,9 @@ export default function ModelProfile() {
                 <TabsTrigger value="category" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
                   Change Category
                 </TabsTrigger>
+                <TabsTrigger value="portfolio" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black">
+                  My Portfolio
+                </TabsTrigger>
               </TabsList>
 
               {/* Details Tab */}
@@ -279,16 +348,8 @@ export default function ModelProfile() {
                         <Label className="text-gray-400 flex items-center gap-2">
                           <Mail className="w-4 h-4" /> Email
                         </Label>
-                        {isEditing ? (
-                          <Input
-                            type="email"
-                            value={editData.email}
-                            onChange={(e) => setEditData({ ...editData, email: e.target.value })}
-                            className="bg-[#2a0a1a] border-[#d4af37] text-white"
-                          />
-                        ) : (
-                          <p className="text-white">{selectedRegistration.email}</p>
-                        )}
+                        <p className="text-white">{selectedRegistration.email}</p>
+                        <p className="text-gray-500 text-xs">Email cannot be changed here — it verifies ownership of this registration.</p>
                       </div>
 
                       {/* Phone */}
@@ -402,6 +463,186 @@ export default function ModelProfile() {
                         </Button>
                       ))}
                     </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Portfolio Tab */}
+              <TabsContent value="portfolio" className="mt-4">
+                <Card className="bg-[#1a0a1a] border-[#d4af37]/30">
+                  <CardHeader>
+                    <CardTitle className="text-[#d4af37] flex items-center gap-2">
+                      <Globe className="w-4 h-4" /> Public Portfolio
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="bg-[#2a0a1a] border border-[#d4af37]/40 p-4">
+                      <p className="text-gray-400 text-sm mb-2">Your shareable portfolio link:</p>
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                        <code className="text-[#d4af37] break-all text-sm">
+                          {`${window.location.origin}/models/${modelSlug(selectedRegistration.id, selectedRegistration.fullName)}`}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(
+                              `${window.location.origin}/models/${modelSlug(selectedRegistration.id, selectedRegistration.fullName)}`
+                            );
+                            toast.success("Portfolio link copied!");
+                          }}
+                          className="border-[#d4af37] text-[#d4af37] shrink-0"
+                        >
+                          <Link2 className="w-4 h-4 mr-2" /> Copy
+                        </Button>
+                        <a
+                          href={`/models/${modelSlug(selectedRegistration.id, selectedRegistration.fullName)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="border border-[#d4af37]/50 text-[#d4af37] hover:bg-[#d4af37] hover:text-black px-3 py-1.5 text-xs uppercase tracking-widest shrink-0"
+                        >
+                          Preview
+                        </a>
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Bio</Label>
+                      {isEditing ? (
+                        <Textarea
+                          value={editData.bio}
+                          onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
+                          className="bg-[#2a0a1a] border-[#d4af37] text-white"
+                          rows={4}
+                          placeholder="Tell agencies and clients about yourself..."
+                        />
+                      ) : (
+                        <p className="text-white whitespace-pre-line">{selectedRegistration.bio || "Not set"}</p>
+                      )}
+                    </div>
+
+                    {/* Showreel */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Showreel URL (YouTube or Vimeo)</Label>
+                      {isEditing ? (
+                        <Input
+                          value={editData.showreelUrl}
+                          onChange={(e) => setEditData({ ...editData, showreelUrl: e.target.value })}
+                          className="bg-[#2a0a1a] border-[#d4af37] text-white"
+                          placeholder="https://youtube.com/watch?v=..."
+                        />
+                      ) : (
+                        <p className="text-white break-all">{selectedRegistration.showreelUrl || "Not set"}</p>
+                      )}
+                    </div>
+
+                    {/* Measurements */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Measurements</Label>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        {MEASUREMENT_KEYS.map((key) =>
+                          isEditing ? (
+                            <div key={key} className="space-y-1">
+                              <Label className="text-gray-500 text-xs">{MEASUREMENT_LABELS[key]}</Label>
+                              <Input
+                                value={editMeasurements[key]}
+                                onChange={(e) => setEditMeasurements({ ...editMeasurements, [key]: e.target.value })}
+                                className="bg-[#2a0a1a] border-[#d4af37]/60 text-white text-sm"
+                                placeholder={key === "height" ? "e.g. 175cm" : ""}
+                              />
+                            </div>
+                          ) : null
+                        )}
+                        {!isEditing &&
+                          MEASUREMENT_KEYS.filter((k) => parseJsonField(selectedRegistration.measurements)[k]).map((key) => (
+                            <div key={key} className="bg-[#2a0a1a] border border-[#d4af37]/20 px-3 py-2">
+                              <p className="text-gray-500 text-xs">{MEASUREMENT_LABELS[key]}</p>
+                              <p className="text-white">{parseJsonField(selectedRegistration.measurements)[key]}</p>
+                            </div>
+                          ))}
+                        {!isEditing && !MEASUREMENT_KEYS.some((k) => parseJsonField(selectedRegistration.measurements)[k]) && (
+                          <p className="text-gray-500 col-span-full">Not set</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Socials */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Social Media</Label>
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        {SOCIAL_KEYS.map((key) =>
+                          isEditing ? (
+                            <div key={key} className="space-y-1">
+                              <Label className="text-gray-500 text-xs">{SOCIAL_LABELS[key]}</Label>
+                              <Input
+                                value={editSocials[key]}
+                                onChange={(e) => setEditSocials({ ...editSocials, [key]: e.target.value })}
+                                className="bg-[#2a0a1a] border-[#d4af37]/60 text-white text-sm"
+                                placeholder={key === "instagram" ? "@handle or full URL" : ""}
+                              />
+                            </div>
+                          ) : null
+                        )}
+                        {!isEditing &&
+                          SOCIAL_KEYS.filter((k) => parseJsonField(selectedRegistration.socialMediaHandles)[k]).map((key) => (
+                            <div key={key} className="bg-[#2a0a1a] border border-[#d4af37]/20 px-3 py-2">
+                              <p className="text-gray-500 text-xs">{SOCIAL_LABELS[key]}</p>
+                              <p className="text-white break-all">{parseJsonField(selectedRegistration.socialMediaHandles)[key]}</p>
+                            </div>
+                          ))}
+                        {!isEditing && !SOCIAL_KEYS.some((k) => parseJsonField(selectedRegistration.socialMediaHandles)[k]) && (
+                          <p className="text-gray-500 col-span-full">Not set</p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Bookings toggle */}
+                    <div className="space-y-2">
+                      <Label className="text-gray-400">Bookings</Label>
+                      {isEditing ? (
+                        <label className="flex items-center gap-3 text-white cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={editData.availableForBookings}
+                            onChange={(e) => setEditData({ ...editData, availableForBookings: e.target.checked })}
+                            className="w-4 h-4 accent-[#d4af37]"
+                          />
+                          I am available for bookings (shows a booking form on my public portfolio)
+                        </label>
+                      ) : (
+                        <p className="text-white">
+                          {selectedRegistration.availableForBookings ? "Available for bookings" : "Bookings closed"}
+                        </p>
+                      )}
+                    </div>
+
+                    {isEditing ? (
+                      <div className="flex justify-end gap-2 pt-4">
+                        <Button variant="outline" onClick={() => setIsEditing(false)} className="border-gray-500 text-gray-400">
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={handleUpdateProfile}
+                          disabled={updateProfile.isPending}
+                          className="bg-[#d4af37] text-black hover:bg-[#e5c158]"
+                        >
+                          {updateProfile.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                          Save Portfolio
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsEditing(true)}
+                          className="border-[#d4af37] text-[#d4af37]"
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit Portfolio
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

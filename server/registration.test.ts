@@ -70,21 +70,54 @@ function createNonAdminContext(): TrpcContext {
 
 describe("registration", () => {
   describe("submit", () => {
-    it("should accept public registration submission", async () => {
+    // Needs a live database; skipped when DATABASE_URL is not configured.
+    it.skipIf(!process.env.DATABASE_URL)(
+      "should accept public registration submission",
+      async () => {
+        const ctx = createPublicContext();
+        const caller = appRouter.createCaller(ctx);
+
+        // Push the registration window into the future so this test does not
+        // break once the real deadline passes.
+        process.env.REGISTRATION_DEADLINE_ISO = "2099-12-31T23:59:59.999Z";
+        try {
+          const result = await caller.registration.submit({
+            fullName: "John Doe",
+            dateOfBirth: "2000-01-15",
+            age: 24,
+            category: "adults",
+            phoneNumber: "+254712345678",
+            email: "john@example.com",
+            countySubLocation: "Chuka",
+          });
+
+          expect(result).toEqual({ success: true });
+        } finally {
+          delete process.env.REGISTRATION_DEADLINE_ISO;
+        }
+      },
+    );
+
+    it("should reject submissions once the deadline has passed", async () => {
       const ctx = createPublicContext();
       const caller = appRouter.createCaller(ctx);
 
-      const result = await caller.registration.submit({
-        fullName: "John Doe",
-        dateOfBirth: "2000-01-15",
-        age: 24,
-        category: "adults",
-        phoneNumber: "+254712345678",
-        email: "john@example.com",
-        countySubLocation: "Chuka",
-      });
-
-      expect(result).toEqual({ success: true });
+      process.env.REGISTRATION_DEADLINE_ISO = "2000-01-01T00:00:00.000Z";
+      try {
+        await expect(
+          caller.registration.submit({
+            fullName: "John Doe",
+            dateOfBirth: "2000-01-15",
+            age: 24,
+            category: "adults",
+            phoneNumber: "+254712345678",
+            email: "john@example.com",
+            countySubLocation: "Chuka",
+          }),
+        ).rejects.toMatchObject({ code: "FORBIDDEN" });
+      } finally {
+        delete process.env.REGISTRATION_DEADLINE_ISO;
+      }
     });
 
     it("should reject invalid email", async () => {
@@ -131,14 +164,17 @@ describe("registration", () => {
 
 describe("admin", () => {
   describe("getRegistrationsByCategory", () => {
-    it("should allow admin to fetch registrations", async () => {
-      const ctx = createAdminContext();
-      const caller = appRouter.createCaller(ctx);
+    it.skipIf(!process.env.DATABASE_URL)(
+      "should allow admin to fetch registrations",
+      async () => {
+        const ctx = createAdminContext();
+        const caller = appRouter.createCaller(ctx);
 
-      // This should not throw an error
-      const result = await caller.admin.getRegistrationsByCategory("adults");
-      expect(Array.isArray(result)).toBe(true);
-    });
+        // This should not throw an error
+        const result = await caller.admin.getRegistrationsByCategory("adults");
+        expect(Array.isArray(result)).toBe(true);
+      },
+    );
 
     it("should deny non-admin access", async () => {
       const ctx = createNonAdminContext();
@@ -149,22 +185,25 @@ describe("admin", () => {
         expect.fail("Should have thrown FORBIDDEN error");
       } catch (error: any) {
         expect(error.code).toBe("FORBIDDEN");
-        expect(error.message).toContain("Admin access required");
+        expect(error.message).toContain("Staff access required");
       }
     });
   });
 
   describe("getStats", () => {
-    it("should allow admin to fetch stats", async () => {
-      const ctx = createAdminContext();
-      const caller = appRouter.createCaller(ctx);
+    it.skipIf(!process.env.DATABASE_URL)(
+      "should allow admin to fetch stats",
+      async () => {
+        const ctx = createAdminContext();
+        const caller = appRouter.createCaller(ctx);
 
-      const result = await caller.admin.getStats();
-      expect(result).toHaveProperty("total");
-      expect(result).toHaveProperty("adults");
-      expect(result).toHaveProperty("teens");
-      expect(result).toHaveProperty("littleStars");
-    });
+        const result = await caller.admin.getStats();
+        expect(result).toHaveProperty("total");
+        expect(result).toHaveProperty("adults");
+        expect(result).toHaveProperty("teens");
+        expect(result).toHaveProperty("littleStars");
+      },
+    );
 
     it("should deny non-admin access to stats", async () => {
       const ctx = createNonAdminContext();

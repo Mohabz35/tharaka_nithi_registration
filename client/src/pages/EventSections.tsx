@@ -25,7 +25,7 @@ export default function EventSections() {
             <li>Support talented models and artists in Tharaka-Nithi County</li>
           </ul>
           <Button
-            onClick={() => alert("Contact us at support@royaliconevents.co.ke for sponsorship opportunities")}
+            onClick={() => alert("Contact us at face.of.tharakanithi.county@royaliconevents.co.ke for sponsorship opportunities")}
             className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold mt-4"
           >
             Become a Sponsor
@@ -49,7 +49,7 @@ export default function EventSections() {
             <li>Exclusive partnership packages available</li>
           </ul>
           <Button
-            onClick={() => alert("Contact us at support@royaliconevents.co.ke")}
+            onClick={() => alert("Contact us at face.of.tharakanithi.county@royaliconevents.co.ke")}
             className="bg-[#d4af37] text-black hover:bg-[#e5c158] font-bold mt-4"
           >
             Partner With Us

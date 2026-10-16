@@ -27,7 +27,7 @@ interface Props {
 
 export default function AdminBulkEmailPanel({ registrations }: Props) {
   const [open, setOpen] = useState(false);
-  const [emailType, setEmailType] = useState<"certificate" | "registration_pdf">("certificate");
+  const [emailType, setEmailType] = useState<"certificate" | "registration_pdf" | "participation">("certificate");
   const [targetCategory, setTargetCategory] = useState<"all" | "adults" | "teens" | "little_stars">("all");
   const [results, setResults] = useState<{ sent: number; failed: number } | null>(null);
 
@@ -86,6 +86,7 @@ export default function AdminBulkEmailPanel({ registrations }: Props) {
               <SelectContent className="bg-[#4a1a2a] border-[#d4af37] text-white">
                 <SelectItem value="certificate">Certificate of Registration</SelectItem>
                 <SelectItem value="registration_pdf">Registration Form PDF</SelectItem>
+                <SelectItem value="participation">Certificate of Participation</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -107,7 +108,7 @@ export default function AdminBulkEmailPanel({ registrations }: Props) {
 
           <div className="bg-black/50 border border-[#d4af37] rounded-md p-4 mt-4">
             <p className="text-sm">
-              You are about to send <strong className="text-[#d4af37]">{emailType === 'certificate' ? 'Certificates' : 'Registration PDFs'}</strong> to <strong className="text-[#d4af37]">{targets.length}</strong> contestants.
+              You are about to send <strong className="text-[#d4af37]">{emailType === 'certificate' ? 'Certificates' : emailType === 'participation' ? 'Participation Certificates' : 'Registration PDFs'}</strong> to <strong className="text-[#d4af37]">{targets.length}</strong> contestants.
             </p>
           </div>
 

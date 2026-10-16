@@ -159,7 +159,7 @@ export default function PaymentDashboard() {
                 <p className="text-gray-400">
                   If you have any questions about your order or payment, please contact us at:
                 </p>
-                <p className="text-[#d4af37] mt-2">support@royaliconevents.co.ke</p>
+                <p className="text-[#d4af37] mt-2">face.of.tharakanithi.county@royaliconevents.co.ke</p>
               </div>
               <div>
                 <p className="text-white font-medium mb-2">Payment Issues</p>

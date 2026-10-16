@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ChevronLeft, CalendarDays, MapPin, Images, Search, Share2 } from "lucide-react";
 import { useLocation } from "wouter";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import SiteHeader from "@/components/SiteHeader";
 
 function formatDate(date: string | Date | null | undefined): string | null {
   if (!date) return null;
@@ -19,6 +21,11 @@ function formatDate(date: string | Date | null | undefined): string | null {
 }
 
 export default function Events() {
+  usePageMeta({
+    title: "Events & Highlights | Tharaka Nithi Models",
+    description: "Photos, highlights and recaps from Royals Icon Events — pageants, bootcamps and showcases across Tharaka-Nithi.",
+    path: "/events",
+  });
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -36,6 +43,7 @@ export default function Events() {
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
       <header className="bg-[#050204] border-b border-[#d4af37]/20 pt-10 pb-8 px-4 sm:px-8 lg:px-12">

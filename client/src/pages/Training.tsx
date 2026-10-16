@@ -12,8 +12,10 @@ import {
 } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { Loader2, ChevronLeft, GraduationCap, CalendarDays, MapPin, Users, CheckCircle2 } from "lucide-react";
+import { usePageMeta } from "@/hooks/usePageMeta";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
+import SiteHeader from "@/components/SiteHeader";
 
 const categoryLabels: Record<string, string> = {
   adults: "Adults (18–35)",
@@ -64,6 +66,11 @@ const emptyForm: ProgramForm = {
 
 export default function Training() {
   const [, setLocation] = useLocation();
+  usePageMeta({
+    title: "Training & Bootcamp | Tharaka Nithi Models",
+    description: "Model training programs and bootcamps by Royals Icon Events — grooming, runway, confidence and portfolio building.",
+    path: "/training",
+  });
   const [selectedProgramId, setSelectedProgramId] = useState<number | null>(null);
   const [form, setForm] = useState<ProgramForm>(emptyForm);
   const [submitted, setSubmitted] = useState(false);
@@ -121,6 +128,7 @@ export default function Training() {
 
   return (
     <div className="min-h-screen bg-[#0a0508] text-white font-sans selection:bg-[#d4af37] selection:text-black">
+      <SiteHeader />
       <div className="w-full h-1 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent" />
 
       <header className="bg-[#050204] border-b border-[#d4af37]/20 pt-10 pb-8 px-4 sm:px-8 lg:px-12">

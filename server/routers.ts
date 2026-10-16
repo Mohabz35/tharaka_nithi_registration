@@ -1,4 +1,4 @@
-import { COOKIE_NAME, SUPPORT_EMAIL } from "../shared/const.js";
+import { COOKIE_NAME, SUPPORT_EMAIL, modelSlug, parseModelSlug } from "../shared/const.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
@@ -17,18 +17,35 @@ import {
   updateTrainingProgram, deleteTrainingProgram, toggleTrainingProgramActive,
   createTrainingRegistration, getTrainingRegistrationCount, getAllTrainingRegistrations,
   updateTrainingRegistrationPayment, deleteTrainingRegistration,
+  getPublicModelForPortfolio, getPublishedModelPortfolioSummaries,
+  createBookingEnquiry, getAllBookingEnquiries, updateBookingEnquiryStatus, deleteBookingEnquiry,
+  listUsers, setUserRole, countAdminsExcept, getUserById,
+  getFinancialSummary,
 } from "./db.js";
 import { REGISTRATION_DEADLINE_ISO } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies.js";
-import { protectedProcedure, publicProcedure, router } from "./_core/trpc.js";
+import { protectedProcedure, publicProcedure, router, staffProcedure } from "./_core/trpc.js";
 import { systemRouter } from "./_core/systemRouter.js";
 import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
-import { generateCertificate } from "./_core/certificateGenerator.js";
+import { generateCertificate, generateAchievementCertificate } from "./_core/certificateGenerator.js";
+import { generateRegistrationReceiptPDF } from "./_core/receiptGenerator.js";
+import { sendWeeklyDigest, maybeSendWeeklyDigest, isDigestDue, DIGEST_SETTING_KEY } from "./_core/weeklyDigest.js";
 import { storageGetSignedUrl } from "./storage.js";
-import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail, buildTrainingRegistrationEmail } from "./_core/emailService.js";
+import { sendEmail, buildCertificateEmail, buildRegistrationEmail, buildRegistrationConfirmationEmail, buildDocumentConfirmationEmail, buildTrainingRegistrationEmail, buildBookingEnquiryEmail, buildRegistrationReceiptEmail, buildAchievementCertificateEmail } from "./_core/emailService.js";
 import { contestantRouter } from "./contestant.js";
 import { merchandiseRouter } from "./merchandiseRouter.js";
+
+// Registration fee (KES) configured by the admin in site settings.
+async function getRegistrationFee(): Promise<number> {
+  try {
+    const raw = await getSiteSetting("registration_fee");
+    const value = Number(raw);
+    return Number.isFinite(value) && value > 0 ? Math.round(value) : 0;
+  } catch {
+    return 0;
+  }
+}
 
 export const appRouter = router({
   system: systemRouter,
@@ -133,7 +150,10 @@ export const appRouter = router({
             });
           }
           const deadlineSetting = await getSiteSetting("registration_deadline");
-          const deadlineIso = deadlineSetting || REGISTRATION_DEADLINE_ISO;
+          const deadlineIso =
+            deadlineSetting ||
+            process.env.REGISTRATION_DEADLINE_ISO ||
+            REGISTRATION_DEADLINE_ISO;
           if (new Date(deadlineIso).getTime() < Date.now()) {
             throw new TRPCError({
               code: "FORBIDDEN",
@@ -168,10 +188,14 @@ export const appRouter = router({
               await generateParentalConsentPDF(mockRegistration);
             }
 
-            // Send a confirmation email to the registrant
+            // Send a receipt (with fee, when configured) or confirmation email
             try {
-              const confirmation = buildRegistrationConfirmationEmail(input.fullName);
-              await sendEmail({ to: input.email, ...confirmation });
+              const feeKes = await getRegistrationFee();
+              const emailContent =
+                feeKes > 0
+                  ? buildRegistrationReceiptEmail(input.fullName, registrationId, feeKes, "pending")
+                  : buildRegistrationConfirmationEmail(input.fullName);
+              await sendEmail({ to: input.email, ...emailContent });
             } catch (emailErr) {
               console.error("[Registration] Confirmation email failed:", emailErr);
             }
@@ -272,6 +296,31 @@ export const appRouter = router({
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate PDF" });
         }
       }),
+
+    downloadReceipt: publicProcedure
+      .input(z.object({ registrationId: z.string() }))
+      .mutation(async ({ input }) => {
+        try {
+          const registration = await getRegistrationById(input.registrationId);
+          if (!registration) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "Registration not found" });
+          }
+          const feeKes = await getRegistrationFee();
+          const { key } = await generateRegistrationReceiptPDF({
+            registrationId: `REG-${String(registration.id).padStart(3, "0")}`,
+            fullName: registration.fullName,
+            registrationDate: registration.registrationDate,
+            feeKes,
+            paymentStatus: registration.paymentStatus as "pending" | "completed",
+          });
+          const signedUrl = await storageGetSignedUrl(key);
+          return { success: true, receiptUrl: signedUrl, receiptKey: key };
+        } catch (error) {
+          if (error instanceof TRPCError) throw error;
+          console.error("Receipt generation error:", error);
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to generate receipt" });
+        }
+      }),
   }),
 
   // ============ Model Profile ============
@@ -302,6 +351,34 @@ export const appRouter = router({
         }
       }),
 
+    // Public portfolio by slug: "first-last-123" (any name variant resolves via trailing id)
+    getPortfolio: publicProcedure
+      .input(z.object({ slug: z.string().min(1).max(200) }))
+      .query(async ({ input }) => {
+        const parsed = parseModelSlug(input.slug);
+        if (!parsed) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Model not found" });
+        }
+        const model = await getPublicModelForPortfolio(parsed.id);
+        if (!model) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Model not found" });
+        }
+        let socials: Record<string, string> = {};
+        try {
+          if (model.socialMediaHandles) socials = JSON.parse(model.socialMediaHandles) || {};
+        } catch { socials = {}; }
+        let measurements: Record<string, string> = {};
+        try {
+          if (model.measurements) measurements = JSON.parse(model.measurements) || {};
+        } catch { measurements = {}; }
+        return {
+          ...model,
+          socials,
+          measurements,
+          slug: modelSlug(model.id, model.fullName),
+        };
+      }),
+
     // Update category
     updateCategory: publicProcedure
       .input(z.object({
@@ -319,25 +396,117 @@ export const appRouter = router({
         }
       }),
 
-    // Update profile fields
+    // Update profile fields (email acts as ownership proof)
     updateProfile: publicProcedure
       .input(z.object({
         registrationId: z.number(),
-        fullName: z.string().optional(),
-        phoneNumber: z.string().optional(),
-        email: z.string().email().optional(),
-        countySubLocation: z.string().optional(),
-        talents: z.string().optional(),
+        email: z.string().email(),
+        fullName: z.string().max(255).optional(),
+        phoneNumber: z.string().max(20).optional(),
+        countySubLocation: z.string().max(255).optional(),
+        talents: z.string().max(2000).optional(),
+        bio: z.string().max(3000).optional(),
+        showreelUrl: z.string().max(500).optional(),
+        measurements: z.record(z.string(), z.string().max(100)).optional(),
+        socialMediaHandles: z.record(z.string(), z.string().max(300)).optional(),
+        availableForBookings: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
         try {
-          const { updateRegistration } = await import("./db.js");
-          const { registrationId, ...data } = input;
+          const { getDb, updateRegistration } = await import("./db.js");
+          const { registrations } = await import("../drizzle/schema.js");
+          const { ilike } = await import("drizzle-orm");
+          const db = await getDb();
+          if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+          const owned = await db
+            .select({ id: registrations.id })
+            .from(registrations)
+            .where(ilike(registrations.email, input.email));
+          if (!owned.some((r) => r.id === input.registrationId)) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "Email does not match this registration" });
+          }
+
+          const { registrationId, email, measurements, socialMediaHandles, ...rest } = input;
+          const data: Record<string, unknown> = { ...rest };
+          if (measurements !== undefined) data.measurements = JSON.stringify(measurements);
+          if (socialMediaHandles !== undefined) data.socialMediaHandles = JSON.stringify(socialMediaHandles);
           await updateRegistration(registrationId, data);
           return { success: true };
         } catch (error) {
+          if (error instanceof TRPCError) throw error;
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to update profile" });
         }
+      }),
+
+    // Book a model (public enquiry, emailed to support)
+    bookModel: publicProcedure
+      .input(z.object({
+        registrationId: z.number(),
+        clientName: z.string().min(2).max(255),
+        clientEmail: z.string().email().max(320),
+        clientPhone: z.string().max(20).optional(),
+        eventType: z.string().max(255).optional(),
+        eventDate: z.string().max(40).optional(),
+        budget: z.string().max(100).optional(),
+        message: z.string().min(5).max(3000),
+      }))
+      .mutation(async ({ input }) => {
+        const model = await getPublicModelForPortfolio(input.registrationId);
+        if (!model || !model.availableForBookings) {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Model not available for bookings" });
+        }
+        const id = await createBookingEnquiry({
+          registrationId: input.registrationId,
+          modelName: model.fullName,
+          clientName: input.clientName,
+          clientEmail: input.clientEmail,
+          clientPhone: input.clientPhone,
+          eventType: input.eventType,
+          eventDate: input.eventDate,
+          budget: input.budget,
+          message: input.message,
+        });
+        try {
+          await sendEmail({
+            to: SUPPORT_EMAIL,
+            ...buildBookingEnquiryEmail({
+              modelName: model.fullName,
+              clientName: input.clientName,
+              clientEmail: input.clientEmail,
+              clientPhone: input.clientPhone,
+              eventType: input.eventType,
+              eventDate: input.eventDate,
+              budget: input.budget,
+              message: input.message,
+            }),
+          });
+        } catch (error) {
+          console.error("Booking enquiry email error:", error);
+        }
+        return { success: true, id };
+      }),
+  }),
+
+  // ============ Booking Enquiries (Admin) ============
+  bookings: router({
+    getAll: staffProcedure.query(async () => {
+      return await getAllBookingEnquiries();
+    }),
+
+    updateStatus: staffProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["new", "contacted", "closed"]) }))
+      .mutation(async ({ input }) => {
+        await updateBookingEnquiryStatus(input.id, input.status);
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.number())
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await deleteBookingEnquiry(input);
+        return { success: true };
       }),
   }),
 
@@ -402,10 +571,9 @@ export const appRouter = router({
   // ============ Admin ============
   admin: router({
     // Model registrations
-    getRegistrationsByCategory: protectedProcedure
+    getRegistrationsByCategory: staffProcedure
       .input(z.enum(["adults", "teens", "little_stars"]))
-      .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      .query(async ({ input }) => {
         return await getRegistrationsByCategory(input);
       }),
 
@@ -469,7 +637,39 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         const { id, ...data } = input;
-        return await updateRegistration(id, data);
+
+        // When the admin marks a registration fee as paid, email the receipt.
+        let sendPaidReceipt = false;
+        let receiptName = "";
+        let receiptRegId = "";
+        if (data.paymentStatus === "completed") {
+          try {
+            const before = await getRegistrationById(String(id));
+            if (before && before.paymentStatus !== "completed") {
+              sendPaidReceipt = Boolean(before.email);
+              receiptName = before.fullName;
+              receiptRegId = `REG-${String(id).padStart(3, "0")}`;
+            }
+          } catch {
+            // best effort only
+          }
+        }
+
+        const result = await updateRegistration(id, data);
+
+        if (sendPaidReceipt) {
+          try {
+            const feeKes = await getRegistrationFee();
+            if (feeKes > 0) {
+              const receipt = buildRegistrationReceiptEmail(receiptName, receiptRegId, feeKes, "completed");
+              const before = await getRegistrationById(String(id));
+              if (before?.email) await sendEmail({ to: before.email, ...receipt });
+            }
+          } catch (emailErr) {
+            console.error("[Registration] Paid receipt email failed:", emailErr);
+          }
+        }
+        return result;
       }),
 
     updatePhoto: protectedProcedure
@@ -487,7 +687,7 @@ export const appRouter = router({
     sendBulkEmail: protectedProcedure
       .input(
         z.object({
-          type: z.enum(["certificate", "registration_pdf"]),
+          type: z.enum(["certificate", "registration_pdf", "participation"]),
           registrationIds: z.array(z.number()),
         })
       )
@@ -508,6 +708,7 @@ export const appRouter = router({
 
             let attachmentUrl = "";
             let emailContent;
+            let attachmentName = "Document.pdf";
 
             if (input.type === "certificate") {
               const { url, key } = await generateCertificate({
@@ -520,10 +721,28 @@ export const appRouter = router({
               });
               attachmentUrl = await storageGetSignedUrl(key);
               emailContent = buildCertificateEmail(registration.fullName);
+              attachmentName = "Certificate.pdf";
+            } else if (input.type === "participation") {
+              const categoryLabels: Record<string, string> = {
+                adults: "Adults (18–35)",
+                teens: "Teens (13–17)",
+                little_stars: "Little Stars (5–12)",
+              };
+              const { url, key } = await generateAchievementCertificate({
+                recipientName: registration.fullName,
+                award: "Certificate of Participation",
+                kind: "participation",
+                categoryLabel: categoryLabels[registration.category] || registration.category,
+                fileNameId: regStr,
+              });
+              attachmentUrl = await storageGetSignedUrl(key);
+              emailContent = buildAchievementCertificateEmail(registration.fullName, "Certificate of Participation");
+              attachmentName = "Certificate_of_Participation.pdf";
             } else {
               const { url, key } = await generateRegistrationPDF(registration);
               attachmentUrl = await storageGetSignedUrl(key);
               emailContent = buildRegistrationEmail(registration.fullName);
+              attachmentName = "Registration_Form.pdf";
             }
 
             // Fetch the PDF to attach it
@@ -536,7 +755,7 @@ export const appRouter = router({
               html: emailContent.html,
               attachments: [
                 {
-                  filename: input.type === "certificate" ? "Certificate.pdf" : "Registration_Form.pdf",
+                  filename: attachmentName,
                   content: Buffer.from(pdfBuffer),
                 }
               ]
@@ -553,19 +772,21 @@ export const appRouter = router({
         return { success: true, sentCount, failedCount };
       }),
 
-    getStats: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+    getStats: staffProcedure.query(async ({ ctx }) => {
+      // Admins loading the dashboard trigger the weekly digest when due.
+      if (ctx.user.role === "admin") {
+        void maybeSendWeeklyDigest();
+      }
       return await getRegistrationStats();
     }),
 
-    search: protectedProcedure
+    search: staffProcedure
       .input(z.string())
-      .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      .query(async ({ input }) => {
         return await searchRegistrations(input);
       }),
 
-    filter: protectedProcedure
+    filter: staffProcedure
       .input(z.object({
         category: z.enum(["adults", "teens", "little_stars"]).optional(),
         paymentStatus: z.enum(["pending", "completed"]).optional(),
@@ -573,12 +794,11 @@ export const appRouter = router({
         ageMax: z.number().optional(),
         county: z.string().optional(),
       }))
-      .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      .query(async ({ input }) => {
         return await filterRegistrations(input);
       }),
 
-    searchAndFilter: protectedProcedure
+    searchAndFilter: staffProcedure
       .input(z.object({
         query: z.string().default(""),
         filters: z.object({
@@ -591,9 +811,104 @@ export const appRouter = router({
         page: z.number().optional().default(1),
         limit: z.number().optional().default(50)
       }))
-      .query(async ({ ctx, input }) => {
-        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      .query(async ({ input }) => {
         return await searchAndFilterRegistrations(input.query, input.filters || {}, input.page, input.limit);
+      }),
+
+    // ============ Reports, digest & team access (admin only) ============
+    getFinancialReport: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await getFinancialSummary();
+    }),
+
+    listUsers: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await listUsers();
+    }),
+
+    setUserRole: protectedProcedure
+      .input(z.object({ userId: z.number(), role: z.enum(["user", "admin", "committee"]) }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        if (input.userId === ctx.user.id && input.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "You cannot remove your own admin role" });
+        }
+        const target = await getUserById(input.userId);
+        if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+        if (target.role === "admin" && input.role !== "admin") {
+          const otherAdmins = await countAdminsExcept(input.userId);
+          if (otherAdmins < 1) {
+            throw new TRPCError({ code: "FORBIDDEN", message: "At least one admin must remain" });
+          }
+        }
+        await setUserRole(input.userId, input.role);
+        return { success: true, role: input.role };
+      }),
+
+    digestStatus: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      const lastSent = await getSiteSetting(DIGEST_SETTING_KEY);
+      return { lastSentAt: lastSent ?? null, due: isDigestDue(lastSent) };
+    }),
+
+    sendWeeklyDigest: protectedProcedure.mutation(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await sendWeeklyDigest({ force: true });
+    }),
+
+    emailWinnerCertificate: protectedProcedure
+      .input(z.object({ winnerId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const winner = await getWinnerById(input.winnerId);
+        if (!winner) throw new TRPCError({ code: "NOT_FOUND", message: "Winner not found" });
+
+        let email = "";
+        if (winner.registrationId) {
+          try {
+            const reg = await getRegistrationById(String(winner.registrationId));
+            email = reg?.email ?? "";
+          } catch {
+            email = "";
+          }
+        }
+        if (!email) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "No email linked to this winner. Link the winner to a registration first.",
+          });
+        }
+
+        const award = winner.placement ? `${winner.title} — ${winner.placement}` : winner.title;
+        const categoryLabels: Record<string, string> = {
+          adults: "Adults (18–35)",
+          teens: "Teens (13–17)",
+          little_stars: "Little Stars (5–12)",
+          overall: "Overall",
+        };
+
+        const { key } = await generateAchievementCertificate({
+          recipientName: winner.fullName,
+          award,
+          kind: "winner",
+          categoryLabel: categoryLabels[winner.category] || winner.category,
+          fileNameId: `winner_${winner.id}`,
+        });
+
+        const signedUrl = await storageGetSignedUrl(key);
+        const pdfResponse = await fetch(signedUrl);
+        const pdfBuffer = await pdfResponse.arrayBuffer();
+        const emailContent = buildAchievementCertificateEmail(winner.fullName, award);
+        const sent = await sendEmail({
+          to: email,
+          subject: emailContent.subject,
+          html: emailContent.html,
+          attachments: [
+            { filename: `Certificate_${winner.fullName.replace(/[^a-zA-Z0-9]+/g, "_")}.pdf`, content: Buffer.from(pdfBuffer) },
+          ],
+        });
+        if (!sent) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to send certificate email" });
+        return { success: true, email };
       }),
 
     // Partner Logos

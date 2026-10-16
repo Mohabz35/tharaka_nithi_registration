@@ -18,6 +18,9 @@ const MerchandiseStore = lazy(() => import("@/pages/MerchandiseStore"));
 const PaymentPage = lazy(() => import("@/pages/PaymentPage"));
 const PaymentDashboard = lazy(() => import("@/pages/PaymentDashboard"));
 const ModelProfile = lazy(() => import("@/pages/ModelProfile"));
+const ModelPortfolio = lazy(() => import("@/pages/ModelPortfolio"));
+const Privacy = lazy(() => import("@/pages/Privacy"));
+const Terms = lazy(() => import("@/pages/Terms"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const Winners = lazy(() => import("@/pages/Winners"));
 const WinnerDetail = lazy(() => import("@/pages/WinnerDetail"));
@@ -40,6 +43,9 @@ function Router() {
         <Route path={"/login"} component={Auth} />
         <Route path={"/register"} component={RegisterModel} />
         <Route path={"/gallery"} component={Gallery} />
+        <Route path={"/models/:slug"} component={ModelPortfolio} />
+        <Route path={"/privacy"} component={Privacy} />
+        <Route path={"/terms"} component={Terms} />
         <Route path={"/winners"} component={Winners} />
         <Route path={"/winners/:id"} component={WinnerDetail} />
         <Route path={"/events"} component={Events} />
