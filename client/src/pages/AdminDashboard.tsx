@@ -22,6 +22,7 @@ import AdminPhotoEditor from "@/components/AdminPhotoEditor";
 import AdminBulkEmailPanel from "@/components/AdminBulkEmailPanel";
 import AdminPaymentsTab from "@/components/AdminPaymentsTab";
 import AdminReportsTab from "@/components/AdminReportsTab";
+import AdminCouncilTab from "@/components/AdminCouncilTab";
 import AdminWinnersManager from "@/components/AdminWinnersManager";
 import AdminEventsManager from "@/components/AdminEventsManager";
 import AdminTrainingManager from "@/components/AdminTrainingManager";
@@ -242,6 +243,9 @@ export default function AdminDashboard() {
               </TabsTrigger>
               <TabsTrigger value="bookings" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
                 Bookings
+              </TabsTrigger>
+              <TabsTrigger value="council" className="data-[state=active]:bg-[#d4af37] data-[state=active]:text-black text-white flex-1 py-3">
+                Council
               </TabsTrigger>
               {isAdmin && (
                 <>
@@ -606,6 +610,10 @@ export default function AdminDashboard() {
 
             <TabsContent value="bookings">
               <AdminBookingsManager />
+            </TabsContent>
+
+            <TabsContent value="council">
+              <AdminCouncilTab />
             </TabsContent>
 
             <TabsContent value="partners">

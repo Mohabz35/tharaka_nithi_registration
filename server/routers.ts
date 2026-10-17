@@ -1,6 +1,7 @@
-import { COOKIE_NAME, SUPPORT_EMAIL, modelSlug, parseModelSlug } from "../shared/const.js";
+import { COOKIE_NAME, SUPPORT_EMAIL, modelSlug, parseModelSlug, COUNCIL_SEAT_KEYS } from "../shared/const.js";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import crypto from "crypto";
 import {
   createRegistration, getAllRegistrations, getRegistrationById, getRegistrationsByCategory,
   getRegistrationStats, searchRegistrations, filterRegistrations, searchAndFilterRegistrations,
@@ -19,12 +20,17 @@ import {
   updateTrainingRegistrationPayment, deleteTrainingRegistration,
   getPublicModelForPortfolio, getPublishedModelPortfolioSummaries,
   createBookingEnquiry, getAllBookingEnquiries, updateBookingEnquiryStatus, deleteBookingEnquiry,
-  listUsers, setUserRole, countAdminsExcept, getUserById,
-  getFinancialSummary,
+  listUsers, setUserRole, setUserStaffRole, countAdminsExcept, getUserById,
+  getFinancialSummary, getFinanceLedger,
+  createStaffAccount, createFundRequest, listFundRequests, listFundRequestsByUser,
+  reviewFundRequest, markFundRequestPaid,
+  createFinanceReport, listFinanceReports,
+  createVpApplication, listVpApplications, reviewVpApplication,
 } from "./db.js";
 import { REGISTRATION_DEADLINE_ISO } from "../shared/const.js";
 import { getSessionCookieOptions } from "./_core/cookies.js";
-import { protectedProcedure, publicProcedure, router, staffProcedure } from "./_core/trpc.js";
+import { hashPassword } from "./auth.js";
+import { protectedProcedure, publicProcedure, router, staffProcedure, treasurerProcedure } from "./_core/trpc.js";
 import { systemRouter } from "./_core/systemRouter.js";
 import { generateImage } from "./_core/imageGeneration.js";
 import { generateRegistrationPDF, generateParentalConsentPDF } from "./_core/pdfGenerator.js";
@@ -1352,6 +1358,186 @@ export const appRouter = router({
       .mutation(async ({ ctx, input }) => {
         if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
         return await deleteTrainingRegistration(input);
+      }),
+  }),
+
+  // ============ Executive Council ============
+  council: router({
+    // Public: apply for the vacant Vice President seat.
+    applyForVicePresident: publicProcedure
+      .input(
+        z.object({
+          fullName: z.string().min(2, "Full name is required"),
+          email: z.string().email("Valid email is required"),
+          phoneNumber: z.string().min(9, "Phone number is required"),
+          statement: z.string().min(20, "Tell us about yourself (at least 20 characters)"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const id = await createVpApplication(input);
+        return { success: true, id };
+      }),
+
+    // Treasurer (or admin): fund ledger — generated vs disbursed.
+    getFinanceLedger: treasurerProcedure.query(async () => {
+      const fee = await getRegistrationFee();
+      return await getFinanceLedger(fee);
+    }),
+
+    submitFundRequest: treasurerProcedure
+      .input(
+        z.object({
+          type: z.enum(["advance", "payout"]),
+          amount: z.number().int().min(1, "Amount must be at least KES 1"),
+          purpose: z.string().min(5, "Describe the purpose"),
+          eventDate: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const id = await createFundRequest({ ...input, requesterId: ctx.user.id });
+        return { success: true, id };
+      }),
+
+    listMyFundRequests: treasurerProcedure.query(async ({ ctx }) => {
+      return await listFundRequestsByUser(ctx.user.id);
+    }),
+
+    submitFinanceReport: treasurerProcedure
+      .input(
+        z.object({
+          title: z.string().min(2, "Title is required"),
+          body: z.string().min(10, "Report body is required"),
+          amount: z.number().int().min(0).optional(),
+          category: z.string().max(100).optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const id = await createFinanceReport({ ...input, submitterId: ctx.user.id });
+        return { success: true, id };
+      }),
+
+    // Admin + treasurer + president read reports.
+    listFinanceReports: protectedProcedure.query(async ({ ctx }) => {
+      const role = ctx.user?.role;
+      const seat = ctx.user?.staffRole;
+      const allowed =
+        role === "admin" ||
+        (role === "committee" && (seat === "treasurer" || seat === "president"));
+      if (!allowed) throw new TRPCError({ code: "FORBIDDEN", message: "Finance report access required" });
+      return await listFinanceReports();
+    }),
+
+    // Admin only: review queue + approvals.
+    listFundRequests: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await listFundRequests();
+    }),
+
+    reviewFundRequest: protectedProcedure
+      .input(
+        z.object({
+          requestId: z.number(),
+          action: z.enum(["approve", "reject"]),
+          adminNote: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await reviewFundRequest(
+          input.requestId,
+          input.action === "approve" ? "approved" : "rejected",
+          input.adminNote ?? null,
+          ctx.user.id,
+        );
+        return { success: true };
+      }),
+
+    markFundRequestPaid: protectedProcedure
+      .input(z.object({ requestId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await markFundRequestPaid(input.requestId, ctx.user.id);
+        return { success: true };
+      }),
+
+    listVpApplications: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+      return await listVpApplications();
+    }),
+
+    // Approve/reject a VP application; on approve optionally create the council account
+    // with a one-time temp password returned to the admin.
+    reviewVpApplication: protectedProcedure
+      .input(
+        z.object({
+          applicationId: z.number(),
+          action: z.enum(["approve", "reject"]),
+          adminNote: z.string().optional(),
+          createAccount: z.boolean().default(false),
+          name: z.string().optional(),
+          email: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        await reviewVpApplication(
+          input.applicationId,
+          input.action === "approve" ? "approved" : "rejected",
+          input.adminNote ?? null,
+          ctx.user.id,
+        );
+
+        if (input.action === "approve" && input.createAccount) {
+          if (!input.name || !input.email) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "Name and email are required to create the account" });
+          }
+          const tempPassword = crypto.randomBytes(9).toString("base64url");
+          await createStaffAccount({
+            name: input.name,
+            email: input.email,
+            passwordHash: hashPassword(tempPassword),
+            staffRole: "vice_president",
+          });
+          return { success: true, tempPassword };
+        }
+        return { success: true };
+      }),
+
+    // Admin only: create a council account and assign seats.
+    createStaffAccount: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().min(2, "Name is required"),
+          email: z.string().email("Valid email is required"),
+          password: z.string().min(8, "Password must be at least 8 characters"),
+          staffRole: z.enum(COUNCIL_SEAT_KEYS as [string, ...string[]]),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        const id = await createStaffAccount({
+          name: input.name,
+          email: input.email,
+          passwordHash: hashPassword(input.password),
+          staffRole: input.staffRole,
+        });
+        return { success: true, id };
+      }),
+
+    setSeat: protectedProcedure
+      .input(
+        z.object({
+          userId: z.number(),
+          staffRole: z.string().nullable(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") throw new TRPCError({ code: "FORBIDDEN", message: "Admin access required" });
+        if (input.staffRole && !COUNCIL_SEAT_KEYS.includes(input.staffRole as any)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Unknown council seat" });
+        }
+        await setUserStaffRole(input.userId, input.staffRole);
+        return { success: true, staffRole: input.staffRole };
       }),
   }),
 });

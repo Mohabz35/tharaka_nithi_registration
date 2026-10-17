@@ -318,3 +318,32 @@
 
 ### Verification
 - [x] npm run check (tsc) + npm run test + npm run build all pass
+
+## Executive Council Accounts (9 seats + Treasurer finance + VP applications)
+
+### Schema & migrations
+- [x] `users.staffRole` text column (president | vice_president | secretary | org_sec | marketing | welfare | treasurer | coordinator | models_coordinator); council = role "committee" + staffRole seat key
+- [x] `fund_requests` table (advance|payout, amount, purpose, eventDate, status pending/approved/rejected/paid, adminNote, reviewedById/At)
+- [x] `finance_reports` table (title, body, amount, category, submitterId)
+- [x] `vp_applications` table (fullName, email, phone, statement, status, adminNote, reviewedById/At)
+- [x] ensureSchema: ADD COLUMN IF NOT EXISTS staffRole + CREATE TABLE IF NOT EXISTS for all three tables
+
+### Server
+- [x] `treasurerProcedure` middleware (admin OR committee+treasurer) in server/_core/trpc.ts; staffProcedure unchanged (council uses committee role)
+- [x] db helpers: createStaffAccount, createFundRequest, listFundRequests (join requester), listFundRequestsByUser, reviewFundRequest, markFundRequestPaid, createFinanceReport, listFinanceReports (join submitter+seat), createVpApplication, listVpApplications, reviewVpApplication, getFinanceLedger (completed regs×fee + successful tx − paid requests), setUserStaffRole
+- [x] council router: applyForVicePresident (public), getFinanceLedger/submitFundRequest/listMyFundRequests/submitFinanceReport (treasurerProcedure), listFinanceReports (admin+treasurer+ president), listFundRequests/reviewFundRequest/markFundRequestPaid/listVpApplications/reviewVpApplication/createStaffAccount/setSeat (admin-only); VP approve can create account with one-time temp password
+- [x] shared/const.ts: COUNCIL_SEATS (9 seats with named holders, VP vacant), councilSeatLabel helper
+
+### Client
+- [x] AdminCouncilTab.tsx: fund ledger cards, submit fund request form, admin review queue (approve/reject/mark paid), my-requests table, finance report submit + inbox, VP applications (approve & create account with temp password), council seats overview; tab visible to all staff, sections gated treasurer/admin
+- [x] AdminDashboard: Council tab wired for all staff
+- [x] AdminReportsTab Team Access: Council seat assignment dropdown (setSeat)
+- [x] VpApplication.tsx public page at /vice-president (form + success state); route in App.tsx; sitemap entry added
+
+### Tests & verification
+- [x] council.test.ts — 9 tests: seat constants, treasurer gate (user/committee blocked, treasurer+admin allowed), admin-only review/seat/VP, public VP application, unknown-seat BAD_REQUEST
+- [x] Suite: 95 pass / 9 skipped (DB) / 0 fail; npm run check + npm run build pass
+
+### Seating plan (manual, after deploy)
+- [ ] Assign each council member an account: have them register, then set role=committee + seat in Reports & Team (or create via Council tab seat flow / createStaffAccount)
+- [ ] Treasurer = Pilly Aly (committee + treasurer seat); President = Maxwell Okoth; Secretary = Reginah Akelo; Org Sec = Deborah Moraa; Marketing = Sheddy Precious Global; Welfare = Rahman Ali; County Coordinator = Winslet Flynn; Models Coordinator = Idah Apule; VP seat open until an application is approved

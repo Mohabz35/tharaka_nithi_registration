@@ -17,6 +17,9 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: varchar("passwordHash", { length: 255 }).notNull(),
   role: roleEnum("role").default("user").notNull(),
+  // Executive council seat key (president | vice_president | secretary | org_sec |
+  // marketing | welfare | treasurer | coordinator). Null for non-council users.
+  staffRole: text("staffRole"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -337,3 +340,55 @@ export const training_registrations = pgTable("training_registrations", {
 
 export type TrainingRegistration = typeof training_registrations.$inferSelect;
 export type InsertTrainingRegistration = typeof training_registrations.$inferInsert;
+
+// ============ Executive Council Tables ============
+
+// Treasurer fund requests: advances/payouts awaiting admin approval.
+export const fund_requests = pgTable("fund_requests", {
+  id: serial("id").primaryKey(),
+  requesterId: integer("requesterId").references(() => users.id).notNull(),
+  type: varchar("type", { length: 20 }).notNull(), // "advance" | "payout"
+  amount: integer("amount").notNull(), // KES
+  purpose: text("purpose").notNull(),
+  eventDate: varchar("eventDate", { length: 40 }),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending | approved | rejected | paid
+  adminNote: text("adminNote"),
+  reviewedById: integer("reviewedById").references(() => users.id),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export type FundRequest = typeof fund_requests.$inferSelect;
+export type InsertFundRequest = typeof fund_requests.$inferInsert;
+
+// Council finance reports: treasurer submissions (and admin uploads).
+export const finance_reports = pgTable("finance_reports", {
+  id: serial("id").primaryKey(),
+  submitterId: integer("submitterId").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body").notNull(),
+  amount: integer("amount"), // optional reported total (KES)
+  category: varchar("category", { length: 100 }).default("general").notNull(), // general | advance | payout | inventory | other
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type FinanceReport = typeof finance_reports.$inferSelect;
+export type InsertFinanceReport = typeof finance_reports.$inferInsert;
+
+// Public applications for the vacant Vice President seat.
+export const vp_applications = pgTable("vp_applications", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("fullName", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull(),
+  phoneNumber: varchar("phoneNumber", { length: 20 }).notNull(),
+  statement: text("statement").notNull(),
+  status: varchar("status", { length: 20 }).default("pending").notNull(), // pending | approved | rejected
+  adminNote: text("adminNote"),
+  reviewedById: integer("reviewedById").references(() => users.id),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type VpApplication = typeof vp_applications.$inferSelect;
+export type InsertVpApplication = typeof vp_applications.$inferInsert;

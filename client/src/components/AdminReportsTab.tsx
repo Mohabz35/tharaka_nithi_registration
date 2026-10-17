@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { downloadCsv } from "@/lib/csv";
 import { toast } from "sonner";
 import { Download, Loader2, Send, ShieldCheck, Users } from "lucide-react";
+import { COUNCIL_SEATS, councilSeatLabel } from "@shared/const";
 
 const kes = (n: number) => `KES ${n.toLocaleString()}`;
 
@@ -34,6 +35,7 @@ export default function AdminReportsTab() {
 
   const [sendingDigest, setSendingDigest] = useState(false);
   const [savingRole, setSavingRole] = useState<number | null>(null);
+  const [savingSeat, setSavingSeat] = useState<number | null>(null);
 
   const digestMutation = trpc.admin.sendWeeklyDigest.useMutation({
     onSuccess: res => {
@@ -64,6 +66,19 @@ export default function AdminReportsTab() {
     },
   });
 
+  const seatMutation = trpc.council.setSeat.useMutation({
+    onSuccess: (_data, vars) => {
+      setSavingSeat(null);
+      toast.success(vars.staffRole ? `Seat assigned: ${councilSeatLabel(vars.staffRole)}.` : "Seat cleared.");
+      utils.admin.listUsers.invalidate();
+    },
+    onError: (err) => {
+      setSavingSeat(null);
+      toast.error(err.message || "Failed to assign seat");
+      utils.admin.listUsers.invalidate();
+    },
+  });
+
   const handleSendDigest = () => {
     setSendingDigest(true);
     digestMutation.mutate();
@@ -72,6 +87,12 @@ export default function AdminReportsTab() {
   const handleRoleChange = (userId: number, role: "user" | "admin" | "committee") => {
     setSavingRole(userId);
     roleMutation.mutate({ userId, role });
+  };
+
+  const handleSeatChange = (userId: number, staffRole: string) => {
+    setSavingSeat(userId);
+    // "none" clears the seat; council seats require the committee role.
+    seatMutation.mutate({ userId, staffRole: staffRole === "none" ? null : staffRole });
   };
 
   const exportTransactionsCSV = () => {
@@ -229,6 +250,7 @@ export default function AdminReportsTab() {
                     <TableHead className="text-[#d4af37]">Email</TableHead>
                     <TableHead className="text-[#d4af37]">Last signed in</TableHead>
                     <TableHead className="text-[#d4af37]">Role</TableHead>
+                    <TableHead className="text-[#d4af37]">Council seat</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,6 +277,28 @@ export default function AdminReportsTab() {
                           </SelectContent>
                         </Select>
                         {u.role === "admin" && <ShieldCheck className="w-4 h-4 text-[#d4af37] inline ml-2" />}
+                      </TableCell>
+                      <TableCell>
+                        <Select
+                          value={u.staffRole ?? "none"}
+                          onValueChange={val => handleSeatChange(u.id, val)}
+                          disabled={savingSeat === u.id || u.role === "user"}
+                        >
+                          <SelectTrigger className="bg-[#4a1a2a] border-[#d4af37] text-white w-52">
+                            <SelectValue placeholder="No seat" />
+                          </SelectTrigger>
+                          <SelectContent className="bg-[#4a1a2a] border-[#d4af37] text-white">
+                            <SelectItem value="none">No seat</SelectItem>
+                            {COUNCIL_SEATS.map(seat => (
+                              <SelectItem key={seat.key} value={seat.key}>
+                                {seat.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {u.staffRole && (
+                          <span className="text-[#d4af37] text-xs ml-2">{councilSeatLabel(u.staffRole)}</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

@@ -19,6 +19,9 @@ import {
   training_programs, InsertTrainingProgram,
   training_registrations, InsertTrainingRegistration,
   booking_enquiries, InsertBookingEnquiry,
+  fund_requests, InsertFundRequest,
+  finance_reports, InsertFinanceReport,
+  vp_applications, InsertVpApplication,
 } from "../drizzle/schema.js";
 import { ENV } from "./_core/env.js";
 
@@ -238,6 +241,47 @@ export async function ensureSchema(): Promise<void> {
         "budget" varchar(100),
         "message" text NOT NULL,
         "status" varchar(20) DEFAULT 'new' NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      // Executive council: seat key on users + council finance / VP application tables.
+      await _client!`ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "staffRole" text`;
+
+      await _client!`CREATE TABLE IF NOT EXISTS "fund_requests" (
+        "id" serial PRIMARY KEY,
+        "requesterId" integer NOT NULL,
+        "type" varchar(20) NOT NULL,
+        "amount" integer NOT NULL,
+        "purpose" text NOT NULL,
+        "eventDate" varchar(40),
+        "status" varchar(20) DEFAULT 'pending' NOT NULL,
+        "adminNote" text,
+        "reviewedById" integer,
+        "reviewedAt" timestamp,
+        "createdAt" timestamp DEFAULT now() NOT NULL,
+        "updatedAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      await _client!`CREATE TABLE IF NOT EXISTS "finance_reports" (
+        "id" serial PRIMARY KEY,
+        "submitterId" integer NOT NULL,
+        "title" varchar(255) NOT NULL,
+        "body" text NOT NULL,
+        "amount" integer,
+        "category" varchar(100) DEFAULT 'general' NOT NULL,
+        "createdAt" timestamp DEFAULT now() NOT NULL
+      )`;
+
+      await _client!`CREATE TABLE IF NOT EXISTS "vp_applications" (
+        "id" serial PRIMARY KEY,
+        "fullName" varchar(255) NOT NULL,
+        "email" varchar(320) NOT NULL,
+        "phoneNumber" varchar(20) NOT NULL,
+        "statement" text NOT NULL,
+        "status" varchar(20) DEFAULT 'pending' NOT NULL,
+        "adminNote" text,
+        "reviewedById" integer,
+        "reviewedAt" timestamp,
         "createdAt" timestamp DEFAULT now() NOT NULL
       )`;
 
@@ -1135,6 +1179,7 @@ export async function listUsers() {
       email: users.email,
       name: users.name,
       role: users.role,
+      staffRole: users.staffRole,
       createdAt: users.createdAt,
       lastSignedIn: users.lastSignedIn,
     })
@@ -1146,6 +1191,13 @@ export async function setUserRole(id: number, role: "user" | "admin" | "committe
   const db = await getDb();
   if (!db) { throw new Error("Database not available"); }
   await db.update(users).set({ role, updatedAt: new Date() }).where(eq(users.id, id));
+  return true;
+}
+
+export async function setUserStaffRole(id: number, staffRole: string | null) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db.update(users).set({ staffRole, updatedAt: new Date() }).where(eq(users.id, id));
   return true;
 }
 
@@ -1295,4 +1347,254 @@ export async function getUserById(id: number) {
   if (!db) { return undefined; }
   const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+// ============ Executive council (accounts, funds, reports, VP applications) ============
+
+export type StaffAccountInput = {
+  name: string;
+  email: string;
+  passwordHash: string;
+  staffRole: string;
+};
+
+export async function createStaffAccount(input: StaffAccountInput): Promise<number> {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db
+    .insert(users)
+    .values({
+      name: input.name,
+      email: input.email.toLowerCase(),
+      passwordHash: input.passwordHash,
+      role: "committee",
+      staffRole: input.staffRole,
+    })
+    .returning({ id: users.id });
+  return result[0].id;
+}
+
+export type FundRequestInput = {
+  requesterId: number;
+  type: "advance" | "payout";
+  amount: number;
+  purpose: string;
+  eventDate?: string;
+};
+
+export async function createFundRequest(input: FundRequestInput): Promise<number> {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db
+    .insert(fund_requests)
+    .values({
+      requesterId: input.requesterId,
+      type: input.type,
+      amount: input.amount,
+      purpose: input.purpose,
+      eventDate: input.eventDate,
+      status: "pending",
+    })
+    .returning({ id: fund_requests.id });
+  return result[0].id;
+}
+
+export async function listFundRequests() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db
+    .select({
+      id: fund_requests.id,
+      type: fund_requests.type,
+      amount: fund_requests.amount,
+      purpose: fund_requests.purpose,
+      eventDate: fund_requests.eventDate,
+      status: fund_requests.status,
+      adminNote: fund_requests.adminNote,
+      reviewedAt: fund_requests.reviewedAt,
+      createdAt: fund_requests.createdAt,
+      requesterId: fund_requests.requesterId,
+      requesterName: users.name,
+      requesterEmail: users.email,
+    })
+    .from(fund_requests)
+    .leftJoin(users, eq(fund_requests.requesterId, users.id))
+    .orderBy(desc(fund_requests.createdAt));
+}
+
+export async function listFundRequestsByUser(requesterId: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db
+    .select()
+    .from(fund_requests)
+    .where(eq(fund_requests.requesterId, requesterId))
+    .orderBy(desc(fund_requests.createdAt));
+}
+
+export async function reviewFundRequest(
+  id: number,
+  status: "approved" | "rejected",
+  adminNote: string | null,
+  reviewedById: number,
+) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db
+    .update(fund_requests)
+    .set({ status, adminNote, reviewedById, reviewedAt: new Date(), updatedAt: new Date() })
+    .where(eq(fund_requests.id, id));
+  return true;
+}
+
+export async function markFundRequestPaid(id: number, reviewedById: number) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db
+    .update(fund_requests)
+    .set({ status: "paid", reviewedById, reviewedAt: new Date(), updatedAt: new Date() })
+    .where(eq(fund_requests.id, id));
+  return true;
+}
+
+export type FinanceReportInput = {
+  submitterId: number;
+  title: string;
+  body: string;
+  amount?: number;
+  category?: string;
+};
+
+export async function createFinanceReport(input: FinanceReportInput): Promise<number> {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db
+    .insert(finance_reports)
+    .values({
+      submitterId: input.submitterId,
+      title: input.title,
+      body: input.body,
+      amount: input.amount,
+      category: input.category ?? "general",
+    })
+    .returning({ id: finance_reports.id });
+  return result[0].id;
+}
+
+export async function listFinanceReports() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db
+    .select({
+      id: finance_reports.id,
+      title: finance_reports.title,
+      body: finance_reports.body,
+      amount: finance_reports.amount,
+      category: finance_reports.category,
+      createdAt: finance_reports.createdAt,
+      submitterId: finance_reports.submitterId,
+      submitterName: users.name,
+      submitterEmail: users.email,
+      staffRole: users.staffRole,
+    })
+    .from(finance_reports)
+    .leftJoin(users, eq(finance_reports.submitterId, users.id))
+    .orderBy(desc(finance_reports.createdAt));
+}
+
+export type VpApplicationInput = {
+  fullName: string;
+  email: string;
+  phoneNumber: string;
+  statement: string;
+};
+
+export async function createVpApplication(input: VpApplicationInput): Promise<number> {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  const result = await db
+    .insert(vp_applications)
+    .values({
+      fullName: input.fullName,
+      email: input.email.toLowerCase(),
+      phoneNumber: input.phoneNumber,
+      statement: input.statement,
+      status: "pending",
+    })
+    .returning({ id: vp_applications.id });
+  return result[0].id;
+}
+
+export async function listVpApplications() {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  return await db.select().from(vp_applications).orderBy(desc(vp_applications.createdAt));
+}
+
+export async function reviewVpApplication(
+  id: number,
+  status: "approved" | "rejected",
+  adminNote: string | null,
+  reviewedById: number,
+) {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+  await db
+    .update(vp_applications)
+    .set({ status, adminNote, reviewedById, reviewedAt: new Date() })
+    .where(eq(vp_applications.id, id));
+  return true;
+}
+
+export type FinanceLedger = {
+  registrationFees: number;
+  paymentsCollected: number;
+  fundsGenerated: number;
+  disbursed: number;
+  pendingOut: number;
+  balance: number;
+  completedRegistrationCount: number;
+  successfulTxCount: number;
+};
+
+// Treasurer ledger: money generated (registration fees + successful payments)
+// vs money disbursed (approved/paid fund requests) and still pending.
+export async function getFinanceLedger(registrationFee: number): Promise<FinanceLedger> {
+  const db = await getDb();
+  if (!db) { throw new Error("Database not available"); }
+
+  const [completedRegs] = await db
+    .select({ value: count() })
+    .from(registrations)
+    .where(eq(registrations.paymentStatus, "completed"));
+
+  const [payments] = await db
+    .select({ total: sum(payment_transactions.amount), value: count() })
+    .from(payment_transactions)
+    .where(eq(payment_transactions.status, "success"));
+
+  const requestTotals = await db
+    .select({ status: fund_requests.status, total: sum(fund_requests.amount) })
+    .from(fund_requests)
+    .groupBy(fund_requests.status);
+
+  const toNum = (v: string | null) => (v === null ? 0 : Number(v));
+  const statusMap = Object.fromEntries(requestTotals.map(r => [r.status, toNum(r.total)]));
+
+  const registrationFees = (completedRegs?.value ?? 0) * registrationFee;
+  const paymentsCollected = toNum(payments?.total ?? null);
+  const fundsGenerated = registrationFees + paymentsCollected;
+  const disbursed = statusMap.paid ?? 0;
+  const pendingOut = (statusMap.pending ?? 0) + (statusMap.approved ?? 0);
+
+  return {
+    registrationFees,
+    paymentsCollected,
+    fundsGenerated,
+    disbursed,
+    pendingOut,
+    balance: fundsGenerated - disbursed,
+    completedRegistrationCount: completedRegs?.value ?? 0,
+    successfulTxCount: payments?.value ?? 0,
+  };
 }

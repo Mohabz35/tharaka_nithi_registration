@@ -30,6 +30,29 @@ export const SOCIAL_LINKS = {
 
 export type SocialPlatform = keyof typeof SOCIAL_LINKS;
 
+// ============ Executive council seats ============
+// staffRole values stored on users.staffRole. Vice President is vacant until appointed.
+export const COUNCIL_SEATS = [
+  { key: "president", label: "President", holder: "Maxwell Okoth" },
+  { key: "vice_president", label: "Vice President", holder: null },
+  { key: "secretary", label: "Secretary General", holder: "Reginah Akelo" },
+  { key: "org_sec", label: "Organizing Secretary", holder: "Deborah Moraa" },
+  { key: "marketing", label: "Marketing Director", holder: "Sheddy Precious Global" },
+  { key: "welfare", label: "Welfare Director", holder: "Rahman Ali" },
+  { key: "treasurer", label: "Treasurer", holder: "Pilly Aly" },
+  { key: "coordinator", label: "Tharaka Nithi County Coordinator", holder: "Winslet Flynn" },
+  { key: "models_coordinator", label: "Pageant-Models Coordinator Kenya", holder: "Idah Apule" },
+] as const;
+
+export type CouncilSeatKey = (typeof COUNCIL_SEATS)[number]["key"];
+
+export const COUNCIL_SEAT_KEYS = COUNCIL_SEATS.map(s => s.key);
+
+export function councilSeatLabel(key: string | null | undefined): string {
+  if (!key) return "";
+  return COUNCIL_SEATS.find(s => s.key === key)?.label ?? key;
+}
+
 // ============ Model portfolio slugs ============
 export function slugifyText(value: string): string {
   return (value || "")

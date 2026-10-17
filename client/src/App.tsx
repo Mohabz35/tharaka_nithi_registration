@@ -27,6 +27,7 @@ const WinnerDetail = lazy(() => import("@/pages/WinnerDetail"));
 const Events = lazy(() => import("@/pages/Events"));
 const EventDetail = lazy(() => import("@/pages/EventDetail"));
 const Training = lazy(() => import("@/pages/Training"));
+const VpApplication = lazy(() => import("@/pages/VpApplication"));
 
 const PageLoader = () => (
   <div className="min-h-screen bg-black flex items-center justify-center">
@@ -51,6 +52,7 @@ function Router() {
         <Route path={"/events"} component={Events} />
         <Route path={"/events/:slug"} component={EventDetail} />
         <Route path={"/training"} component={Training} />
+        <Route path={"/vice-president"} component={VpApplication} />
         <Route path={"/admin"} component={AdminDashboard} />
         <Route path={"/event-sections"} component={EventSections} />
         <Route path={"/poster-generator"} component={ContestantPoster} />
